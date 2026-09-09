@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📨 MISSÃO BYTES — Serialização de Dados</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
+  body{background:linear-gradient(135deg,#04122e 0%,#0b2a6e 55%,#0a57d4 100%);color:#fff;min-height:100vh}
+  header{position:sticky;top:0;z-index:10;background:rgba(4,12,40,.94);padding:12px 18px;
+         display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:3px solid #0a84ff}
+  header h1{font-size:1.05rem;flex:1;min-width:220px}
+  .hud{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:.88rem}
+  .xp-badge{background:#0a84ff;padding:6px 14px;border-radius:20px;font-weight:bold}
+  .badges{font-size:1.15rem;letter-spacing:3px}
+  .xpbar-outer{width:130px;height:10px;background:#062055;border-radius:6px;overflow:hidden}
+  .xpbar-inner{height:100%;width:0;background:linear-gradient(90deg,#00c6ff,#7b2ff7);transition:width .5s}
+  main{max-width:920px;margin:0 auto;padding:22px 14px 60px}
+  .card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:16px;
+        padding:22px;margin-bottom:18px;backdrop-filter:blur(4px);animation:fadein .35s}
+  @keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  h2{color:#7fd0ff;margin-bottom:8px;font-size:1.25rem}
+  h3{color:#cfe6ff;margin:12px 0 8px;font-size:1.02rem;line-height:1.5}
+  p,li{line-height:1.6}
+  .muted{color:#a9c4ec;font-size:.9rem}
+  button{cursor:pointer;border:none;border-radius:10px;padding:12px 20px;font-size:.97rem;font-weight:bold;transition:.2s}
+  .btn-primary{background:#0a84ff;color:#fff}
+  .btn-primary:hover{background:#2e9bff;transform:translateY(-2px)}
+  .btn-ghost{background:transparent;color:#9cc6ff;border:2px solid #3a6fd8}
+  .btn-ghost:hover{background:rgba(10,132,255,.25)}
+  .btn-small{padding:7px 13px;font-size:.82rem}
+  .opt{display:block;width:100%;text-align:left;background:rgba(255,255,255,.08);
+       border:2px solid rgba(255,255,255,.25);color:#fff;margin:8px 0;padding:13px 15px}
+  .opt:hover:not(:disabled){border-color:#00c6ff}
+  .opt.correct{border-color:#3ddc84;background:rgba(61,220,132,.18)}
+  .opt.wrong{border-color:#ff5d73;background:rgba(255,93,115,.18)}
+  .feedback{padding:13px;border-radius:10px;margin-top:12px;display:none;line-height:1.55}
+  .feedback.ok{display:block;background:rgba(61,220,132,.15);border:1px solid #3ddc84}
+  .feedback.err{display:block;background:rgba(255,93,115,.15);border:1px solid #ff5d73}
+  pre.code{background:#031029;border:1px solid #274b9a;border-radius:8px;padding:13px;
+           font-family:Consolas,monospace;font-size:.85rem;overflow-x:auto;white-space:pre;color:#cde6ff;margin:10px 0}
+  /* grades de pixels */
+  .pixgrid{display:grid;gap:2px;padding:5px;background:#04122e;border-radius:8px;border:1px solid #3a6fd8}
+  .pixgrid .px{width:100%;aspect-ratio:1;border-radius:2px}
+  .g4{grid-template-columns:repeat(4,1fr);width:118px}
+  .g8{grid-template-columns:repeat(8,1fr);width:214px}
+  .gOpt{display:flex;flex-direction:column;align-items:center;gap:8px;gap:8px}
+  .gOpt span{font-size:.85rem;color:#cfe6ff;text-align:center}
+  /* jogo de ordem */
+  .seq{display:flex;flex-wrap:wrap;gap:8px;min-height:46px;border:2px dashed #4d8dff;border-radius:10px;padding:8px;margin:12px 0}
+  .item{background:#123a8f;border:2px solid #4d8dff;color:#fff;padding:9px 13px;border-radius:8px;
+        font-weight:normal;font-size:.86rem;text-align:left}
+  .item:hover:not(:disabled){border-color:#00e0ff}
+  .item.sel{background:#062a6e;border-color:#00c6ff;opacity:.7}
+  .chip{background:#062a6e;border:1px solid #00c6ff;border-radius:8px;padding:6px 10px;font-size:.8rem}
+  .shake{animation:shk .35s}
+  @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);
+         background:#04102e;border:2px solid #00c6ff;padding:14px 26px;border-radius:14px;font-weight:bold;
+         z-index:50;transition:.4s;box-shadow:0 0 22px rgba(0,198,255,.5)}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  .final-rank{font-size:1.3rem;text-align:center;padding:18px;border-radius:14px;background:rgba(0,0,0,.25);margin-top:10px}
+  .phase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:13px}
+  .phase-btn{text-align:left;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.2);color:#fff;padding:15px;border-radius:14px}
+  .phase-btn:hover:not(:disabled){border-color:#00c6ff;background:rgba(0,198,255,.12)}
+  .phase-btn .icon{font-size:1.7rem}
+  .phase-btn .meta{color:#9cc6ff;font-size:.83rem;margin-top:6px}
+  .done-mark{color:#3ddc84}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📨 MISSÃO BYTES — Serialização de Dados</h1>
+  <div class="hud">
+    <span class="xp-badge">⭐ <span id="xp">0</span> XP</span>
+    <span class="badges" id="badges">—</span>
+    <div class="xpbar-outer"><div class="xpbar-inner" id="xpbar"></div></div>
+    <button class="btn-ghost btn-small" onclick="resetGame()">↺ Reiniciar</button>
+  </div>
+</header>
+
+<main id="content"></main>
+<div id="toast"></div>
+
+<script>
+/* ================= ESTADO ================= */
+const state = JSON.parse(localStorage.getItem('missao-bytes') || '{"xp":0,"badges":[],"done":[]}');
+const el = id => document.getElementById(id);
+function save(){ localStorage.setItem('missao-bytes', JSON.stringify(state)); renderHUD(); }
+function addXP(n){ state.xp += n; toast('⭐ +'+n+' XP!'); save(); }
+function toast(m){ const t=el('toast'); t.textContent=m; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2500); }
+function resetGame(){ if(confirm('Reiniciar toda a missão? XP e badges serão perdidos.')){
+  localStorage.removeItem('missao-bytes'); location.reload(); } }
+function shuffleIdx(n){ const a=[...Array(n).keys()];
+  for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ================= DADOS DAS IMAGENS 4x4 ================= */
+const COL = {R:'#ff3b30', Y:'#ffd60a', G:'#8a9a5b', P:'#7d3cff'};
+const IMG = ['R','Y','G','P','G','P','R','Y','P','Y','G','R','Y','R','G','P']; // F0..F3 (slides 5-7)
+function transpose(s){ const t=[]; for(let i=0;i<4;i++) for(let j=0;j<4;j++) t.push(s[j*4+i]); return t; }
+function gridHTML(seq,cols){ return '<div class="pixgrid g'+cols+'">'+
+  seq.map(c=>'<div class="px" style="background:'+COL[c]+'"></div>').join('')+'</div>'; }
+function optHTML(label,seq,cols){ return '<div class="gOpt">'+gridHTML(seq,cols)+'<span>'+label+'</span></div>'; }
+
+/* ================= FASES ================= */
+const PHASES = [
+ {id:'f1',  icon:'🧩', nome:'Fase 1 — A Imagem Despedaçada',      tema:'Fundamentos e definição da serialização', bonus:100, badge:'🧩'},
+ {id:'f2',  icon:'📦', nome:'Fase 2 — O Mercado de Formatos',      tema:'Binário, JSON, XML, MessagePack, Protobuf, Thrift', bonus:100, badge:'📦'},
+ {id:'f3',  icon:'🔐', nome:'Fase 3 — O Cofre das Codificações',   tema:'ASCII, Unicode (UTF-8/16/32), Hexadecimal', bonus:100, badge:'🔐'},
+ {id:'f4',  icon:'✂️', nome:'Fase 4 — O Quebra-Cabeça da Rede',    tema:'Segmentação e Endianness', bonus:100, badge:'✂️'},
+ {id:'f5',  icon:'💻', nome:'Fase 5 — O Multiverso das Linguagens', tema:'Java, C#, Python, JavaScript', bonus:100, badge:'💻'},
+ {id:'boss',icon:'🛡️', nome:'BOSS FINAL — O Guardião da Integridade', tema:'Hashes MD5 e SHA-256, segurança dos dados', bonus:150, badge:'🛡️'}
+];
+
+const INTROS = {
+ f1:'Sua primeira missão: uma mensagem deve atravessar o mundo e ser reconstruída EXATAMENTE como foi enviada (slide 3). Entenda o que é serializar — e o caos que acontece quando não há padrão nenhum.',
+ f2:'Escolha o recipiente certo para os seus dados: binário, JSON, XML, MessagePack, Protobuf ou Thrift. Cada formato tem custos e benefícios (slides 11–31).',
+ f3:'Antes de viajar pela rede, os caracteres viram números: ASCII, Unicode (UTF-8/16/32) e hexadecimal (slides 33–42). Decifre o cofre!',
+ f4:'Nenhuma mensagem gigante viaja inteira: ela é segmentada na camada de Transporte, e os bytes têm ordem de memória — Big vs Little Endian (slides 43–49).',
+ f5:'Cada linguagem tem seu feitiço de serialização: Serializable, Gson, System.Text.Json, json.dumps, JSON.stringify... (slides 51–72).',
+ boss:'Sua mensagem chegou... ou foi adulterada no caminho? Só o hash decide. Domine MD5 e SHA-256 e torne-se o Guardião da Integridade (slides 73–81).'
+};
+
+/* ================= BANCO DE DESAFIOS ================= */
+const QUIZ = {
+/* ---------- FASE 1: FUNDAMENTOS ---------- */
+f1:[
+ {type:'rebuild', q:'📡 A imagem 4×4 foi serializada linha por linha (F0→F1→F2→F3) e você recebeu o fluxo na ordem acordada. Qual reconstrução está CORRETA?',
+  options:[
+   {html:optHTML('A) 4×4 por linhas (formato acordado)',IMG,4)},
+   {html:optHTML('B) Interpretando como imagem 8×2',IMG,8)},
+   {html:optHTML('C) Interpretando como colunas',transpose(IMG),4)}
+  ], a:0,
+  e:'Sem o padrão acordado, o receptor poderia pensar em 8×2 ou que foram enviadas colunas (slide 7). Como o formato é "linha por linha", a reconstrução correta é a 4×4 na mesma ordem.'},
+ {q:'📦 O que é serialização de dados?',
+  o:['Processo de converter uma estrutura de dados ou objeto em um formato que possa ser armazenado ou transmitido e posteriormente reconstruído',
+     'Técnica de compactação de arquivos ZIP','Criptografar dados com chaves públicas','Dividir a rede em sub-redes'], a:0,
+  e:'Definição do slide 5: transformar os dados em uma sequência de bytes ou representação legível que pode ser enviada pela rede, salva em arquivo ou persistida em banco.'},
+ {q:'Qual problema o exemplo da imagem 4×4 sem padrão acordado ilustra?',
+  o:['O receptor poderia reconstruir como 8×2 ou como colunas, gerando uma imagem errada',
+     'A imagem chega sempre corrompida','O arquivo fica maior','A conexão cai'], a:0,
+  e:'Slides 6–7: recebendo a série de dados "sem muita informação", o receptor pode montar errado — por isso projetamos os dois lados juntos.'},
+ {q:'Por que usamos padrões/protocolos de serialização no mundo real?',
+  o:['Os dados são reconstruídos à forma original independentemente de quem projetou os sistemas, sem reenviar as instruções de reconstrução a cada envio',
+     'Para o hardware ficar mais rápido','Para evitar vírus','Para economizar bateria'], a:0,
+  e:'Slides 8 e 11: os padrões garantem consistência E eficiência — se a reconstrução já é conhecida, não transmitimos instruções toda vez.'},
+ {q:'Qual destes NÃO foi citado como aplicação da serialização?',
+  o:['Compilar programas em assembly',
+     'Aplicativos Web e Móveis (front-end ↔ back-end)',
+     'Dispositivos IoT enviando dados a servidores centrais',
+     'Mensageria (WhatsApp, Slack), NoSQL (MongoDB) e protocolos (HTTP, gRPC)'], a:0,
+  e:'O slide 9 lista: Web/Móveis, IoT, mensageria, bancos NoSQL e protocolos de rede.'},
+ {q:'Na introdução da aula, a mensagem enviada a um amigo do outro lado do mundo deve...',
+  o:['Se transformar em uma sequência de bytes que viajam por cabos e ondas e é reconstruída exatamente como enviada',
+     'Ser impressa e entregue por correio','Ficar salva no cache do roteador','Ser convertida em áudio'], a:0,
+  e:'Slide 3: a ideia vira bytes, viaja pela rede e renasce idêntica na mente do amigo — essa é a magia da serialização.'}
+],
+/* ---------- FASE 2: FORMATOS ---------- */
+f2:[
+ {q:'✅ Vantagens da serialização BINÁRIA:',
+  o:['Eficiência (menos memória e largura de banda) e velocidade de serialização/desserialização',
+     'Legibilidade para humanos e portabilidade total','Funciona apenas com texto','Exige Base64'], a:0,
+  e:'Slides 12–13: elimina redundâncias dos formatos de texto — representation compacta e direta de uns e zeros.'},
+ {q:'❌ Desvantagens do binário:',
+  o:['Não é legível por humanos (dificulta depuração) e pode ser menos portável entre sistemas/arquiteturas',
+     'É muito verboso','Precisa de tags de abertura e fechamento','Só suporta números'], a:0,
+  e:'Slide 14: legibilidade humana e portabilidade são as duas desvantagens clássicas.'},
+ {q:'Onde a eficiência do binário é crucial?',
+  o:['Jogos (salvar/carregar objetos rápido) e sistemas financeiros em tempo real',
+     'E-mails estáticos','Páginas institucionais','Impressão de documentos'], a:0,
+  e:'Slide 13: onde cada milissegundo é crucial — jogos e finanças em tempo real.'},
+ {code:`{
+  "nombre": "Juan",
+  "edad": 30,
+  "casado": false,
+  "hijos": ["Ana", "Luis"],
+  "direccion": { "calle": "Calle Falsa 123", "ciudad": "Springfield" }
+}`,
+  q:'🔍 Detetive de formatos: que formato é este?',
+  o:['JSON','XML','Binário','MessagePack'], a:0,
+  e:'Pares chave-valor e listas com sintaxe tipo JavaScript/Python = JSON (slide 16).'},
+ {q:'No JSON, "hijos": ["Ana","Luis"] é um exemplo de...',
+  o:['Lista (Array)','Chave (Key) sozinha','Objeto pai','Tag'], a:0,
+  e:'Slide 17 anota exatamente essa linha como Lista(Array).' },
+ {q:'❌ Desvantagens do JSON:',
+  o:['Tamanho maior que o binário (redundância de texto) e serialização/desserialização mais lentas',
+     'Ilegível e proprietário','Não suporta listas','Funciona só em Python'], a:0,
+  e:'Slide 20: tamanho e desempenho — pode ser preciso receber o objeto inteiro antes de usar.'},
+ {q:'Na tabela XML vs JSON, a validação de dados...',
+  o:['No XML é rica, com suporte a esquemas (XSD); no JSON é limitada',
+     'No JSON usa XSD','Nenhum dos dois valida','Ambos são idênticos'], a:0,
+  e:'Slide 26: XML valida contra esquemas; JSON não tem suporte nativo a esquemas.'},
+ {q:'MessagePack é...',
+  o:['Formato binário eficiente, similar ao JSON, porém muito mais compacto e rápido de desserializar',
+     'Um formato de tags como o HTML','Um protocolo da camada física','Uma tabela ASCII'], a:0,
+  e:'Slide 29: "similar ao JSON, porém muito mais compacto", com amplo suporte a várias linguagens.'},
+ {q:'Para usar Protobuf precisamos...',
+  o:['Definir o esquema em um arquivo .proto (IDL) e compilá-lo com protoc',
+     'Escrever XML','Instalar o MongoDB','Usar apenas JavaScript'], a:0,
+  e:'Slides 30 e 59: syntax="proto3"; message Person {...}; protoc --java_out=. person.proto'},
+ {q:'Apache Thrift foi desenvolvido inicialmente por...',
+  o:['Facebook','Google','Microsoft','IBM'], a:0,
+  e:'Slide 31: criado no Facebook, gera código para diversas linguagens e suporta serviços RPC de alto desempenho.'},
+ {q:'📈 O gráfico de tendências (2004→hoje) mostra o interesse da comunidade migrando...',
+  o:['De XML para JSON','De JSON para XML','De binário para ASCII','De TCP para UDP'], a:0,
+  e:'Slide 27: JSON domina novos projetos; XML permanece em aplicações empresariais e sistemas legacy.'}
+],
+/* ---------- FASE 3: CODIFICAÇÃO ---------- */
+f3:[
+ {q:'ASCII representa caracteres usando números de...',
+  o:['0 a 127','0 a 255','0 a 65535','1 a 64'], a:0,
+  e:'Slide 35: 128 números, cada um correspondendo a letras, números e símbolos de controle.'},
+ {q:'No slide, o caractere "Ç" em ASCII virou...',
+  o:['? — não é representável (limite de 128 símbolos)','231','65','0x8C'], a:0,
+  e:'Slide 35: A→65 funciona, mas Ç→? — essa limitação motivou o Unicode/UTF.'},
+ {code:`System.out.println((int) 'A');
+System.out.println((char) 65);
+System.out.println('A' + 'A');`,
+  q:'Qual é a saída correta (Java)?',
+  o:['65, A, 130','A, 65, AA','65, 65, 6565','A, A, 130'], a:0,
+  e:'Slide 36: char como número ASCII — A=65; (char)65 imprime A; A+A = 65+65 = 130.'},
+ {q:'UTF-8 / UTF-16 / UTF-32 são...',
+  o:['Padrões que representam qualquer caractere Unicode usando sequências de bytes, compatíveis com ASCII',
+     'Formatos de imagem','Protocolos de roteamento','Extensões do TCP'], a:0,
+  e:'Slide 38: Unicode Transformation Format — extensão do ASCII para praticamente todas as línguas escritas.'},
+ {q:'O caractere "ç" em Unicode é representado como...',
+  o:['U+00E7','U+231','0x8C','A-231'], a:0,
+  e:'Slide 40: letra U maiúscula + símbolo + + número em hexadecimal → U+00E7.'},
+ {q:'Unicode foi desenvolvido para...',
+  o:['Resolver limitações anteriores — o ASCII é 100% compatível apenas com o idioma inglês',
+     'Substituir o cabo de rede','Acelerar discos','Criptografar senhas'], a:0,
+  e:'Slide 39: padrão universal, consistente independente de plataforma, programa ou idioma.'},
+ {q:'🕵️ Decodifique os bytes ASCII: 87 111 114 108 100',
+  o:['World','Hello','JALA','jala'], a:0,
+  e:'W=87, o=111, r=114, l=108, d=100 — a cauda de "Hello World" (slide 37: 72 101 108 108 111 32 87 111 114 108 100).'},
+ {q:'Hexadecimal agrupa bits em segmentos de 4 e representa 0 a 15 usando...',
+  o:['Números 0-9 e letras A-F','Somente letras','Somente 0 e 1','Emoji'], a:0,
+  e:'Slide 41: base 16, "chunks" de 4 bits, legível para humanos e próximo da máquina.'},
+ {q:'O binário 10001100 (140 em decimal) em hexadecimal é...',
+  o:['8C','C8','14F','FF'], a:0,
+  e:'Slide 42: formas equivalentes — 8C, 8c, 0x8C (prefixo 0x) ou 8CH (sufixo H).'}
+],
+/* ---------- FASE 4: SEGMENTAÇÃO + ENDIANNESS ---------- */
+f4:[
+ {type:'order', q:'✂️ Um e-mail foi dividido em 3 segmentos. Clique na ordem correta de transmissão:',
+  items:['Segmento 3 — Parte 3 do texto','Segmento 1 — Parte 1 do texto','Segmento 2 — Parte 2 do texto'],
+  seq:[1,2,0],
+  e:'Os segmentos seguem o número de sequência do cabeçalho (1→2→3), permitindo remontar no destino (slide 43).'},
+ {q:'Cada segmento recebe um cabeçalho com...',
+  o:['Endereços de origem e destino, número de sequência e outras informações de transmissão',
+     'Apenas uma cor','Um emoji','A senha do usuário'], a:0,
+  e:'Slide 43: o cabeçalho permite o encaminhamento e a reconstrução na ordem certa.'},
+ {q:'A segmentação ocorre principalmente na camada...',
+  o:['De Transporte','Física','De Aplicação','De Enlace'], a:0,
+  e:'Slide 43: a camada de Transporte divide os dados e envia os segmentos para a camada de Rede.'},
+ {q:'Qual NÃO é uma razão para segmentar?',
+  o:['Criptografar os dados com MD5',
+     'Capacidade de rede limitada (limite do quadro)',
+     'Eficiência e retransmissão em caso de erros',
+     'Múltiplos fluxos compartilhando o mesmo link (intercalação)'], a:0,
+  e:'Slide 44: as três razões reais são limite do quadro, eficiência/retransmissão e múltiplos fluxos.'},
+ {q:'No Big Endian, o byte armazenado primeiro (endereço mais baixo) é o...',
+  o:['Mais significativo — o "big end"','Menos significativo','Do meio','Nulo'], a:0,
+  e:'Slide 47: a parte mais importante do valor vem primeiro; 3860 = 0F14. Usado em SPARC e sistemas de rede.'},
+ {q:'O número 3860 (0x0F14) em LITTLE Endian é armazenado como...',
+  o:['140F','0F14','F140','0F41'], a:0,
+  e:'Slide 48: o byte menos significativo ("little end") vai primeiro no endereço mais baixo. Usado por Intel x86 e AMD.'},
+ {type:'order', q:'💾 Armazene 0x11223344 na memória em LITTLE ENDIAN (endereços 0x00 → 0x03):',
+  items:['Byte 11','Byte 44','Byte 33','Byte 22'], seq:[1,2,3,0],
+  e:'Little Endian: 0x00:44, 0x01:33, 0x02:22, 0x03:11 — os bytes ficam em ordem inversa (slide 49).'},
+ {q:'Processadores Intel x86 e AMD usam...',
+  o:['Little Endian','Big Endian','Os dois ao mesmo tempo','Nenhum (só ASCII)'], a:0,
+  e:'Slide 48: Little Endian; Big Endian aparece em arquiteturas como SPARC e em sistemas de rede.'},
+ {q:'Se um sistema Little Endian lê 0F14 como se fosse 140F, o número 3860 vira...',
+  o:['5135','3860','140','8C'], a:0,
+  e:'Slide 46: bytes invertidos = interpretação errada. Por isso a conversão de endianness é crucial na serialização.'}
+],
+/* ---------- FASE 5: LINGUAGENS ---------- */
+f5:[
+ {code:`import java.io.Serializable;
+
+public class Person implements Serializable {
+  private static final long serialVersionUID = 123456L;
+  private String name;
+  public Person(String name) { this.name = name; }
+}`,
+  q:'🔍 Que técnica de serialização é esta?',
+  o:['Java — serialização nativa (interface Serializable)','C# — XML','Python — pickle','JavaScript — JSON'], a:0,
+  e:'Slides 52–53: a interface Serializable + serialVersionUID controlam a versão da classe.'},
+ {q:'Em Java, para que serve o serialVersionUID?',
+  o:['Controle de versão: verifica compatibilidade entre versões da classe durante a desserialização',
+     'Gerar o hash MD5 do objeto','Nomear o arquivo .ser','Acelerar a JVM'], a:0,
+  e:'Slide 53: identificador único crucial para a verificação de compatibilidade.'},
+ {q:'Para salvar Person em binário no arquivo person.ser, Java usa...',
+  o:['ObjectOutputStream com out.writeObject(person)','gson.toJson','json.dumps','JSON.stringify'], a:0,
+  e:'Slide 54: FileOutputStream + ObjectOutputStream → writeObject. O resultado é puro byte (aced 0005 7372...).'},
+ {code:`Person person = new Person("Homero");
+Gson gson = new Gson();
+String json = gson.toJson(person);`,
+  q:'Biblioteca e resultado?',
+  o:['Gson (Java) → {"name":"Homero"}','Jackson (C#) → XML','pickle (Python) → bytes','jQuery → HTML'], a:0,
+  e:'Slide 57: Gson serializa o objeto; JSON é essencialmente uma String legível.'},
+ {q:'Por que gson.fromJson(json, Person.class) exige informar a classe?',
+  o:['Porque, durante a serialização para JSON, algumas informações da classe Java original são perdidas',
+     'Porque Gson não compila','Porque JSON é binário','Por estética'], a:0,
+  e:'Slide 58: é preciso especificar explicitamente a classe de destino na desserialização.'},
+ {code:`syntax = "proto3";
+message Person { string name = 1; }
+// compilar com: protoc --java_out=. person.proto`,
+  q:'Isso pertence a...',
+  o:['Protobuf','Thrift','MessagePack','XML'], a:0,
+  e:'Slides 59–60: IDL do Protobuf; após compilar, serializamos com newBuilder().setName().build() e writeTo(fos).'},
+ {q:'Na desserialização Protobuf (Person.parseFrom(fis))...',
+  o:['Não é preciso informar a classe — o protótipo já está compilado',
+     'É preciso informar a classe entre < >','É preciso Base64','Só funciona em Python'], a:0,
+  e:'Slide 61: diferente do JSON, o esquema compilado já sabe a estrutura dos dados.'},
+ {code:`Person person = new Person { Name = "Homero", Age = 50 };
+string jsonString = JsonSerializer.Serialize(person);`,
+  q:'Linguagem e biblioteca?',
+  o:['C# — System.Text.Json','Java — Gson','Python — json','JS — JSON'], a:0,
+  e:'Slide 63: biblioteca nativa do C#; a desserialização usa Deserialize<Person>(jsonString) com a classe entre < >.'},
+ {code:`person_dict = person.__dict__
+json_string = json.dumps(person_dict)
+# desserializar:
+person_dict = json.loads(json_string)
+person = Person(**person_dict)`,
+  q:'Linguagem?',
+  o:['Python','C#','Java','JavaScript'], a:0,
+  e:'Slide 69: a sintaxe JSON é análoga ao dicionário Python; __dict__ converte o objeto, ** desempacota de volta.'},
+ {q:'Em JavaScript, serializar e desserializar são respectivamente...',
+  o:['JSON.stringify(person) e JSON.parse(jsonString)','dumps e loads','Serialize e Deserialize','writeObject e readObject'], a:0,
+  e:'Slide 71: e como JSON veio da sintaxe JS, é natural reconstruir a classe com new Person(personData.name, ...).'}
+],
+/* ---------- BOSS: SEGURANÇA ---------- */
+boss:[
+ {q:'🛡️ Uma função hash produz...',
+  o:['Uma cadeia de dados de tamanho FIXO a partir de uma entrada, praticamente única para cada entrada',
+     'Um arquivo compactado','Uma cópia reversível dos dados','Uma imagem PNG'], a:0,
+  e:'Slide 75: tamanho fixo e praticamente sem repetições — a base da verificação de integridade.'},
+ {q:'O MD5 produz um valor hash de...',
+  o:['128 bits (16 bytes)','256 bits (32 bytes)','64 bits','512 bits'], a:0,
+  e:'Slide 75: Message Digest Algorithm 5 — 128 bits a partir de uma entrada de tamanho arbitrário.'},
+ {code:`import hashlib
+data = "This is an important message from JALA students."
+hash_md5 = hashlib.md5(data.encode()).hexdigest()
+# 2804afb0e087efc423a1ffdbf32d54b7`,
+  q:'Se trocarmos "students" por "professors", o hash MD5...',
+  o:['Muda completamente — detectamos a adulteração (6ccef88f...)','Permanece igual','Fica mais curto','Vira nulo'], a:0,
+  e:'Slides 76–77: uma única palavra alterada gera um hash totalmente diferente — a mensagem foi modificada!'},
+ {q:'Por que armazenar senhas com hash no servidor?',
+  o:['Porque é (ou deveria ser) impossível/impraticável descobrir o original a partir do hash',
+     'Para deixar as senhas legíveis','Para economizar espaço','Porque hash é rápido de digitar'], a:0,
+  e:'Slide 78: o banco guarda o hash, não a senha — mesmo comprometido, não revela o original.'},
+ {q:'O hash 81dc9bdb52d04dc20036dbd8313ed055 veio de "1234". Ao logar, o servidor...',
+  o:['Compara hashes — não precisa conhecer o dado original','Descriptografa a senha','Envia a senha por e-mail','Guarda a senha em texto'], a:0,
+  e:'Slide 79: a validação compara números hash para autorizar o login.'},
+ {q:'SHA-256 é...',
+  o:['Família SHA-2 (NSA), 256 bits (32 bytes), mais seguro que MD5, usado em SSL/TLS e Bitcoin',
+     '128 bits, criado pelo Facebook','Mais fraco que MD5','Só serve para imagens'], a:0,
+  e:'Slide 80: resistente a hashes duplicados e ataques — componente crucial de protocolos de segurança.'},
+ {code:`hash_sha256 = hashlib.sha256(data.encode()).hexdigest()`,
+  q:'O SHA-256 do exemplo produziu...',
+  o:['5c0c2cbbd09314ed156bb5c0b2a8c2fe45a565bb315b90f8740fa42d1bf8b027 (64 dígitos hex = 256 bits)',
+     '2804afb0e087efc423a1ffdbf32d54b7 (32 hex = 128 bits)','8C','1234'], a:0,
+  e:'Slide 80: 64 caracteres hexadecimais = 256 bits. O MD5 tem 32 hex = 128 bits.'},
+ {type:'order', q:'👑 DESAFIO FINAL: ordene a jornada completa da mensagem pelo mundo:',
+  items:['Codificar (ASCII/UTF → 0s e 1s)','Serializar (objeto → bytes/formato)','Transmitir (cabos e ondas)',
+         'Segmentar (cabeçalhos + nº de sequência)','Verificar integridade (hash no destino)'],
+  seq:[1,0,3,2,4],
+  e:'Serializar → Codificar → Segmentar → Transmitir → Verificar. Você é oficialmente um GUARDIÃO DOS BYTES! 🛡️'}
+]
+};
+
+/* ================= HUD / MAPA ================= */
+function renderHUD(){
+  el('xp').textContent = state.xp;
+  el('xpbar').style.width = Math.min(100, state.xp/18)+'%';
+  el('badges').innerHTML = state.badges.length ? state.badges.join(' ') : '—';
+}
+function rankNome(xp){
+  if(xp>=1550) return '🛡️ GUARDIÃO DOS BYTES';
+  if(xp>=1150) return '🛠️ Engenheiro de Serialização';
+  if(xp>=550)  return '📨 Mensageiro Global';
+  return '🧑‍💻 Estagiário de Redes';
+}
+function telaMapa(){
+  el('content').innerHTML = `
+  <div class="card">
+    <h2>🗺️ Central do Mensageiro</h2>
+    <p>Você é o <b>Mensageiro da Jala</b>. Uma mensagem crítica precisa chegar intacta a um amigo
+    do outro lado do mundo — passe pelas 5 fases de treinamento e enfrente o
+    <b>Boss da Adulteração</b> (baseado nos slides da Semana 2).</p>
+    <p class="muted">Progresso salvo no navegador • Badges: ${state.badges.length}/6</p>
+  </div>
+  <div class="phase-grid">
+    ${PHASES.map(p=>{
+      const done = state.done.includes(p.id);
+      return `<button class="phase-btn" onclick="telaIntro('${p.id}')">
+        <div class="icon">${p.icon}</div>
+        <div><b>${p.nome}</b></div>
+        <div class="meta">${p.tema} • bônus ${p.bonus} XP ${done?'<span class="done-mark">✔ concluída</span>':''}</div>
+      </button>`;}).join('')}
+  </div>
+  <div class="card"><h2>🏆 Ranking atual</h2><div class="final-rank">${rankNome(state.xp)}</div></div>`;
+}
+function telaIntro(id){
+  const p = PHASES.find(x=>x.id===id);
+  el('content').innerHTML = `
+  <div class="card">
+    <h2>${p.icon} ${p.nome}</h2>
+    <p>${INTROS[id]}</p>
+    <p class="muted">Tema: ${p.tema} • Bônus de fase: ${p.bonus} XP + Badge ${p.badge}</p><br>
+    <button class="btn-primary" onclick="telaQuiz('${p.id}')">▶ Iniciar missão</button>
+    <button class="btn-ghost" onclick="telaMapa()">← Voltar</button>
+  </div>`;
+}
+
+/* ================= QUIZ (multipla escolha / rebuild) ================= */
+function telaQuiz(pid, idx=0, acertos=0){
+  const qs = QUIZ[pid], p = PHASES.find(x=>x.id===pid);
+  if(idx >= qs.length){
+    const bonus = Math.round(p.bonus * acertos / qs.length);
+    state.xp += bonus;
+    if(!state.done.includes(pid)) state.done.push(pid);
+    if(!state.badges.includes(p.badge)) state.badges.push(p.badge);
+    save();
+    el('content').innerHTML = `<div class="card">
+      <h2>🎉 ${p.icon} Fase concluída!</h2>
+      <p>Acertos: <b>${acertos}/${qs.length}</b> → bônus <b>+${bonus} XP</b></p>
+      <p>Badge conquistada: ${p.badge} <b>${p.nome.replace(/—/,'|').split('|')[1]||''}</b></p>
+      <div class="final-rank">${rankNome(state.xp)}</div><br>
+      <button class="btn-primary" onclick="telaMapa()">🗺️ Voltar ao mapa</button></div>`;
+    return;
+  }
+  const q = qs[idx];
+  if(q.type==='order'){ telaOrder(pid,idx,acertos,q); return; }
+  const opts = q.o ? q.o.map(t=>({label:t})) : q.options;
+  el('content').innerHTML = `<div class="card">
+    <h2>${p.icon} ${p.nome}</h2>
+    <p class="muted">Desafio ${idx+1} de ${qs.length} • Acertos: ${acertos}</p>
+    <h3>${q.q}</h3>
+    ${q.code?`<pre class="code">${q.code}</pre>`:''}
+    ${opts.map((op,i)=>`<button class="opt" onclick="respMC('${pid}',${idx},${acertos},${i},${q.a})">${op.html?op.html:op.label}</button>`).join('')}
+    <div class="feedback" id="fb"></div><div id="next"></div></div>`;
+}
+function respMC(pid,idx,acertos,escolha,correta){
+  document.querySelectorAll('.opt').forEach((b,i)=>{
+    b.disabled=true;
+    if(i===correta) b.classList.add('correct');
+    else if(i===escolha) b.classList.add('wrong');
+  });
+  const q=QUIZ[pid][idx], fb=el('fb');
+  if(escolha===correta){ acertos++; addXP(20); fb.className='feedback ok'; fb.innerHTML='✅ <b>Correto!</b> '+q.e; }
+  else{ fb.className='feedback err'; fb.innerHTML='❌ <b>Quase!</b> '+q.e; }
+  el('next').innerHTML='<button class="btn-primary" onclick="telaQuiz(\''+pid+'\','+(idx+1)+','+acertos+')">'+
+    (idx+1<QUIZ[pid].length?'Próximo desafio →':'Ver resultado 🏅')+'</button>';
+}
+
+/* ================= DESAFIO DE ORDEM ================= */
+let O=null;
+function telaOrder(pid,idx,acertos,q){
+  O={pid,idx,acertos,q,progress:[],err:false,disp:shuffleIdx(q.items.length)};
+  const p=PHASES.find(x=>x.id===pid);
+  el('content').innerHTML=`<div class="card">
+    <h2>${p.icon} ${p.nome}</h2>
+    <p class="muted">Desafio de ordem (+40 XP se acertar de primeira) — clique na sequência correta</p>
+    <h3>${q.q}</h3>
+    <div class="seq" id="seqStrip"></div>
+    <div>${O.disp.map(i=>`<button class="item" id="it${i}" onclick="clickOrd(${i})">${q.items[i]}</button>`).join(' ')}</div>
+    <div class="feedback" id="fb"></div><div id="next"></div></div>`;
+}
+function clickOrd(i){
+  const t=O.q.seq[O.progress.length], btn=el('it'+i);
+  if(i===t){
+    O.progress.push(i);
+    btn.classList.add('sel'); btn.disabled=true;
+    el('seqStrip').insertAdjacentHTML('beforeend','<span class="chip">'+O.q.items[i]+'</span>');
+    if(O.progress.length===O.q.seq.length){
+      const ok=!O.err, acertos=ok?O.acertos+1:O.acertos, st=O;
+      if(ok) addXP(40);
+      const fb=el('fb'); fb.className='feedback '+(ok?'ok':'err');
+      fb.innerHTML=(ok?'✅ <b>Sequência perfeita! (+40 XP)</b> ':'⚠️ <b>Sequência concluída, mas com trocas (sem XP).</b> ')+st.q.e;
+      el('next').innerHTML='<button class="btn-primary" onclick="telaQuiz(\''+st.pid+'\','+(st.idx+1)+','+acertos+')">Continuar →</button>';
+      O=null;
+    }
+  }else{
+    O.err=true;
+    btn.classList.add('shake');
+    setTimeout(()=>btn.classList.remove('shake'),400);
+    el('seqStrip').innerHTML='';
+    O.progress=[];
+    document.querySelectorAll('.item').forEach(b=>{b.disabled=false;b.classList.remove('sel');});
+    toast('❌ Ordem errada! Tente de novo.');
+  }
+}
+
+/* ================= INICIALIZAÇÃO ================= */
+renderHUD();
+telaMapa();
+</script>
+</body>
+</html>
