@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAB CH-0426 — Simulador de Força Bruta v2</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121a24; --panel2:#0e1620; --line:#223140;
+    --green:#38e07b; --red:#ff5d5d; --amber:#ffd166; --blue:#4db8ff;
+    --txt:#f2f6f9; --muted:#9aaabb; --mono:ui-monospace,'Cascadia Code','Courier New',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--bg); color:var(--txt); font-family:system-ui,-apple-system,'Segoe UI',sans-serif; min-height:100vh}
+  body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(255,255,255,.012) 2px 4px)}
+  header{position:sticky; top:0; z-index:50; background:rgba(11,15,20,.95); border-bottom:1px solid var(--line);
+    padding:10px 16px}
+  .hrow{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+  .hrow .t{font-family:var(--mono); font-weight:700; color:var(--green); letter-spacing:1px}
+  .spacer{flex:1}
+  .badge{font-family:var(--mono); background:var(--panel); border:1px solid var(--line); border-radius:20px;
+    padding:5px 14px; font-size:.8rem; color:var(--muted)}
+  .btn{background:var(--green); color:#04120a; border:none; border-radius:8px; padding:11px 20px;
+    font-size:.95rem; font-weight:700; cursor:pointer; font-family:inherit}
+  .btn:hover{filter:brightness(1.12)}
+  .btn:disabled{background:var(--line); color:var(--muted); cursor:not-allowed}
+  .btn.ghost{background:transparent; color:var(--txt); border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--green); color:var(--green)}
+  .btn.danger{background:var(--red); color:#1a0505}
+  .btn.small{padding:7px 13px; font-size:.8rem}
+  nav.tabs{display:flex; gap:4px; overflow-x:auto; padding-top:8px}
+  nav.tabs button{background:none; border:none; color:var(--muted); font-family:var(--mono); font-size:.8rem;
+    padding:7px 12px; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap}
+  nav.tabs button.active{color:var(--green); border-bottom-color:var(--green)}
+  nav.tabs button:hover{color:var(--txt)}
+  main{position:relative; z-index:1; max-width:1020px; margin:0 auto; padding:22px 16px 90px}
+  h1{font-size:1.5rem; margin-bottom:4px}
+  h2{font-size:1.05rem; margin:16px 0 8px; color:var(--green)}
+  .sub{color:var(--muted); margin-bottom:16px; font-size:.92rem}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px}
+  .warnbar{border:1px solid var(--amber); background:rgba(255,209,102,.07); border-radius:10px;
+    padding:10px 14px; font-size:.85rem; color:var(--amber); margin-bottom:16px}
+  input[type=text], select{background:var(--panel2); border:1px solid var(--line); color:var(--txt);
+    border-radius:8px; padding:11px; font-size:.95rem; width:100%; font-family:var(--mono)}
+  input[type=text]:focus{outline:none; border-color:var(--green)}
+  label.f{display:block; color:var(--muted); font-size:.78rem; margin:10px 0 4px; font-family:var(--mono)}
+  pre.art{font-family:var(--mono); font-size:.82rem; line-height:1.55; white-space:pre-wrap; word-break:break-word;
+    background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--green);
+    border-radius:8px; padding:14px; overflow-x:auto}
+  table.grid{width:100%; border-collapse:collapse; font-size:.8rem; font-family:var(--mono)}
+  table.grid th, table.grid td{border:1px solid var(--line); padding:6px 8px; text-align:left; white-space:nowrap}
+  table.grid th{color:var(--muted); font-weight:600; background:var(--panel2)}
+  .cell-r{background:rgba(255,93,93,.16)} .cell-o{background:rgba(255,140,60,.14)}
+  .cell-a{background:rgba(255,209,102,.12)} .cell-g{background:rgba(56,224,123,.10)}
+  .chip{display:inline-block; background:var(--panel2); border:1px solid var(--blue); color:var(--txt);
+    border-radius:20px; padding:4px 12px; font-size:.75rem; margin:3px 4px 3px 0; font-family:var(--mono); cursor:pointer}
+  .chip:hover{border-color:var(--green); color:var(--green)}
+  .bigstat{font-family:var(--mono); text-align:center; padding:14px 8px}
+  .bigstat .v{font-size:clamp(1.3rem,4vw,2.1rem); font-weight:800}
+  .bigstat .l{color:var(--muted); font-size:.75rem; margin-top:2px}
+  .stats3{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin:12px 0}
+  .cand{font-family:var(--mono); font-size:clamp(1rem,3vw,1.5rem); text-align:center; padding:16px 8px;
+    background:var(--panel2); border:1px dashed var(--line); border-radius:10px; margin:10px 0;
+    letter-spacing:2px; word-break:break-all; animation:flick .12s steps(2) infinite}
+  @keyframes flick{50%{opacity:.72}}
+  .verdict{font-family:var(--mono); font-weight:800; border-radius:8px; padding:10px 14px; margin-top:10px; text-align:center}
+  .v-crit{background:rgba(255,93,93,.15); color:var(--red); border:1px solid var(--red)}
+  .v-weak{background:rgba(255,140,60,.13); color:#ff9d4d; border:1px solid #ff9d4d}
+  .v-ok{background:rgba(255,209,102,.1); color:var(--amber); border:1px solid var(--amber)}
+  .v-strong{background:rgba(56,224,123,.1); color:var(--green); border:1px solid var(--green)}
+  .prog{height:14px; background:var(--panel2); border:1px solid var(--line); border-radius:8px; overflow:hidden; margin:8px 0}
+  .prog>i{display:block; height:100%; background:linear-gradient(90deg,var(--green),var(--blue)); width:0%}
+  .result{border:2px solid var(--green); background:rgba(56,224,123,.07); border-radius:12px; padding:16px; margin-top:12px; display:none}
+  .result .big{font-family:var(--mono); font-weight:800; font-size:1.3rem; color:var(--green); text-align:center; margin-bottom:8px}
+  .q-opt{display:block; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+    margin:8px 0; cursor:pointer; font-size:.9rem}
+  .q-opt:hover{border-color:var(--blue)}
+  .q-opt.ok{border-color:var(--green); background:rgba(56,224,123,.09)}
+  .q-opt.bad{border-color:var(--red); background:rgba(255,93,93,.09)}
+  .q-exp{display:none; border-left:4px solid var(--blue); background:var(--panel2); border-radius:0 8px 8px 0;
+    padding:10px 14px; margin:8px 0; font-size:.85rem}
+  .q-exp.show{display:block}
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:100; display:none;
+    align-items:center; justify-content:center; padding:16px}
+  .overlay.show{display:flex}
+  .ov-box{background:var(--panel); border:2px solid var(--green); border-radius:14px; padding:24px;
+    max-width:560px; width:100%; text-align:center}
+  .ov-box .big{font-family:var(--mono); font-size:clamp(1.4rem,5vw,2rem); font-weight:800; color:var(--green); margin:8px 0}
+  .toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--panel);
+    border:1px solid var(--green); padding:11px 18px; border-radius:10px; z-index:300; font-size:.85rem; display:none; max-width:90vw}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .muted{color:var(--muted); font-size:.8rem}
+  .legend span{display:inline-block; margin-right:12px; font-size:.75rem; font-family:var(--mono)}
+  .sw{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-1px; margin-right:4px}
+  .cb{display:flex; gap:14px; flex-wrap:wrap; margin:6px 0; font-size:.85rem}
+  .cb label{cursor:pointer; font-family:var(--mono)}
+  /* torneio */
+  .trow{display:flex; gap:10px; align-items:center; border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; margin-bottom:8px; flex-wrap:wrap; font-size:.9rem}
+  .trow .pos{font-family:var(--mono); font-weight:800; color:var(--muted); width:30px}
+  .trow.kill{border-color:var(--red); background:rgba(255,93,93,.06)}
+  .trow.champ{border-color:var(--green); background:rgba(56,224,123,.08); animation:champPulse 1.2s infinite}
+  @keyframes champPulse{50%{box-shadow:0 0 18px rgba(56,224,123,.35)}}
+  .trow .pw{font-family:var(--mono); word-break:break-all}
+  .trow .meta{color:var(--muted); font-size:.78rem; width:100%}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <span class="t">⚡ LAB CH-0426 · SIMULADOR DE FORÇA BRUTA</span>
+    <span class="spacer"></span>
+    <span class="badge">USO EDUCACIONAL</span>
+    <button class="btn ghost small" id="snd-btn" onclick="toggleSound()">🔊</button>
+  </div>
+  <nav class="tabs" id="nav">
+    <button data-go="tab-lab" class="active">🎯 Analisador</button>
+    <button data-go="tab-sim">⚔️ Simulação</button>
+    <button data-go="tab-dict">📖 Dicionário + Regras</button>
+    <button data-go="tab-table">📊 Tabela de tempos</button>
+    <button data-go="tab-quiz">🧠 Quiz final</button>
+    <button data-go="tab-tour">🏆 Torneio</button>
+  </nav>
+</header>
+
+<main>
+
+<div class="warnbar">🎓 <strong>Simulador educacional.</strong> Tudo acontece DENTRO desta página:
+nenhuma rede, nenhum sistema real, nenhuma conexão. Use apenas senhas <strong>fictícias</strong>.
+O objetivo é entender o ataque para <strong>construir defesas melhores</strong>.</div>
+
+<!-- ==================== ABA ANALISADOR ==================== -->
+<section id="tab-lab">
+  <h1>🎯 Analisador de resistência</h1>
+  <p class="sub">Digite uma senha <strong>fictícia</strong> e veja quanto tempo um ataque de força bruta levaria
+  — do celular do estagiário ao datacenter de um estado-nação.</p>
+
+  <div class="panel">
+    <label class="f">SENHA DE TESTE (fictícia!)</label>
+    <input type="text" id="ana-in" maxlength="40" placeholder="ex.: Empresa@2026" autocomplete="off">
+    <div class="row" style="margin-top:8px">
+      <span class="muted">Exemplos da aula:</span>
+      <span class="chip" onclick="anaSet('123456')">123456</span>
+      <span class="chip" onclick="anaSet('silvio123')">silvio123</span>
+      <span class="chip" onclick="anaSet('Empresa@2026')">Empresa@2026</span>
+      <span class="chip" onclick="anaSet('Professor@2026!')">Professor@2026!</span>
+      <span class="chip" onclick="anaSet('cafe-aviao-pedra-lago-janela')">cafe-aviao-pedra-lago-janela</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>🎲 Fábrica de senhas-passe</h2>
+    <p class="muted" style="margin-bottom:8px">Sorteia palavras ALEATÓRIAS (método senha-passe). Atenção ao número:
+    nossa wordlist didática é pequena (100 palavras ≈ 6,6 bits/palavra). Listas reais como a da EFF (7.776 palavras)
+    dão 12,9 bits/palavra — lá, 4 palavras bastam. Aqui, use <strong>6+</strong>.</p>
+    <div class="row">
+      <div style="flex:1;min-width:130px"><label class="f">PALAVRAS</label>
+        <select id="gp-words"><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option></select></div>
+      <div style="flex:1;min-width:130px"><label class="f">SEPARADOR</label>
+        <select id="gp-sep"><option value="-">hífen (-)</option><option value=".">ponto (.)</option>
+        <option value="_">underline (_)</option><option value="">nenhum</option></select></div>
+      <div style="align-self:flex-end" class="cb"><label><input type="checkbox" id="gp-num" checked> +número (0–99)</label></div>
+      <div style="align-self:flex-end"><button class="btn small" onclick="gpGenerate()">🎲 Sortear</button></div>
+    </div>
+    <div class="cand" id="gp-out" style="animation:none; color:var(--amber)">—</div>
+    <div class="row">
+      <span class="muted">entropia real: <strong id="gp-bits" style="color:var(--txt)">—</strong> bits
+      <span id="gp-cmp"></span></span>
+      <span class="spacer"></span>
+      <button class="btn ghost small" onclick="gpUse()">➡ Usar no analisador</button>
+      <button class="btn ghost small" onclick="gpSendTour()">➡ Levar ao torneio</button>
+    </div>
+  </div>
+
+  <div class="panel" id="ana-out" style="display:none">
+    <div class="stats3" id="ana-stats"></div>
+    <div id="ana-verdict"></div>
+    <h2>⏱️ Tempo médio até a quebra (metade do espaço de busca)</h2>
+    <div style="overflow-x:auto"><table class="grid" id="ana-table"></table></div>
+    <p class="muted" style="margin-top:10px">📌 Estimativa por classes de caracteres. Regra prática NIST 800-63B:
+    senha como único fator → mínimo <strong>15 caracteres</strong> + checagem contra vazados, porque
+    <em>força não é exclusividade</em>.</p>
+  </div>
+</section>
+
+<!-- ==================== ABA SIMULAÇÃO ==================== -->
+<section id="tab-sim" hidden>
+  <h1>⚔️ Simulação do ataque</h1>
+  <p class="sub">Escolha uma senha-alvo fictícia, configure a "máquina" do atacante e assista às tentativas.
+  O botão de compressão de tempo existe porque senhas reais levariam séculos.</p>
+
+  <div class="panel">
+    <label class="f">SENHA-ALVO (fictícia, máx. 16 caracteres)</label>
+    <input type="text" id="sim-target" maxlength="16" placeholder="ex.: gato7" autocomplete="off">
+    <div class="row" style="margin-top:6px">
+      <span class="muted">Sugestões:</span>
+      <span class="chip" onclick="simSet('gato7')">gato7</span>
+      <span class="chip" onclick="simSet('abc123')">abc123</span>
+      <span class="chip" onclick="simSet('Gato7!')">Gato7!</span>
+      <span class="chip" onclick="simSet('x9$kQ2')">x9$kQ2</span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div style="flex:1; min-width:240px">
+        <label class="f">PODER DO ATACANTE</label>
+        <select id="sim-speed"></select>
+      </div>
+      <div style="flex:1; min-width:240px">
+        <label class="f">COMPRESSÃO DE TEMPO</label>
+        <select id="sim-mult">
+          <option value="1">tempo real (1×)</option>
+          <option value="10">10×</option>
+          <option value="100">100×</option>
+          <option value="1000" selected>1 mil ×</option>
+          <option value="10000">10 mil ×</option>
+          <option value="1000000">1 milhão ×</option>
+          <option value="1000000000">1 bilhão ×</option>
+        </select>
+      </div>
+    </div>
+    <p class="muted" id="sim-info" style="margin-top:8px"></p>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="sim-start" onclick="simToggle()">▶ Iniciar ataque</button>
+      <button class="btn ghost small" onclick="simSkip()">⏭ Pular para o resultado esperado</button>
+      <button class="btn ghost small" onclick="simReset()">↺ Limpar</button>
+    </div>
+  </div>
+
+  <div class="panel" id="sim-live" style="display:none">
+    <div class="cand" id="sim-cand">••••</div>
+    <div class="prog"><i id="sim-prog"></i></div>
+    <div class="muted" style="text-align:center" id="sim-pct">0% do espaço de busca</div>
+    <div class="stats3">
+      <div class="bigstat panel" style="margin:0"><div class="v" id="sim-att">0</div><div class="l">TENTATIVAS</div></div>
+      <div class="bigstat panel" style="margin:0"><div class="v" id="sim-clock">0s</div><div class="l">TEMPO DO ATACANTE</div></div>
+      <div class="bigstat panel" style="margin:0"><div class="v" id="sim-eta">—</div><div class="l">RESTANTE (TEMPO DE AULA)</div></div>
+    </div>
+    <p class="muted">⚡ Aqui as tentativas são <strong>aleatórias</strong>. Atacantes reais começam por listas
+    vazadas e padrões — veja a aba <strong>Dicionário + Regras</strong>.</p>
+  </div>
+
+  <div class="result" id="sim-result"></div>
+</section>
+
+<!-- ==================== ABA DICIONÁRIO ==================== -->
+<section id="tab-dict" hidden>
+  <h1>📖 Ataque por dicionário + regras</h1>
+  <p class="sub">Ninguém testa "aaa…zzz" em ordem. Atacantes usam <strong>listas de vazadas</strong> +
+  <strong>regras de mutação</strong> (capitalizar, ano, @, !). É isso que mata padrões como
+  <span style="font-family:var(--mono)">Empresa@2026</span> em segundos.</p>
+
+  <div class="panel">
+    <label class="f">SENHA-ALVO (fictícia)</label>
+    <input type="text" id="dict-target" maxlength="24" placeholder="ex.: Empresa@2026" autocomplete="off">
+    <div class="row" style="margin-top:6px">
+      <span class="chip" onclick="dictSet('Empresa@2026')">Empresa@2026</span>
+      <span class="chip" onclick="dictSet('senha123')">senha123</span>
+      <span class="chip" onclick="dictSet('Flamengo10!')">Flamengo10!</span>
+      <span class="chip" onclick="dictSet('cafe-aviao-pedra-lago')">cafe-aviao-pedra-lago</span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div style="flex:1; min-width:220px">
+        <label class="f">VELOCIDADE DA ANIMAÇÃO</label>
+        <select id="dict-cps">
+          <option value="25">25 tentativas/s (didático)</option>
+          <option value="100" selected>100/s</option>
+          <option value="500">500/s</option>
+          <option value="5000">instantâneo</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="dict-start" onclick="dictStart()">▶ Atacar com dicionário</button>
+      <button class="btn ghost small" onclick="dictInstant()">⏭ Resultado imediato</button>
+    </div>
+    <p class="muted" id="dict-info" style="margin-top:8px"></p>
+  </div>
+
+  <div class="panel" id="dict-live" style="display:none">
+    <div class="cand" id="dict-cand">•••</div>
+    <div class="stats3">
+      <div class="bigstat panel" style="margin:0"><div class="v" id="dict-att">0</div><div class="l">TENTATIVA Nº</div></div>
+      <div class="bigstat panel" style="margin:0"><div class="v" id="dict-eta">—</div><div class="l">LISTA: <span id="dict-total">0</span> CANDIDATOS</div></div>
+    </div>
+  </div>
+
+  <div class="result" id="dict-result"></div>
+
+  <div class="panel">
+    <h2>🧪 As regras de mutação desta simulação</h2>
+    <p class="muted" id="dict-rules"></p>
+    <p class="muted" style="margin-top:8px">🌍 Compare: a lista real <em>rockyou</em> tem ~14 milhões de senhas.
+    A 500 mil tentativas/s (GPU de entrada, hash rápido), varre tudo em ~30 segundos.</p>
+  </div>
+</section>
+
+<!-- ==================== ABA TABELA ==================== -->
+<section id="tab-table" hidden>
+  <h1>📊 Tabela de tempos de quebra</h1>
+  <p class="sub">Tempo MÉDIO de força bruta por comprimento × poder do atacante. Responde: "qual tamanho é suficiente?"</p>
+
+  <div class="panel">
+    <div class="cb" id="tbl-classes">
+      <label><input type="checkbox" id="cl-low" checked> a-z (26)</label>
+      <label><input type="checkbox" id="cl-upp" checked> A-Z (26)</label>
+      <label><input type="checkbox" id="cl-num" checked> 0-9 (10)</label>
+      <label><input type="checkbox" id="cl-sym" checked> símbolos (32)</label>
+    </div>
+    <div class="cb">
+      <label><input type="checkbox" id="cl-slow"> 🐢 O site usa HASH LENTO (bcrypt/argon2) — ~100.000× mais lento p/ o atacante</label>
+    </div>
+    <div style="overflow-x:auto"><table class="grid" id="tbl-grid"></table></div>
+    <div class="legend" style="margin-top:10px">
+      <span><span class="sw cell-r"></span>quebra na hora</span>
+      <span><span class="sw cell-o"></span>horas/dias</span>
+      <span><span class="sw cell-a"></span>meses/anos</span>
+      <span><span class="sw cell-g"></span>inviável (≥100 anos)</span>
+    </div>
+    <p class="muted" style="margin-top:10px">💡 Dois jeitos de vencer: <strong>comprimento</strong> (cada caractere
+    multiplica o espaço pelo alfabeto) e <strong>hash lento no servidor</strong>. Defesa boa usa os dois + MFA.</p>
+  </div>
+</section>
+
+<!-- ==================== ABA QUIZ ==================== -->
+<section id="tab-quiz" hidden>
+  <h1>🧠 Quiz final do laboratório</h1>
+  <p class="sub">Cinco perguntas. Responda com o grupo e discuta antes de clicar.</p>
+  <div id="quiz-box"></div>
+  <div class="panel" id="quiz-score" style="display:none"></div>
+</section>
+
+<!-- ==================== ABA TORNEIO ==================== -->
+<section id="tab-tour" hidden>
+  <h1>🏆 Torneio — a última senha de pé</h1>
+  <p class="sub">Cada equipe inscreve UMA candidata fictícia. Todos apostam às cegas em qual sobrevive mais tempo.
+  Depois, o veredito da matemática — ao vivo, uma morte por vez.</p>
+
+  <div class="panel">
+    <div class="row">
+      <div style="flex:1; min-width:260px">
+        <label class="f">ATACANTE DO TORNEIO</label>
+        <select id="t-attacker"></select>
+      </div>
+      <div style="align-self:flex-end" class="cb">
+        <label><input type="checkbox" id="t-slow"> 🐢 hash lento no servidor</label>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:8px">⚖️ Veredito = <strong>menor</strong> entre (a) tempo de força bruta e
+    (b) posição na lista de dicionário+regras. Senha previsível morre cedo, mesmo sendo "longa".</p>
+  </div>
+
+  <div class="panel" id="t-reg">
+    <h2>1️⃣ Inscrição das candidatas</h2>
+    <div class="row">
+      <input type="text" id="t-name" placeholder="Nome da equipe" style="flex:1; min-width:150px" maxlength="24">
+      <input type="text" id="t-pass" placeholder="Senha candidata (fictícia!)" style="flex:2; min-width:200px" maxlength="40" autocomplete="off">
+      <button class="btn small" onclick="tAdd()">➕ Inscrever</button>
+      <button class="btn ghost small" title="Sortear senha-passe" onclick="tQuickGen()">🎲</button>
+    </div>
+    <div id="t-list" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" onclick="tStartBets()">➡️ Ir para as apostas</button>
+      <button class="btn ghost small" onclick="tReset()">↺ Zerar torneio</button>
+      <span class="cb" style="margin:0"><label><input type="checkbox" id="t-show" onchange="tRender()"> 👁 revelar senhas na lista</label></span>
+    </div>
+  </div>
+
+  <div class="panel" id="t-betpanel" style="display:none">
+    <h2>2️⃣ Apostas (às cegas!)</h2>
+    <p class="muted" style="margin-bottom:10px">Cada equipe aposta em qual candidato sobrevive MAIS TEMPO.
+    Dica suja oficialmente permitida: usem o <strong>Analisador</strong> e a <strong>Fábrica 🎲</strong> antes de apostar.</p>
+    <div id="t-bets"></div>
+    <button class="btn" onclick="tReveal()">🎬 Apurar o veredito</button>
+  </div>
+
+  <div class="panel" id="t-revealpanel" style="display:none">
+    <h2>3️⃣ Veredito</h2>
+    <div id="t-reveal"></div>
+    <div id="t-score" style="margin-top:14px"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost small" onclick="tBack()">← Voltar às apostas</button>
+      <button class="btn small" onclick="tReset()">🏆 Novo torneio</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>🎖️ Sugestão de pontuação p/ a aula</h2>
+    <table class="grid">
+      <tr><th>FEITO</th><th>PONTOS</th></tr>
+      <tr><td>Equipe dona da senha campeã</td><td>+5</td></tr>
+      <tr><td>Aposta correta (qualquer equipe)</td><td>+3</td></tr>
+      <tr><td>Empate técnico na final</td><td>+5 p/ todas as empatadas</td></tr>
+    </table>
+    <p class="muted" style="margin-top:8px">Discussão pós-jogo: por que a vencedora venceu? Aleatoriedade,
+    comprimento ou os dois? Alguma candidata "parecia forte" e morreu jovem? Por quê?</p>
+  </div>
+</section>
+
+<div class="panel" style="border-color:var(--line)">
+  <h2>🔗 Fechando o ciclo com o Caso CH-0426</h2>
+  <p style="font-size:.9rem">No caso do Marcos, o log mostrava <strong style="font-family:var(--mono)">1 única tentativa</strong> —
+  por isso força bruta foi descartada. Este laboratório mostra o cenário <em>oposto</em>: quando o atacante precisa
+  testar milhões de combinações. Juntos: <strong>senha única + comprimento + hash lento + rate limiting + MFA</strong>.
+  Nenhum controle sozinho basta.</p>
+</div>
+
+<p class="muted" style="text-align:center; margin-top:8px">🛡️ Ferramenta didática — não realize ataques contra
+sistemas que você não possui. Em muitos países isso é crime (no Brasil, art. 154-A do Código Penal).</p>
+
+</main>
+
+<div class="overlay" id="ov">
+  <div class="ov-box">
+    <div style="font-size:2.4rem">💥</div>
+    <div class="big">SENHA QUEBRADA</div>
+    <div id="ov-body" style="font-size:.9rem"></div>
+    <button class="btn" style="margin-top:14px" onclick="document.getElementById('ov').classList.remove('show')">Entendi</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== ESTADO / UTIL ==================== */
+const $=id=>document.getElementById(id);
+const UNIV=13.8e9;
+let soundOn=true, audioCtx=null;
+function beep(f,d,type){ if(!soundOn) return; try{
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.type=type||'sine'; o.frequency.value=f; g.gain.value=.1;
+  o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+(d||.12));
+}catch(e){} }
+const sndOk=()=>{beep(660,.1); setTimeout(()=>beep(880,.14),90);};
+const sndErr=()=>beep(160,.2,'square');
+const sndBoom=()=>{beep(220,.35,'sawtooth'); setTimeout(()=>beep(170,.5,'sawtooth'),180);};
+function toggleSound(){ soundOn=!soundOn; $('snd-btn').textContent=soundOn?'🔊':'🔇'; }
+let toastTO;
+function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block';
+  clearTimeout(toastTO); toastTO=setTimeout(()=>t.style.display='none',3000); }
+
+document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('main > section').forEach(s=>s.hidden=true);
+  $(b.dataset.go).hidden=false;
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('active',x===b));
+  window.scrollTo(0,0);
+}));
+
+/* ==================== FORMATAÇÃO ==================== */
+function fmtCount(n){
+  if(!isFinite(n)) return '∞';
+  if(n<1e3) return Math.round(n).toLocaleString('pt-BR');
+  const u=[[1e24,'septilhões'],[1e21,'sextilhões'],[1e18,'quintilhões'],[1e15,'quatrilhões'],
+           [1e12,'trilhões'],[1e9,'bilhões'],[1e6,'milhões'],[1e3,'mil']];
+  for(const [v,nm] of u) if(n>=v){ const q=n/v;
+    return (q>=100?Math.round(q):q.toFixed(1)).toLocaleString('pt-BR')+' '+nm; }
+}
+function fmtSci(n){ if(!isFinite(n)) return '∞'; const e=n.toExponential(1);
+  return e.replace('e+',' × 10^').replace('.',',').replace('e-',' × 10^-'); }
+function fmtTime(sec){
+  if(!isFinite(sec)) return '∞';
+  if(sec<1e-3) return fmtSci(sec*1e6)+' µs';
+  if(sec<1) return sec.toFixed(2).replace('.',',')+' ms';
+  if(sec<60) return sec.toFixed(1).replace('.',',')+' s';
+  const m=sec/60,h=sec/3600,d=sec/86400,y=sec/31557600;
+  if(m<60) return m.toFixed(1).replace('.',',')+' min';
+  if(h<24) return h.toFixed(1).replace('.',',')+' horas';
+  if(d<365) return d.toFixed(1).replace('.',',')+' dias';
+  const f=(x)=>x>=100?Math.round(x).toLocaleString('pt-BR'):x.toFixed(1).replace('.',',');
+  if(y<1e3) return f(y)+' anos';
+  if(y<1e6) return f(y/1e3)+' mil anos';
+  if(y<1e9) return f(y/1e6)+' milhões de anos';
+  if(y<UNIV) return f(y/1e9)+' bilhões de anos';
+  return f(y/UNIV)+'× a idade do universo';
+}
+
+/* ==================== MATEMÁTICA ==================== */
+function poolOf(pw){
+  let p=0,parts=[];
+  if(/[a-z]/.test(pw)){p+=26;parts.push('a-z');}
+  if(/[A-Z]/.test(pw)){p+=26;parts.push('A-Z');}
+  if(/[0-9]/.test(pw)){p+=10;parts.push('0-9');}
+  if(/[^a-zA-Z0-9]/.test(pw)){p+=32;parts.push('símb.');}
+  return {pool:p||26,parts};
+}
+function keyspace(pool,len){ return Math.pow(pool,len); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+/* ==================== PODERES ==================== */
+const SPEEDS=[
+  {icon:'🔒', name:'Online COM bloqueio — 10 tentativas/min', rate:10/60, offline:false},
+  {icon:'🌐', name:'Online sem bloqueio — 10 mil/s',           rate:1e4,  offline:false},
+  {icon:'🖥️', name:'GPU doméstica (hash rápido) — 10 bi/s',    rate:1e10, offline:true},
+  {icon:'🏭', name:'Farm de GPUs — 1 trilhão/s',               rate:1e12, offline:true},
+  {icon:'👾', name:'Estado-nação (datacenter) — 100 tri/s',    rate:1e14, offline:true},
+];
+function effRate(sp,slowHash){ return (slowHash&&sp.offline)? sp.rate/1e5 : sp.rate; }
+
+/* ==================== ANALISADOR ==================== */
+function anaSet(v){ $('ana-in').value=v; analyze(); }
+ $('ana-in').addEventListener('input',analyze);
+function analyze(){
+  const pw=$('ana-in').value, out=$('ana-out');
+  if(!pw){ out.style.display='none'; return; }
+  out.style.display='block';
+  const {pool,parts}=poolOf(pw);
+  const ks=keyspace(pool,pw.length), avg=ks/2, bits=pw.length*Math.log2(pool);
+  $('ana-stats').innerHTML=
+    stat(pw.length,'CARACTERES')+stat(fmtSci(pool),'ALFABETO ('+parts.join('+')+')')+
+    stat(bits.toFixed(0)+' bits','ENTROPIA')+stat(fmtCount(ks),'ESPAÇO DE BUSCA');
+  let cls,txt;
+  if(bits<28){cls='v-crit'; txt='☠️ TRIVIAL — quebrada em segundos mesmo por atacante fraco';}
+  else if(bits<36){cls='v-weak'; txt='🧨 FRACA — morre em minutos/horas em ataque offline';}
+  else if(bits<60){cls='v-ok'; txt='⚠️ RAZOÁVEL — resiste a GPU doméstica, não a um farm… se for ÚNICA';}
+  else if(bits<80){cls='v-strong'; txt='🛡️ FORTE para busca cega — mas lembre do credential stuffing!';}
+  else {cls='v-strong'; txt='🏰 BLINDADA contra força bruta — o ataque passará a ser phishing/roubo';}
+  $('ana-verdict').innerHTML='<div class="verdict '+cls+'">'+txt+'</div>';
+  const slow=$('cl-slow').checked;
+  $('ana-table').innerHTML='<tr><th>ATACANTE</th><th>VELOCIDADE</th><th>TEMPO MÉDIO</th></tr>'+
+    SPEEDS.map(s=>{
+      const r=effRate(s,slow);
+      return '<tr><td>'+s.icon+' '+s.name.split('—')[0]+'</td><td>'+fmtSci(r)+'/s</td><td><strong>'+
+        fmtTime(avg/r)+'</strong></td></tr>';
+    }).join('');
+}
+function stat(v,l){ return '<div class="bigstat panel" style="margin:0"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>'; }
+
+/* ==================== FÁBRICA DE SENHAS-PASSE ==================== */
+const WORDS=['abelha','acorde','agulha','alface','amora','ancora','areia','arroz','astro','aviao',
+'azulejo','banana','banco','barco','bambu','bolha','bota','botao','bule','cabana',
+'cacto','campo','canoa','cavalo','chave','chuva','cogumelo','colmeia','cometa','coruja',
+'cratera','cuia','doce','dunas','espelho','estrela','farol','feijao','felino','fogo',
+'folha','fogueira','galho','garfo','gato','girassol','golfinho','grilo','ilha','janela',
+'jardim','lago','lanterna','leme','limao','lobo','lua','luva','mapa','mar',
+'milho','moeda','morango','musgo','neblina','nuvem','oceano','onca','orquidea','ovo',
+'panda','pedra','pinguim','pipa','planeta','ponte','porta','raiz','relogio','riacho',
+'rocha','sapo','sertao','tartaruga','tigre','tomate','tornado','trigo','tromba','trovao',
+'tulipa','uva','vagalume','vela','vento','vinhedo','vulcao','zebra','bussola','moinho'];
+const BITS_WORD=Math.log2(WORDS.length);
+function genPass(){
+  const n=parseInt($('gp-words').value);
+  const sep=$('gp-sep').value;
+  const w=[];
+  for(let i=0;i<n;i++) w.push(WORDS[Math.floor(Math.random()*WORDS.length)]);
+  let out=w.join(sep);
+  if($('gp-num').checked) out+=sep+Math.floor(Math.random()*100);
+  return out;
+}
+function gpEntropy(){
+  let bits=parseInt($('gp-words').value)*BITS_WORD;
+  if($('gp-num').checked) bits+=Math.log2(100);
+  return bits;
+}
+function gpGenerate(){
+  const p=genPass();
+  $('gp-out').textContent=p;
+  const bits=gpEntropy();
+  $('gp-bits').textContent=bits.toFixed(1).replace('.',',');
+  $('gp-cmp').textContent=bits<36?'— ⚠️ ainda fraca! mais palavras.':(bits<60?'— ok c/ hash lento':'— forte 🔒');
+  beep(700,.06);
+}
+function gpUse(){
+  if($('gp-out').textContent==='—'){ toast('Sorteie uma senha-passe primeiro.'); return; }
+  $('ana-in').value=$('gp-out').textContent; analyze();
+  toast('🎲 Enviada ao analisador!');
+}
+function gpSendTour(){
+  if($('gp-out').textContent==='—'){ toast('Sorteie uma senha-passe primeiro.'); return; }
+  $('t-pass').value=$('gp-out').textContent;
+  document.querySelector('#nav button[data-go="tab-tour"]').click();
+  toast('🎲 Enviada à inscrição do torneio!');
+}
+
+/* ==================== SIMULAÇÃO ==================== */
+const POOL_CHARS={low:'abcdefghijklmnopqrstuvwxyz',upp:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  num:'0123456789',sym:'!@#$%&*()-_=+[]{};:,.<>?/'};
+let S={run:false,last:0,att:0,done:false,target:'',charset:'',rate:1e10,mult:1000,exp:0,raf:null,wallStart:0};
+
+ $('sim-speed').innerHTML=SPEEDS.map((s,i)=>'<option value="'+i+'"'+(i===2?' selected':'')+'>'+s.icon+' '+s.name+'</option>').join('');
+ $('t-attacker').innerHTML=SPEEDS.map((s,i)=>'<option value="'+i+'"'+(i===2?' selected':'')+'>'+s.icon+' '+s.name+'</option>').join('');
+
+function simSet(v){ if(S.run) return; $('sim-target').value=v; simPreview(); }
+ $('sim-target').addEventListener('input',()=>{ if(!S.run) simPreview(); });
+function simPreview(){
+  const pw=$('sim-target').value, info=$('sim-info');
+  if(!pw){ info.textContent=''; return; }
+  const {pool,parts}=poolOf(pw);
+  const ks=keyspace(pool,pw.length);
+  info.innerHTML='🎯 <span style="font-family:var(--mono)">'+pw.length+' caracteres</span> · alfabeto '+
+    parts.join('+')+' ('+pool+') · espaço ≈ <strong>'+fmtCount(ks)+
+    '</strong> · expectativa na metade ≈ <strong>'+fmtTime(ks/2/1e10)+'</strong> (GPU doméstica)';
+}
+function simCharset(pw){
+  const {parts}=poolOf(pw);
+  return parts.map(p=>POOL_CHARS[p==='símb.'?'sym':p]).join('')||POOL_CHARS.low;
+}
+function simToggle(){
+  const pw=$('sim-target').value;
+  if(!pw){ toast('Digite uma senha-alvo fictícia primeiro.'); sndErr(); return; }
+  if(S.done||S.run){ simReset(); return; }
+  S.target=pw; S.charset=simCharset(pw);
+  S.rate=SPEEDS[$('sim-speed').value].rate;
+  S.mult=parseFloat($('sim-mult').value);
+  S.exp=keyspace(poolOf(pw).pool,pw.length)/2;
+  S.att=0; S.done=false; S.run=true; S.last=0; S.wallStart=performance.now();
+  $('sim-start').textContent='⏸ Pausar';
+  $('sim-live').style.display='block'; $('sim-result').style.display='none';
+  $('sim-info').innerHTML='⚙️ atacante a <strong>'+fmtSci(S.rate)+'/s</strong> · compressão <strong>'+S.mult+'×</strong> · alvo: <span style="font-family:var(--mono)">'+esc(pw)+'</span>';
+  beep(440,.1);
+  requestAnimationFrame(simTick);
+}
+function simTick(ts){
+  if(!S.run) return;
+  if(!S.last) S.last=ts;
+  const dt=Math.min((ts-S.last)/1000,.05); S.last=ts;
+  const k=S.rate*S.mult*dt;
+  S.att+=k;
+  if(!S.done && Math.random()<k/keyspace(poolOf(S.target).pool,S.target.length)){
+    return simFinish(S.att+Math.random()*k);
+  }
+  if(S.att>=S.exp){ return simFinish(S.exp); }
+  let sample='';
+  for(let i=0;i<S.target.length;i++) sample+=S.charset[Math.floor(Math.random()*S.charset.length)];
+  $('sim-cand').textContent=sample;
+  $('sim-att').textContent=fmtCount(S.att);
+  $('sim-clock').textContent=fmtTime(S.att/S.rate);
+  const frac=S.att/S.exp;
+  $('sim-pct').textContent=(frac<1e-4? fmtSci(frac*100)+'%':(frac*100).toFixed(2).replace('.',',')+'%')+' do espaço de busca';
+  const etaWall=(S.exp-S.att)/(S.rate*S.mult);
+  $('sim-eta').textContent=fmtTime(Math.max(0,etaWall));
+  $('sim-prog').style.width=Math.min(100,frac*100)+'%';
+  S.raf=requestAnimationFrame(simTick);
+}
+function simPause(){ S.run=false; $('sim-start').textContent='▶ Continuar'; if(S.raf) cancelAnimationFrame(S.raf); }
+function simReset(){ simPause(); S.done=false; S.att=0;
+  $('sim-start').textContent='▶ Iniciar ataque'; $('sim-live').style.display='none';
+  $('sim-result').style.display='none'; simPreview(); }
+function simSkip(){
+  if(!S.target){ toast('Configure o alvo e inicie primeiro.'); return; }
+  if(S.done) return;
+  simPause(); simFinish(S.exp);
+}
+function simFinish(att){
+  S.run=false; S.done=true; if(S.raf) cancelAnimationFrame(S.raf);
+  const atkTime=att/S.rate, wall=(performance.now()-S.wallStart)/1000;
+  sndBoom();
+  $('ov-body').innerHTML=
+    'Alvo: <span style="font-family:var(--mono)">'+esc(S.target)+'</span><br>'+
+    'Tentativas: <strong>'+fmtCount(att)+'</strong> ('+fmtSci(att)+')<br>'+
+    'Tempo do atacante: <strong>'+fmtTime(atkTime)+'</strong><br>'+
+    'Tempo que VOCÊ assistiu: '+wall.toFixed(1)+' s (compressão '+S.mult+'×)';
+  $('ov').classList.add('show');
+  const wasEarly=att<S.exp*0.98;
+  $('sim-result').className='result'; $('sim-result').style.display='block';
+  $('sim-result').innerHTML=
+    '<div class="big">💥 QUEBRADA em '+fmtTime(atkTime)+'</div>'+
+    '<p style="font-size:.9rem">'+(wasEarly?'🍀 Sorte estatística — acontece na vida real também. ':'')+
+    'Média: metade do espaço ('+fmtCount(S.exp)+'). Sem compressão: <strong>'+fmtTime(atkTime/S.mult)+'</strong>.</p>'+
+    '<p style="font-size:.9rem; margin-top:6px">🛡️ O que evitaria: <strong>comprimento maior</strong>, '+
+    '<strong>hash lento</strong> no servidor e <strong>MFA</strong> (senha certa deixaria de bastar).</p>';
+  $('sim-start').textContent='↺ Novo experimento';
+}
+
+/* ==================== DICIONÁRIO ==================== */
+const YEARS=[2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
+const cap=w=>w.charAt(0).toUpperCase()+w.slice(1);
+const RULES=[['original',w=>w],['Capitalizada',w=>cap(w)],['+123',w=>w+'123'],
+  ['!',w=>w+'!'],['Cap!',w=>cap(w)+'!']];
+YEARS.forEach(y=>{
+  RULES.push(['+'+y,w=>w+y],['Cap+'+y,w=>cap(w)+y],['Cap@'+y,w=>cap(w)+'@'+y],['Cap@'+y+'!',w=>cap(w)+'@'+y+'!']);
+});
+const BASES=['123456','senha','123456789','brasil','flamengo','corinthians','palmeiras','saopaulo','gremio',
+ 'internacional','cruzeiro','vasco','fluminense','atletico','amor','familia','futebol','carnaval','verao',
+ 'escola','professor','aluno','empresa','trabalho','dinheiro','salario','feliz','alegria','cidade','computador',
+ 'internet','facebook','instagram','whatsapp','youtube','streammax','netflix','gmail','admin','root','user',
+ 'qwerty','abc123','iloveyou','password','monkey','dragon','shadow','master','maria','joao','jose','lucas',
+ 'pedro','ana','beatriz','gabriel','rafael','julia','leticia','bruno','thiago','carlos','silvio','duarte'];
+
+function buildDictCandidates(){
+  const list=[];
+  for(const b of BASES) for(const [lbl,f] of RULES) list.push([f(b),b,lbl]);
+  return list;
+}
+let D={timer:null,idx:0,run:false,cands:0,hit:-1,base:'',rule:'',target:''};
+ $('dict-total').textContent=(BASES.length*RULES.length).toLocaleString('pt-BR');
+ $('dict-rules').innerHTML=RULES.slice(0,10).map(r=>'<span class="chip" style="cursor:default">'+r[0]+'</span>').join('')+
+  '<span class="chip" style="cursor:default">…</span> <span class="muted">(regras de anos: 2015→2026 com 4 mutações cada)</span>';
+function dictSet(v){ if(D.run) return; $('dict-target').value=v; }
+function dictStart(instant){
+  const pw=$('dict-target').value;
+  if(!pw){ toast('Digite uma senha-alvo fictícia.'); sndErr(); return; }
+  if(D.run) return;
+  D.target=pw;
+  const list=buildDictCandidates();
+  D.cands=list.length; D.idx=0; D.hit=-1;
+  for(let i=0;i<list.length;i++) if(list[i][0]===pw){ D.hit=i; D.base=list[i][1]; D.rule=list[i][2]; break; }
+  $('dict-live').style.display='block'; $('dict-result').style.display='none';
+  D.run=true; $('dict-start').disabled=true;
+  if(instant){ dictDone(list); return; }
+  const cps=parseInt($('dict-cps').value);
+  if(cps>=5000){ dictDone(list); return; }
+  const per=Math.max(1,Math.round(cps/40));
+  D.timer=setInterval(()=>{
+    for(let i=0;i<per&&D.idx<D.cands;i++){
+      D.idx++;
+      if(D.hit===D.idx-1){ clearInterval(D.timer); dictDone(list); return; }
+    }
+    $('dict-cand').textContent=list[Math.min(D.idx,D.cands-1)][0];
+    $('dict-att').textContent=D.idx.toLocaleString('pt-BR');
+    $('dict-eta').textContent=Math.max(0,D.cands-D.idx).toLocaleString('pt-BR')+' restantes';
+    if(D.idx>=D.cands){ clearInterval(D.timer); dictDone(list); }
+  },25);
+  beep(440,.08);
+}
+function dictInstant(){ dictStart(true); }
+function dictDone(list){
+  D.run=false; $('dict-start').disabled=false;
+  $('dict-cand').textContent=D.hit>=0?D.target:list[list.length-1][0];
+  $('dict-att').textContent=(D.hit>=0?D.hit+1:D.cands).toLocaleString('pt-BR');
+  const r=$('dict-result');
+  if(D.hit>=0){
+    sndBoom();
+    r.className='result'; r.style.display='block';
+    r.innerHTML='<div class="big">💥 QUEBRADA por dicionário + regras</div>'+
+      '<table class="grid"><tr><th>SENHA</th><th>TENTATIVA</th><th>BASE</th><th>REGRA</th></tr>'+
+      '<tr><td style="font-family:var(--mono)">'+esc(D.target)+'</td><td>#'+(D.hit+1).toLocaleString('pt-BR')+
+      ' de '+D.cands.toLocaleString('pt-BR')+'</td><td style="font-family:var(--mono)">'+D.base+
+      '</td><td style="font-family:var(--mono)">'+D.rule+'</td></tr></table>'+
+      '<p style="font-size:.9rem; margin-top:8px">A senha "forte" caiu porque é <strong>previsível</strong>: '+
+      'palavra comum + padrão de ano/símbolo presente em TODO gerador de regras. '+
+      'A 1 milhão/s, tudo isto leva <strong>~3,6 segundos</strong>.</p>'+
+      '<p style="font-size:.9rem; margin-top:4px">🛡️ Defesa: <strong>aleatoriedade real</strong> '+
+      '(Fábrica 🎲 na aba Analisador) + checagem do servidor contra vazados (NIST 800-63B).</p>';
+  } else {
+    sndOk();
+    r.className='result'; r.style.display='block';
+    r.innerHTML='<div class="big" style="color:var(--green)">🛡️ SOBREVIVEU ao dicionário!</div>'+
+      '<p style="font-size:.9rem">'+fmtCount(D.cands)+' candidatos e nada — sinal de aleatoriedade genuína. '+
+      'Mas sobreviver ao dicionário ≠ inquebrável: o atacante parte para a força bruta (aba Simulação). '+
+      'E se estiver REUTILIZADA, nem precisará: credential stuffing.</p>';
+  }
+}
+
+/* ==================== TABELA ==================== */
+function drawTable(){
+  let pool=0;
+  if($('cl-low').checked)pool+=26;
+  if($('cl-upp').checked)pool+=26;
+  if($('cl-num').checked)pool+=10;
+  if($('cl-sym').checked)pool+=32;
+  if(!pool){ $('tbl-grid').innerHTML='<tr><td>Marque pelo menos uma classe de caracteres.</td></tr>'; return; }
+  const slow=$('cl-slow').checked;
+  const lens=[4,6,8,10,12,14,16,18,20];
+  let html='<tr><th>LEN</th>';
+  SPEEDS.forEach(s=>{ const r=effRate(s,slow); html+='<th>'+s.icon+'<br><span style="font-size:.65rem">'+fmtSci(r)+'/s</span></th>'; });
+  html+='</tr>';
+  for(const L of lens){
+    const avg=keyspace(pool,L)/2;
+    html+='<tr><td><strong>'+L+'</strong></td>';
+    for(const s of SPEEDS){
+      const t=avg/effRate(s,slow);
+      let cls='cell-g';
+      if(t<60) cls='cell-r'; else if(t<86400) cls='cell-o'; else if(t<31557600*100) cls='cell-a';
+      html+='<td class="'+cls+'">'+fmtTime(t)+'</td>';
+    }
+    html+='</tr>';
+  }
+  $('tbl-grid').innerHTML=html;
+}
+['cl-low','cl-upp','cl-num','cl-sym','cl-slow'].forEach(id=>$(id).addEventListener('change',()=>{
+  drawTable(); analyze();
+}));
+drawTable();
+
+/* ==================== QUIZ ==================== */
+const QUIZ=[
+ {q:'1. Um site limita o login a 5 tentativas por minuto. Qual ataque isso praticamente ELIMINA?',
+  o:['Força bruta ONLINE (pela tela de login)','Força bruta OFFLINE (num arquivo de senhas vazadas)','Credential stuffing','Phishing'],
+  c:0,e:'Rate limiting mata a força bruta ONLINE. O ataque OFFLINE acontece com o banco de hashes vazado — o servidor não limita o que roda no computador do atacante. Por isso hash lento importa.'},
+ {q:'2. Dobrar a senha de 8 para 12 caracteres (alfabeto 62) multiplica o espaço de busca por aproximadamente…',
+  o:['4 vezes','1.000 vezes','~15 milhões de vezes','2 vezes'],
+  c:2,e:'62⁴ ≈ 14,7 milhões. Cada caractere EXTRA multiplica tudo pelo alfabeto inteiro. Comprimento é o superpoder.'},
+ {q:'3. Por que um vazamento com hash LENTO (bcrypt/argon2) é muito menos grave que com MD5?',
+  o:['Porque hash lento apaga as senhas','Porque derruba o atacante de bilhões para milhares de tentativas/s','Porque criptografa o banco inteiro','Porque impede o vazamento'],
+  c:1,e:'bcrypt é propositalmente caro: em vez de 10 bi/s, o atacante consegue ~10⁵/s. Senha que morreria em 1 hora passa a levar décadas. Marque a caixa "hash lento" na aba Tabela e compare!'},
+ {q:'4. Qual destas tem MAIOR entropia real contra ataque cego?',
+  o:['Senh@Forte2026','Tr0ub4dor&3','6 palavras aleatórias de uma lista grande (senha-passe)','A senha do usuário com "!" no final'],
+  c:2,e:'Aleatoriedade GENUÍNA vence aparência de complexidade. Senh@Forte2026 e substituições previsíveis já estão nos dicionários de regras.'},
+ {q:'5. A senha mais forte do mundo não protege contra credential stuffing. O que protege?',
+  o:['Trocar a senha todo mês','Senha ÚNICA por serviço + MFA','Usar só letras minúsculas','Nada protege'],
+  c:1,e:'Stuffing usa a senha VAZADA DE OUTRO SERVIÇO — força não ajuda se a senha é reutilizada. Senha única quebra o dominó; MFA garante que a senha sozinha não baste.'},
+];
+let quizAnswers=new Array(QUIZ.length).fill(-1);
+function buildQuiz(){
+  $('quiz-box').innerHTML=QUIZ.map((q,qi)=>
+    '<div class="panel" id="q'+qi+'"><h2>'+q.q+'</h2>'+
+    q.o.map((op,oi)=>'<div class="q-opt" onclick="answer('+qi+','+oi+')">'+String.fromCharCode(65+oi)+') '+op+'</div>').join('')+
+    '<div class="q-exp" id="qe'+qi+'">💡 '+q.e+'</div></div>'
+  ).join('');
+}
+function answer(qi,oi){
+  const panel=$('q'+qi);
+  if(panel.dataset.done) return;
+  panel.dataset.done='1';
+  quizAnswers[qi]=oi;
+  panel.querySelectorAll('.q-opt').forEach((el,i)=>{
+    if(i===QUIZ[qi].c) el.classList.add('ok'); else if(i===oi) el.classList.add('bad');
+  });
+  $('qe'+qi).classList.add('show');
+  if(oi===QUIZ[qi].c){ sndOk(); toast('✅ Correto!'); } else { sndErr(); toast('❌ Não era essa — leia a explicação.'); }
+  if(quizAnswers.every(a=>a>=0)){
+    const score=quizAnswers.filter((a,i)=>a===QUIZ[i].c).length;
+    $('quiz-score').style.display='block';
+    $('quiz-score').innerHTML='<h2>🎯 Resultado: '+score+'/5</h2><p>'+
+      (score===5?'🏆 PERFEITO!':score>=3?'👏 Bom trabalho — revejam as explicações.':'📚 Voltem às abas e tentem de novo!')+'</p>';
+  }
+}
+buildQuiz();
+
+/* ==================== TORNEIO ==================== */
+let TOUR={teams:[],results:[],bets:[],revealTimer:null};
+
+function tAdd(){
+  const name=$('t-name').value.trim(), pw=$('t-pass').value.trim();
+  if(!name||!pw){ toast('Preencha nome da equipe e senha candidata.'); sndErr(); return; }
+  if(pw.length<4){ toast('A candidata precisa de pelo menos 4 caracteres.'); sndErr(); return; }
+  if(TOUR.teams.length>=8){ toast('Máximo de 8 equipes.'); sndErr(); return; }
+  TOUR.teams.push({name,pw});
+  $('t-name').value=''; $('t-pass').value='';
+  tRender(); beep(700,.06);
+}
+function tRemove(i){ TOUR.teams.splice(i,1); tRender(); }
+function tQuickGen(){ $('t-pass').value=genPass(); toast('🎲 Senha-passe sorteada — confira a entropia na aba Analisador!'); }
+function tRender(){
+  const show=$('t-show').checked;
+  $('t-list').innerHTML=TOUR.teams.length?
+    TOUR.teams.map((t,i)=>{
+      const mask=show?esc(t.pw):'•'.repeat(Math.min(t.pw.length,12));
+      return '<div class="trow"><span class="pos">'+(i+1)+'</span><strong>'+esc(t.name)+'</strong>'+
+        '<span class="spacer"></span><span class="pw">'+mask+'</span>'+
+        '<button class="btn ghost small" onclick="tRemove('+i+')">✖</button></div>';
+    }).join('')
+    :'<p class="muted">Nenhuma equipe inscrita ainda.</p>';
+}
+ $('t-show').addEventListener('change',tRender);
+
+function tourAnalyze(pw){
+  const rate=effRate(SPEEDS[TOUR.attacker],TOUR.slow);
+  const {pool}=poolOf(pw);
+  const brute=keyspace(pool,pw.length)/2/rate;
+  const list=buildDictCandidates();
+  let dictIdx=-1;
+  for(let i=0;i<list.length;i++) if(list[i][0]===pw){ dictIdx=i; break; }
+  const dictT=dictIdx>=0?(dictIdx+1)/rate:Infinity;
+  return {survival:Math.min(brute,dictT),
+          via:dictT<brute?'dicionário + regras':'força bruta', dictIdx};
+}
+function tStartBets(){
+  if(TOUR.teams.length<2){ toast('Inscrevam pelo menos 2 equipes.'); sndErr(); return; }
+  TOUR.attacker=parseInt($('t-attacker').value);
+  TOUR.slow=$('t-slow').checked;
+  TOUR.results=TOUR.teams.map(t=>tourAnalyze(t.pw));
+  $('t-bets').innerHTML=TOUR.teams.map((t,i)=>
+    '<div class="row" style="margin-bottom:8px"><span style="min-width:140px; font-weight:600">🎭 '+esc(t.name)+'</span>'+
+    '<select id="tbet-'+i+'" style="flex:1"><option value="">— em quem esta equipe aposta? —</option>'+
+    TOUR.teams.map((c,ci)=>'<option value="'+ci+'">Candidato '+(ci+1)+': '+esc(c.name)+'</option>').join('')+
+    '</select></div>').join('');
+  $('t-betpanel').style.display='block';
+  $('t-revealpanel').style.display='none';
+  sndOk(); toast('🗳️ Hora das apostas — às cegas!');
+}
+function tReveal(){
+  const bets=[];
+  for(let i=0;i<TOUR.teams.length;i++){
+    const v=$('tbet-'+i).value;
+    if(v===''){ toast('Todas as equipes devem apostar!'); sndErr(); return; }
+    bets.push(parseInt(v));
+  }
+  TOUR.bets=bets;
+  $('t-betpanel').style.display='none';
+  $('t-revealpanel').style.display='block';
+  $('t-score').innerHTML='';
+  const order=TOUR.teams.map((t,i)=>i).sort((a,b)=>TOUR.results[a].survival-TOUR.results[b].survival);
+  const maxS=TOUR.results[order[order.length-1]].survival;
+  const winners=order.filter(i=>TOUR.results[i].survival>=maxS*0.999);
+  const kills=order.length-winners.length;
+  let html='', k=0;
+  $('t-reveal').innerHTML='<p class="muted">🔮 consultando a matemática…</p>';
+  if(TOUR.revealTimer) clearInterval(TOUR.revealTimer);
+  TOUR.revealTimer=setInterval(()=>{
+    if(k<kills){
+      const i=order[k], r=TOUR.results[i];
+      const tent=r.dictIdx>=0?' · tentativa nº '+(r.dictIdx+1).toLocaleString('pt-BR')+' da lista':'';
+      html+='<div class="trow kill"><span class="pos">💀</span><strong>'+esc(TOUR.teams[i].name)+'</strong>'+
+        '<span class="pw">'+esc(TOUR.teams[i].pw)+'</span>'+
+        '<span class="meta">caiu em <strong>'+fmtTime(r.survival)+'</strong> — via '+r.via+tent+'</span></div>';
+      $('t-reveal').innerHTML=html;
+      beep(200,.14,'square'); k++;
+    } else {
+      clearInterval(TOUR.revealTimer);
+      winners.forEach(i=>{
+        const r=TOUR.results[i];
+        html+='<div class="trow champ"><span class="pos">🛡️</span><strong>'+esc(TOUR.teams[i].name)+'</strong>'+
+          '<span class="pw">'+esc(TOUR.teams[i].pw)+'</span>'+
+          '<span class="meta">CAMPEÃ — resistiu <strong>'+fmtTime(r.survival)+'</strong> a este atacante'+
+          (r.dictIdx>=0?' (sobreviveu ao dicionário!)':'')+'</span></div>';
+      });
+      $('t-reveal').innerHTML=html;
+      sndBoom(); setTimeout(sndOk,350);
+      tScore(winners);
+    }
+  },1400);
+}
+function tScore(winners){
+  const pts=TOUR.teams.map(()=>0);
+  winners.forEach(i=>pts[i]+=5);
+  TOUR.bets.forEach((b,ti)=>{ if(winners.includes(b)) pts[ti]+=3; });
+  const rows=TOUR.teams.map((t,i)=>({name:t.name,pts:pts[i],bet:TOUR.bets[i]})).sort((a,b)=>b.pts-a.pts);
+  $('t-score').innerHTML='<h2>🎖️ Placar final</h2>'+
+    '<table class="grid"><tr><th>EQUIPE</th><th>APOSTA</th><th>PONTOS</th></tr>'+
+    rows.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(TOUR.teams[r.bet].name)+(winners.includes(r.bet)?' ✅':'')+
+    '</td><td><strong>'+r.pts+'</strong></td></tr>').join('')+'</table>'+
+    '<p class="muted" style="margin-top:8px">+5 p/ equipe da senha campeã · +3 p/ aposta correta.'+
+    (winners.length>1?' <strong>Empate técnico na final!</strong>':'')+
+    ' Pergunte à sala: a campeã venceu por aleatoriedade, comprimento, ou os dois?</p>';
+}
+function tBack(){
+  if(TOUR.revealTimer) clearInterval(TOUR.revealTimer);
+  $('t-revealpanel').style.display='none';
+  $('t-betpanel').style.display='block';
+}
+function tReset(){
+  if(TOUR.revealTimer) clearInterval(TOUR.revealTimer);
+  TOUR={teams:[],results:[],bets:[],revealTimer:null};
+  $('t-name').value=''; $('t-pass').value='';
+  $('t-list').innerHTML=''; $('t-bets').innerHTML='';
+  $('t-reveal').innerHTML=''; $('t-score').innerHTML='';
+  $('t-betpanel').style.display='none'; $('t-revealpanel').style.display='none';
+  toast('↺ Torneio zerado.');
+}
+
+/* init */
+analyze(); simPreview(); tRender();
+</script>
+</body>
+</html>
