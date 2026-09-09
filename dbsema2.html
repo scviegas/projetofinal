@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚴 BIKESTORES QUEST — Os Guardiões do Banco de Dados</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Arial,sans-serif; }
+  body { background:linear-gradient(135deg,#0a1f5c 0%,#1233a0 60%,#0066ff 100%); color:#fff; min-height:100vh; }
+
+  /* ===== HEADER / HUD ===== */
+  header { position:sticky; top:0; z-index:10; background:rgba(5,15,50,.92); padding:12px 20px;
+           display:flex; align-items:center; gap:16px; flex-wrap:wrap; border-bottom:3px solid #0066ff; }
+  header h1 { font-size:1.1rem; flex:1; min-width:200px; }
+  .hud { display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:.9rem; }
+  .xp-badge { background:#0066ff; padding:6px 14px; border-radius:20px; font-weight:bold; }
+  .badges { font-size:1.2rem; letter-spacing:4px; }
+  .xpbar-outer { width:140px; height:10px; background:#0a1f5c; border-radius:6px; overflow:hidden; }
+  .xpbar-inner { height:100%; width:0%; background:linear-gradient(90deg,#00c6ff,#7b2ff7); transition:width .5s; }
+
+  main { max-width:900px; margin:0 auto; padding:24px 16px 60px; }
+  .card { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.18);
+          border-radius:16px; padding:24px; margin-bottom:20px; backdrop-filter:blur(4px);
+          animation:fadein .4s; }
+  @keyframes fadein { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;} }
+
+  h2 { color:#7fd0ff; margin-bottom:10px; }
+  h3 { color:#b3e0ff; margin:14px 0 6px; }
+  p, li { line-height:1.6; }
+  .muted { color:#aac4ee; font-size:.92rem; }
+
+  button { cursor:pointer; border:none; border-radius:10px; padding:12px 22px; font-size:1rem;
+           font-weight:bold; transition:.2s; }
+  .btn-primary { background:#0066ff; color:#fff; }
+  .btn-primary:hover { background:#0084ff; transform:translateY(-2px); }
+  .btn-ghost { background:transparent; color:#9cc6ff; border:2px solid #3a6fd8; }
+  .btn-ghost:hover { background:rgba(0,102,255,.25); }
+  .btn-small { padding:8px 14px; font-size:.85rem; }
+
+  /* ===== MAPA DE FASES ===== */
+  .phase-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .phase-btn { text-align:left; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.2);
+               color:#fff; padding:16px; border-radius:14px; }
+  .phase-btn:hover:not(:disabled) { border-color:#00c6ff; background:rgba(0,198,255,.12); }
+  .phase-btn:disabled { opacity:.45; cursor:not-allowed; }
+  .phase-btn .icon { font-size:1.8rem; }
+  .phase-btn .meta { color:#9cc6ff; font-size:.85rem; margin-top:6px; }
+  .done-mark { color:#3ddc84; }
+
+  /* ===== QUIZ ===== */
+  .opt { display:block; width:100%; text-align:left; background:rgba(255,255,255,.08);
+         border:2px solid rgba(255,255,255,.25); color:#fff; margin:8px 0; padding:14px 16px; }
+  .opt:hover:not(:disabled) { border-color:#00c6ff; }
+  .opt.correct { border-color:#3ddc84; background:rgba(61,220,132,.18); }
+  .opt.wrong   { border-color:#ff5d73; background:rgba(255,93,115,.18); }
+  .feedback { padding:14px; border-radius:10px; margin-top:12px; display:none; }
+  .feedback.ok  { display:block; background:rgba(61,220,132,.15); border:1px solid #3ddc84; }
+  .feedback.err { display:block; background:rgba(255,93,115,.15); border:1px solid #ff5d73; }
+
+  code, .code { background:#04102e; border:1px solid #274b9a; border-radius:8px;
+                display:block; padding:14px; font-family:Consolas,monospace;
+                font-size:.88rem; overflow-x:auto; white-space:pre; color:#cde6ff; margin:10px 0; }
+  code.inline { display:inline; padding:2px 7px; white-space:normal; }
+
+  /* ===== ORDENAÇÃO ===== */
+  .pool, .slots { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; min-height:46px; }
+  .block { background:#123a8f; border:2px solid #4d8dff; color:#fff; padding:9px 13px;
+           border-radius:8px; font-family:Consolas,monospace; font-size:.83rem; cursor:pointer; }
+  .block:hover { border-color:#00e0ff; }
+  .slots .block { background:#0b2a6e; border-color:#00c6ff; }
+  .slots { border:2px dashed #4d8dff; border-radius:10px; padding:8px; }
+
+  /* ===== BADGE POPUP ===== */
+  #toast { position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(120px);
+           background:#04102e; border:2px solid #00c6ff; padding:16px 28px; border-radius:14px;
+           font-weight:bold; z-index:50; transition:.4s; box-shadow:0 0 24px rgba(0,198,255,.5); }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+
+  .final-rank { font-size:1.4rem; text-align:center; padding:20px; border-radius:14px;
+                background:rgba(0,0,0,.25); margin-top:12px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚴 BIKESTORES QUEST</h1>
+  <div class="hud">
+    <span class="xp-badge">⭐ <span id="xp">0</span> XP</span>
+    <span class="badges" id="badges"></span>
+    <div class="xpbar-outer"><div class="xpbar-inner" id="xpbar"></div></div>
+    <button class="btn-ghost btn-small" onclick="resetGame()">↺ Reiniciar</button>
+  </div>
+</header>
+
+<main id="content"></main>
+<div id="toast"></div>
+
+<script>
+/* ================= ESTADO ================= */
+const state = JSON.parse(localStorage.getItem('bikestores') || '{"xp":0,"badges":[],"done":[]}');
+
+function save(){ localStorage.setItem('bikestores', JSON.stringify(state)); render(); }
+function addXP(n){ state.xp += n; toast(`⭐ +${n} XP!`); save(); }
+function grantBadge(id, emoji, nome){
+  if(!state.badges.includes(id)){
+    state.badges.push(id); save();
+    toast(`${emoji} BADGE CONQUISTADA: ${nome}!`); 
+  }
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600);
+}
+function resetGame(){
+  if(confirm('Reiniciar toda a jornada? O XP e os badges serão perdidos.')){
+    localStorage.removeItem('bikestores'); location.reload();
+  }
+}
+
+/* ================= CONTEÚDO DAS FASES ================= */
+const PHASES = [
+ { id:'warmup', icon:'🃏', nome:'Fase 0.5 — Quem é Quem?', tema:'Tipos de Bancos de Dados', xp:50, badge:['b0','🃏','Colecionador'] },
+ { id:'views',  icon:'🪟', nome:'Fase 1 — A Janela do Gerente', tema:'Views', xp:150, badge:['b1','🪟','Guardião das Janelas'] },
+ { id:'procs',  icon:'🍳', nome:'Fase 2 — As Receitas do Chef', tema:'Stored Procedures', xp:150, badge:['b2','🍳','Chef de Procedimentos'] },
+ { id:'trig',   icon:'🚨', nome:'Fase 3 — Quem Acionou o Alarme?', tema:'Triggers', xp:150, badge:['b3','🚨','Vigia dos Alarmes'] },
+ { id:'jdbc',   icon:'🌉', nome:'Fase 4 — Construtores de Pontes', tema:'JDBC', xp:200, badge:['b4','🌉','Mestre das Pontes'] },
+ { id:'orm',    icon:'🔁', nome:'Fase 5 — Tradutores de Idiomas', tema:'ORMs', xp:200, badge:['b5','🔁','Tradutor Supremo'] },
+ { id:'boss',   icon:'👑', nome:'BOSS FINAL — Desafio CRUD', tema:'Java + RDBMS completo', xp:300, badge:['b6','👑','Guardião do Banco'] }
+];
+
+const QUIZZES = {
+ warmup:[
+  {q:'Quem desenvolveu o PostgreSQL?', o:['Microsoft','PostgreSQL Global Development Group','Oracle Corporation','D. Richard Hipp'], a:1, e:'PostgreSQL foi criado pelo PostgreSQL Global Development Group (lançado em 8 de julho de 1996).'},
+  {q:'O SQLite foi lançado em qual ano?', o:['1995','1989','2000','2009'], a:2, e:'SQLite: desenvolvido por D. Richard Hipp, lançado em 17 de agosto de 2000.'},
+  {q:'Qual banco é o mais antigo dessa lista (1979)?', o:['SQL Server','MySQL','MariaDB','Oracle Database'], a:3, e:'Oracle Database é o mais antigo: 1979, pela Oracle Corporation.'},
+  {q:'MariaDB e MySQL têm algo em comum no desenvolvedor?', o:['Não, nenhum','Sim, ambos vieram da Oracle Corporation','MariaDB veio da Microsoft','MySQL veio da MariaDB Corporation Ab'], a:1, e:'Ambos aparecem vinculados à Oracle Corporation nos slides (MariaDB Corporation Ab é a empresa sucessora do MySQL original).'},
+  {q:'SQL Server: Microsoft, lançamento...', o:['1989','1995','1996','2009'], a:0, e:'Microsoft SQL Server — Developer: Microsoft, Initial Release: 1989.'}
+ ],
+ views:[
+  {q:'O que uma VIEW comum armazena?', o:['Uma cópia física dos dados','Apenas a definição da consulta (query salva)','Somente índices','Os logs do banco'], a:1, e:'View comum = consulta salva. Não guarda dados fisicamente (a MATERIALIZED VIEW sim — por isso precisa de REFRESH!).'},
+  {q:'A view vw_clientes_publico expõe nome e telefone, mas NÃO o salário. Qual benefício é esse?', o:['Otimização da consulta','Simplificar consultas complexas','Ocultar informações confidenciais / Segurança','Backup automático'], a:2, e:'Os usuários só veem os dados permitidos pela exibição; a tabela subjacente fica protegida.'},
+  {q:'Uma Materialized View foi criada ontem e a tabela mudou hoje. O que fazer para atualizá-la?', o:['Nada, ela atualiza sozinha sempre','DROP e CREATE novamente','REFRESH MATERIALIZED VIEW','Um trigger resolve'], a:2, e:'Materialized views armazenam resultados pre-calculados — precisam de REFRESH (FAST/COMPLETE/FORCE) para sincronizar.'},
+  {q:'Um relatório junta 4 tabelas com condições complicadas. Criar uma view resolve qual benefício?', o:['Simplificar consultas complexas','Segurança','Ocultar dados','Nenhum'], a:0, e:'A junção fica predefinida na view: os dados já agrupados, consulta simplificada.'},
+  {q:'Sintaxe correta para criar uma view de catálogo (sem o custo!):', o:['CREATE TABLE vw_catalogo AS SELECT...','CREATE VIEW vw_catalogo AS SELECT product_name, list_price FROM produtos;','INSERT INTO VIEW...','CREATE MATERIALIZED ONLY...'], a:1, e:'CREATE VIEW nome AS SELECT ... — a view vira uma "janela" que só mostra as colunas escolhidas.'}
+ ],
+ procs:[
+  {q:'Onde vivem os Stored Procedures?', o:['No código do aplicativo Java','Dentro do próprio banco de dados','No servidor web','No arquivo .csv'], a:1, e:'São blocos de código SQL armazenados no banco — o App apenas invoca (CALL/EXEC).'},
+  {q:'Quais são as 4 vantagens citadas nos slides?', o:['Reutilização, desempenho, segurança, facilidade de manutenção','Velocidade, cores, tema, ícones','Backup, restore, export, import','Views, triggers, índices, logs'], a:0, e:'Exatamente: reutilização de código, melhor desempenho, maior segurança e facilidade de manutenção.'},
+  {q:'Como executar a procedure uspProductList no MySQL?', o:['RUN uspProductList','EXECUTE uspProductList()','CALL uspProductList();','SELECT uspProductList'], a:2, e:'No MySQL usa-se CALL uspProductList(); (no SQL Server seria EXEC uspProductList;).'},
+  {q:'Complete: CREATE PROCEDURE uspProductList() ___ SELECT product_name, list_price FROM produtos ORDER BY product_name; ___',
+   o:['BEGIN ... END','START ... STOP','IF ... THEN','OPEN ... CLOSE'], a:0, e:'BEGIN marca o início do bloco e END o final (no MySQL, com DELIMITER // antes).'},
+  {q:'Qual a diferença de uma procedure para uma view?', o:['Nenhuma','Procedure é só leitura; view escreve dados','Procedure EXECUTA ações/instruções sob demanda; view é uma consulta salva só de leitura','View fica no Java; procedure no MySQL'], a:2, e:'A procedure pode executar INSERT/UPDATE/lógica e é chamada explicitamente; a view é uma query salva usada como tabela virtual.'}
+ ],
+ trig:[
+  {q:'O que dispara (ativa) um trigger?', o:['O usuário digita EXEC','Um comando CALL','Um EVENTO no banco: INSERT, UPDATE ou DELETE','O agendamento do Windows'], a:2, e:'Triggers executam automaticamente em resposta a eventos: inserções, atualizações ou exclusões.'},
+  {q:'No exemplo do slide: ao inserir uma venda, o trigger baixa o estoque. Qual evento é esse?', o:['AFTER UPDATE ON produtos','AFTER INSERT ON vendas','BEFORE SELECT ON vendas','ON DELETE ON clientes'], a:1, e:'CREATE TRIGGER realiza_vendas ON vendas FOR INSERT — a venda inserida dispara a atualização do estoque.'},
+  {q:'Qual a diferença entre Trigger e Stored Procedure?', o:['Trigger é manual, procedure automática','Trigger dispara SOZINHO pelo evento; procedure é chamada manualmente (CALL/EXEC)','Não há diferença','Procedure só funciona no Oracle'], a:1, e:'Essa é a grande pegadinha: trigger = automático; procedure = sob demanda.'},
+  {q:'No SQL Server, de onde o trigger lê os dados da linha inserida?', o:['Da variável NEW','Da tabela virtual INSERTED','Do arquivo de log','Do parâmetro @venda'], a:1, e:'SELECT id_produto FROM INSERTED — tabela virtual do SQL Server (no MySQL seria NEW.coluna).'},
+  {q:'MySQL: como reduzir o estoque dentro do trigger da venda?', o:['SET disponivel = disponivel - NEW.quantidade','SET disponivel = disponivel - quantidade','disponivel--','DELETE disponivel'], a:0, e:'NEW.quantidade referencia o valor da linha recém-inserida na tabela vendas.'}
+ ],
+ jdbc:[
+  {q:'Qual a ordem correta do fluxo JDBC?', o:['executeQuery → getConnection → close','getConnection → createStatement → executeQuery → processar ResultSet → close','close → executeQuery → getConnection','createStatement → getConnection → close'], a:1, e:'1) getConnection (ponte) 2) createStatement (mensageiro) 3) executeQuery 4) resultSet.next() + getInt/getString 5) close.'},
+  {q:'O que o DriverManager faz?', o:['Gera SQL automaticamente','Gerencia a lista de drivers e escolhe o correto para cada banco','Cria tabelas','Faz backup'], a:1, e:'"DriverManager manages a list of database drivers" — App pede, ele conecta ao driver certo (MySQL, Oracle, SQL Server).'},
+  {q:'Para que serve o driver JDBC?', o:['Traduzir a comunicação entre Java e um banco específico','Compilar o Java','Desenhar a interface','Gerar PDFs'], a:0, e:'Cada banco tem seu driver (JDBC Driver MySQL/Oracle/SQL Server) que faz a tradução Java ↔ banco.'},
+  {q:'Como avançar linha por linha no ResultSet?', o:['rs.forward()','while (rs.next()) { ... }','rs.walk()','for (linha : rs)'], a:1, e:'resultSet.next() move o cursor para a próxima linha e retorna false no fim.'},
+  {q:'URL de conexão MySQL correta:', o:['jdbc:mysql://localhost:3306/meudatabase','mysql://java:3306','http://localhost:3306/db','jdbc.oracle://mysql'], a:0, e:'Formato: jdbc:mysql://host:porta/database — exatamente como no slide da atividade.'},
+  {q:'Qual exceção tratar ao conectar/executar queries?', o:['NullPointerException','IOException','SQLException','ClassNotFoundException'], a:2, e:'catch (SQLException e) — cobre falha de conexão e erros de execução da query.'}
+ ],
+ orm:[
+  {q:'ORM é a ponte entre...', o:['Java e HTML','Tabelas/relacionamentos do BD relacional e objetos da linguagem','MySQL e Oracle','Front-end e back-end'], a:1, e:'"ORMs provide a bridge between relational database tables, relationships and fields and Python/Java objects."'},
+  {q:'Qual anotação marca a chave primária?', o:['@PrimaryKey','@Entity','@Id','@Column'], a:2, e:'@Id marca o atributo que mapeia a PRIMARY KEY (@GeneratedValue liga ao AUTO_INCREMENT).'},
+  {q:'@Table(name = "clientes") serve para...', o:['Criar a tabela no Java','Ligar a classe à tabela correta do banco','Deletar a tabela','Renomear o banco'], a:1, e:'Mapeia a classe Cliente para a tabela clientes do banco.'},
+  {q:'Qual método do EntityManager gera um INSERT?', o:['em.find()','em.merge()','em.persist()','em.remove()'], a:2, e:'persist = INSERT. find = SELECT por PK, merge = UPDATE, remove = DELETE.'},
+  {q:'Como navegar de uma Venda para o nome do produto SEM escrever JOIN?', o:['venda.getProduto().getProductName()','SELECT JOIN ON...','venda.jdbcJoin()','Impossível sem SQL'], a:0, e:'Com @ManyToOne + @JoinColumn, o ORM entende a FOREIGN KEY e permite navegar pelos objetos.'},
+  {q:'Em JPQL, "SELECT p FROM Produto p" consulta...', o:['A tabela produtos diretamente','Os OBJETOS Produto (o ORM traduz para SQL)','O banco Oracle','Um CSV'], a:1, e:'JPQL consulta o modelo de objetos; o Hibernate gera o SQL por baixo dos panos.'}
+ ],
+ boss:[
+  {q:'CRUD significa...', o:['Create, Read, Update, Delete','Connect, Run, Upload, Download','Code, Render, Update, Deploy','Create, Restore, Undo, Drop'], a:0, e:'INSERT (C), SELECT (R), UPDATE (U), DELETE (D) — a missão do slide 13!'},
+  {q:'Qual método JDBC é usado para INSERT/UPDATE/DELETE?', o:['executeQuery()','executeUpdate()','getResult()','run()'], a:1, e:'executeQuery() para SELECT (retorna ResultSet); executeUpdate() para INSERT/UPDATE/DELETE (retorna nº de linhas).'},
+  {q:'Por que usar PreparedStatement com "?" no CRUD?', o:['Fica mais bonito','É mais rápido de digitar','Protege contra SQL Injection e trata tipos','É obrigatório no MySQL'], a:2, e:'ps.setString(1, nome) escapa os valores — imune a injeção de SQL.'},
+  {q:'Qual ORM substitui o SQL manual do CRUD?', o:['JDBC','DriverManager','Hibernate/JPA (persist, find, merge, remove)','Log4j'], a:2, e:'Com JPA/Hibernate: em.persist(p), em.find(Produto.class, id), em.merge(p), em.remove(p).'},
+  {q:'O trigger trg_realiza_vendas está no banco e o App insere uma venda via ORM. O estoque...', o:['Não muda — ORM ignora triggers','Baixa sozinho: o trigger dispara no INSERT do banco','Precisa ser baixado no Java','Gera erro'], a:1, e:'O trigger vive NO BANCO: qualquer INSERT (JDBC, ORM ou manual) o aciona. Camadas de mágica em harmonia! 🚨'},
+  {q:'Depois de usar ResultSet e Statement, o que fazer?', o:['Nada, o Java limpa sozinho sempre','rs.close() e statement.close() (ou try-with-resources)','Reiniciar o banco','DELETE FROM ResultSet'], a:1, e:'Fechar recursos libera a conexão — no exemplo do slide: resultSet.close(); statement.close();'}
+ ]
+};
+
+/* ================= TELAS ================= */
+const el = id => document.getElementById(id);
+
+function render(){
+  // HUD
+  el('xp').textContent = state.xp;
+  el('xpbar').style.width = Math.min(100, state.xp/14)+'%';
+  el('badges').innerHTML = state.badges.length ? state.badges.map(b=>b).join(' ') : '—';
+}
+
+function telaMapa(){
+  el('content').innerHTML = `
+  <div class="card">
+    <h2>🗺️ Central de DBAs — Mapa de Fases</h2>
+    <p class="muted">Você é o novo estagiário da loja <b>BikeStores</b>. Complete os treinamentos,
+    acumule XP e enfrente o <b>Boss Final: o Desafio CRUD</b> (slide 13).</p>
+    <p class="muted">Progresso salvo automaticamente no navegador. 🏅 badges: ${state.badges.length}/7</p>
+  </div>
+  <div class="phase-grid">
+    ${PHASES.map(p=>{
+      const done = state.done.includes(p.id);
+      return `<button class="phase-btn" onclick="telaIntro('${p.id}')">
+        <div class="icon">${p.icon}</div>
+        <div><b>${p.nome}</b></div>
+        <div class="meta">${p.tema} • até ${p.xp} XP ${done?'<span class="done-mark">✔ concluída</span>':''}</div>
+      </button>`;}).join('')}
+  </div>
+  <div class="card" id="rankCard">
+    <h2>🏆 Seu Ranking Atual</h2>
+    <div class="final-rank">${rankNome(state.xp)}</div>
+  </div>`;
+}
+
+function rankNome(xp){
+  if(xp>=1000) return '👑 GUARDIÃO SUPREMO DO BANCO DE DADOS';
+  if(xp>=700)  return '🥈 DBA Pleno';
+  if(xp>=400)  return '🥉 DBA Júnior';
+  return '🧑‍💻 Estagiário de DBA';
+}
+
+function telaIntro(id){
+  const p = PHASES.find(x=>x.id===id);
+  const intros = {
+    warmup:'Antes de tudo: conheça as ferramentas do ofício. Memorize os 6 bancos e seus criadores (slide 3).',
+    views:'A janela do gerente: crie visões que mostram só o necessário e protegem o segredo industrial (custo e salário!).',
+    procs:'As receitas do Chef: blocos SQL guardados no banco, chamados sob demanda com CALL/EXEC (slide 7).',
+    trig:'Os alarmes do banco: eventos INSERT/UPDATE/DELETE que disparam ações SOZINHOS (slide 9).',
+    jdbc:'As pontes: DriverManager + Driver conectam o Java ao banco (slide 10) e o ResultSet traz os dados (slide 12).',
+    orm:'O tradutor final: tabela ↔ objeto com @Entity, @Id e EntityManager (slide 11).',
+    boss:'Missão do slide 13: <b>Implemente um CRUD usando um RDBMS e Java</b>. Prove que é Guardião!'
+  };
+  el('content').innerHTML = `
+  <div class="card">
+    <h2>${p.icon} ${p.nome}</h2>
+    <p>${intros[id]}</p>
+    <p class="muted">Recompensa: até <b>${p.xp} XP</b> + Badge ${p.badge[1]} "${p.badge[2]}"</p>
+    <br>
+    <button class="btn-primary" onclick="telaQuiz('${id}')">▶ Iniciar Missão</button>
+    <button class="btn-ghost" onclick="telaMapa()">← Voltar ao mapa</button>
+  </div>`;
+}
+
+function telaQuiz(id, idx=0, acertos=0){
+  const qs = QUIZZES[id];
+  const p = PHASES.find(x=>x.id===id);
+  if(idx >= qs.length){
+    const bonus = Math.round(p.xp * acertos/qs.length);
+    state.xp += bonus;
+    if(!state.done.includes(id)) state.done.push(id);
+    state.badges.push(p.badge[1]);
+    save();
+    el('content').innerHTML = `
+    <div class="card">
+      <h2>🎉 ${p.icon} Fase concluída!</h2>
+      <p>Acertos: <b>${acertos}/${qs.length}</b> → <b>+${bonus} XP</b></p>
+      <p>Badge conquistada: ${p.badge[1]} <b>${p.badge[2]}</b></p>
+      <br>
+      <button class="btn-primary" onclick="telaMapa()">🗺️ Voltar ao mapa</button>
+    </div>`;
+    return;
+  }
+  const q = qs[idx];
+  el('content').innerHTML = `
+  <div class="card">
+    <h2>${p.icon} ${p.nome}</h2>
+    <p class="muted">Pergunta ${idx+1} de ${qs.length} • Acertos: ${acertos}</p>
+    <h3>${q.q}</h3>
+    ${q.o.map((op,i)=>`<button class="opt" data-i="${i}" onclick="responder('${id}',${idx},${acertos},${i},${q.a})">${op}</button>`).join('')}
+    <div class="feedback" id="fb"></div>
+    <div id="next" style="margin-top:14px"></div>
+  </div>`;
+}
+
+function responder(id, idx, acertos, escolha, correta){
+  const fb = el('fb');
+  document.querySelectorAll('.opt').forEach((b,i)=>{
+    b.disabled = true;
+    if(i===correta) b.classList.add('correct');
+    else if(i===escolha) b.classList.add('wrong');
+  });
+  const q = QUIZZES[id][idx];
+  if(escolha===correta){ acertos++; addXP(20); fb.className='feedback ok'; fb.innerHTML='✅ <b>Correto!</b> '+q.e; }
+  else { fb.className='feedback err'; fb.innerHTML='❌ <b>Quase!</b> '+q.e; }
+  el('next').innerHTML = `<button class="btn-primary" onclick="telaQuiz('${id}',${idx+1},${acertos})">${idx+1<QUIZZES[id].length?'Próxima pergunta →':'Ver resultado 🏅'}</button>`;
+}
+
+/* ================= INICIALIZAÇÃO ================= */
+render();
+telaMapa();
+</script>
+</body>
+</html>
