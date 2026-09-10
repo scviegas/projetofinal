@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação Backbone — Desafio de Redes · Packet Tracer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d09; --panel:#12150e; --panel2:#171b12; --inset:#0d100a;
+  --line:#282e1f; --line2:#3a4230;
+  --ink:#ece9db; --dim:#a8ad97; --faint:#6d7460;
+  --acc:#ffb454; --acc2:#ff8a3d;
+  --netA:#ffb454; --netB:#5fd4d0; --netF:#57d97a;
+  --ok:#57d97a; --bad:#ff6b5e; --warn:#ffd166;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:14px; line-height:1.55;
+  background-image:
+    linear-gradient(rgba(255,180,84,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,180,84,.025) 1px, transparent 1px);
+  background-size:34px 34px;
+  overflow:hidden;
+}
+::selection{background:var(--acc);color:#141005}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2c331f;border:2px solid var(--bg);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+button{font-family:inherit;cursor:pointer;color:inherit;background:none;border:none}
+.ic{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;flex:none}
+
+/* ============ BOOT ============ */
+#boot{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#bootInner{width:min(680px,92vw)}
+#bootLines{font-size:14px;color:var(--dim);min-height:230px;white-space:pre-wrap}
+#bootLines .bl{display:block;opacity:0;animation:blin .25s forwards}
+@keyframes blin{to{opacity:1}}
+#bootLines .em{color:var(--acc)} #bootLines .gd{color:var(--ok)}
+#bootTitle{font-family:var(--disp);font-weight:700;font-size:clamp(30px,5vw,52px);letter-spacing:.04em;color:var(--ink);margin:6px 0 2px}
+#bootTitle span{color:var(--acc)}
+#bootSub{color:var(--faint);font-size:12px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:26px}
+#bootForm{display:none;gap:12px;align-items:stretch;flex-wrap:wrap}
+#bootForm.on{display:flex}
+#techName{flex:1;min-width:240px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:15px;padding:13px 14px;outline:none}
+#techName:focus{border-color:var(--acc)}
+.btn-acc{background:var(--acc);color:#171004;font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.08em;padding:13px 22px;text-transform:uppercase;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+.btn-acc:hover{background:var(--acc2)}
+#bootSkip{margin-top:26px;color:var(--faint);font-size:12px;text-decoration:underline dotted}
+#bootSkip:hover{color:var(--dim)}
+.cursor{display:inline-block;width:9px;height:16px;background:var(--acc);vertical-align:-3px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ============ APP GRID ============ */
+#app{display:grid;grid-template-columns:252px minmax(0,1fr) 392px;grid-template-rows:56px minmax(0,1fr);height:100vh;gap:1px;background:var(--line);opacity:0;transition:opacity .5s}
+#app.on{opacity:1}
+header,nav,main,#rightCol{background:var(--bg)}
+
+/* topbar */
+#topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 18px;background:var(--panel)}
+.brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+.brand b{font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.05em}
+.brand b::before{content:"";display:inline-block;width:10px;height:10px;background:var(--acc);margin-right:9px;vertical-align:0}
+.brand small{color:var(--faint);font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+#hudName{color:var(--dim);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+#hudName b{color:var(--ink)}
+#hudRank{font-size:11px;color:var(--acc);border:1px solid var(--line2);padding:2px 8px;letter-spacing:.08em;white-space:nowrap;text-transform:uppercase}
+.xpwrap{display:flex;align-items:center;gap:8px;min-width:130px}
+.xpbar{flex:1;height:6px;background:var(--inset);border:1px solid var(--line2)}
+.xpbar i{display:block;height:100%;background:var(--acc);width:0;transition:width .6s}
+#xpTxt{font-size:11px;color:var(--dim);white-space:nowrap}
+#hudClock{font-size:13px;color:var(--ink);letter-spacing:.06em;display:flex;gap:6px;align-items:center}
+.tbtns{margin-left:auto;display:flex;gap:6px}
+.tbtn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line2);color:var(--dim)}
+.tbtn:hover{border-color:var(--acc);color:var(--acc)}
+
+/* nav */
+nav{overflow-y:auto;padding:14px 10px 30px}
+.navprog{height:4px;background:var(--inset);border:1px solid var(--line2);margin:2px 4px 16px}
+.navprog i{display:block;height:100%;background:var(--acc);transition:width .6s}
+.ph{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);padding:14px 10px 6px}
+.mnav{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:9px 10px;border:1px solid transparent;border-left:2px solid var(--line);color:var(--dim);font-size:12.5px;margin-bottom:2px}
+.mnav .num{font-size:10px;color:var(--faint);width:26px;flex:none;letter-spacing:.05em}
+.mnav .ti{flex:1;min-width:0}
+.mnav .ti b{display:block;font-weight:500;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mnav .ti small{display:block;font-size:9.5px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+.mnav .st{color:var(--faint)}
+.mnav:hover{border-color:var(--line2);color:var(--ink)}
+.mnav.active{background:var(--panel2);border-color:var(--line2);border-left-color:var(--acc);color:var(--ink)}
+.mnav.done .st{color:var(--ok)} .mnav.done .num{color:var(--ok)}
+.mnav.locked{opacity:.42;cursor:not-allowed}
+
+/* main */
+main{overflow-y:auto;padding:26px 34px 60px;scroll-behavior:smooth}
+.mwrap{max-width:760px}
+.m-head{display:flex;align-items:flex-start;gap:18px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
+.m-code{font-family:var(--disp);font-weight:700;font-size:30px;color:var(--acc);letter-spacing:.04em;line-height:1;border:1px solid var(--line2);padding:10px 12px 8px;background:var(--panel)}
+.m-tt{flex:1;min-width:0}
+.m-tt h2{font-family:var(--disp);font-weight:700;font-size:24px;letter-spacing:.02em}
+.m-sub{color:var(--faint);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.m-xp{font-family:var(--disp);font-weight:600;color:var(--ok);border:1px solid var(--line2);padding:8px 12px;font-size:14px;white-space:nowrap}
+.done-badge{display:inline-flex;gap:7px;align-items:center;color:var(--ok);border:1px solid var(--ok);padding:7px 12px;font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.1em}
+
+.sec{margin-bottom:26px}
+.sec-h{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--acc);margin-bottom:10px}
+.sec-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.brief{background:var(--panel);border:1px solid var(--line);padding:16px 18px;color:var(--dim)}
+.brief p+p{margin-top:9px}
+.brief b,.steps b{color:var(--ink)}
+.steps{counter-reset:st;list-style:none}
+.steps li{counter-increment:st;position:relative;padding:9px 0 9px 44px;color:var(--dim);border-bottom:1px dashed var(--line)}
+.steps li:last-child{border-bottom:none}
+.steps li::before{content:counter(st,decimal-leading-zero);position:absolute;left:0;top:10px;font-family:var(--disp);font-weight:700;color:var(--acc);font-size:15px}
+.hint{display:flex;gap:12px;background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--acc);padding:13px 15px;color:var(--dim);font-size:13px}
+.hint .ic{color:var(--acc);margin-top:2px}
+.hint b{color:var(--ink)}
+.hint.red{border-left-color:var(--bad)} .hint.red .ic{color:var(--bad)}
+.hint.grn{border-left-color:var(--ok)} .hint.grn .ic{color:var(--ok)}
+
+.iptab{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0}
+.iptab th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line2)}
+.iptab td{padding:7px 10px;border-bottom:1px dashed var(--line);color:var(--dim)}
+.iptab td:first-child{color:var(--ink);font-weight:500}
+.iptab td.num{color:var(--netA)}
+.iptab tr.hr td{color:var(--netB)}
+
+.cli{background:var(--inset);border:1px solid var(--line2);margin:10px 0}
+.cli-h{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--line2);background:var(--panel2)}
+.cli-h span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+.copy{font-size:10px;letter-spacing:.1em;color:var(--dim);border:1px solid var(--line2);padding:3px 9px;display:flex;gap:5px;align-items:center;text-transform:uppercase}
+.copy:hover{color:var(--acc);border-color:var(--acc)}
+.cli pre{padding:13px 15px;font-size:12.5px;line-height:1.65;color:#d8dcc8;overflow-x:auto;white-space:pre}
+
+.q{border:1px solid var(--line);background:var(--panel);margin-bottom:14px}
+.q-q{padding:13px 16px;border-bottom:1px solid var(--line);color:var(--ink)}
+.q-q::before{content:"? ";color:var(--acc);font-weight:600}
+.opts{padding:10px;display:grid;gap:7px}
+.opt{text-align:left;border:1px solid var(--line2);background:var(--panel2);padding:9px 13px;color:var(--dim);font-size:13px;display:flex;gap:10px;align-items:center;transition:border-color .15s}
+.opt::before{content:"";width:8px;height:8px;border:1px solid var(--faint);flex:none}
+.opt:hover:not(:disabled){border-color:var(--acc);color:var(--ink)}
+.opt:disabled{cursor:default;opacity:.55}
+.opt.ok{border-color:var(--ok);color:var(--ok);opacity:1}
+.opt.ok::before{background:var(--ok);border-color:var(--ok)}
+.opt.bad{border-color:var(--bad);color:var(--bad);animation:shake .4s}
+.opt.bad::before{background:var(--bad);border-color:var(--bad)}
+@keyframes shake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.q-ex{display:none;padding:11px 16px;border-top:1px solid var(--line);color:var(--ok);font-size:12.5px;background:var(--panel2)}
+.q.solved .q-ex{display:block}
+
+.pair{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.pair:last-child{border-bottom:none}
+.pair .term{width:130px;font-family:var(--disp);font-weight:600;color:var(--netB);font-size:14px}
+.pair select{flex:1;min-width:220px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:8px 10px;outline:none}
+.pair select:focus{border-color:var(--acc)}
+.pair.right select{border-color:var(--ok)}
+
+.tsk{display:flex;gap:11px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);background:var(--panel);margin-bottom:7px;text-align:left;color:var(--dim);font-size:13px}
+.tsk:hover{border-color:var(--line2)}
+.tsk .bx{width:18px;height:18px;border:1px solid var(--line2);display:grid;place-items:center;flex:none;margin-top:1px;color:transparent}
+.tsk.on{color:var(--ink)} .tsk.on .bx{background:var(--ok);border-color:var(--ok);color:#0c1409}
+
+.valbar{display:flex;gap:14px;align-items:center;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+#valBtn{display:flex;gap:10px;align-items:center;background:var(--acc);color:#171004;font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.09em;text-transform:uppercase;padding:14px 26px;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+#valBtn:disabled{background:var(--panel2);color:var(--faint);cursor:not-allowed}
+#valHint{color:var(--faint);font-size:12px}
+textarea#diagText{width:100%;min-height:90px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:13px;padding:12px;outline:none;resize:vertical}
+textarea#diagText:focus{border-color:var(--acc)}
+
+/* simulador */
+.sim{border:1px solid var(--line2);background:var(--panel)}
+.sim-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line2);background:var(--panel2);flex-wrap:wrap}
+.sim-top .sab{color:var(--warn);font-size:12.5px;display:flex;gap:8px;align-items:center}
+.sim-top button{margin-left:auto;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line2);padding:5px 10px;display:flex;gap:6px;align-items:center}
+.sim-top button:hover{color:var(--acc);border-color:var(--acc)}
+.sim-grid{display:grid;grid-template-columns:218px minmax(0,1fr);gap:1px;background:var(--line2)}
+.sim-l{background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:8px}
+.sim-l label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.sim-l select{background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:13px;padding:8px;outline:none}
+.scmd{text-align:left;border:1px solid var(--line2);background:var(--inset);padding:8px 10px;color:var(--dim);font-size:12px}
+.scmd:hover{border-color:var(--acc);color:var(--acc)}
+.sim-c{background:#080a06;min-height:250px;max-height:290px;overflow-y:auto;padding:12px 14px;font-size:12.5px;line-height:1.6}
+.sim-c .ln{white-space:pre-wrap;word-break:break-word}
+.sim-c .cmd{color:var(--acc)} .sim-c .ok{color:var(--ok)} .sim-c .err{color:var(--bad)} .sim-c .wrn{color:var(--warn)} .sim-c .dim{color:var(--faint)}
+.sim-acc{padding:14px;border-top:1px solid var(--line2)}
+.sim-acc h5{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--bad);margin-bottom:10px}
+.acc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:7px;margin-bottom:12px}
+.acc-opt{border:1px solid var(--line2);background:var(--panel2);padding:9px 11px;text-align:left;color:var(--dim);font-size:12.5px;display:flex;gap:9px;align-items:center}
+.acc-opt::before{content:"";width:8px;height:8px;border-radius:50%;border:1px solid var(--faint);flex:none}
+.acc-opt:hover{border-color:var(--bad)}
+.acc-opt.sel{border-color:var(--bad);color:var(--ink)} .acc-opt.sel::before{background:var(--bad);border-color:var(--bad)}
+.acc-opt.ok{border-color:var(--ok);color:var(--ok)} .acc-opt.ok::before{background:var(--ok);border-color:var(--bad)}
+#closeCase{display:flex;gap:8px;align-items:center;border:1px solid var(--bad);color:var(--bad);font-family:var(--disp);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:13px;padding:10px 18px}
+#closeCase:hover{background:var(--bad);color:#160806}
+.verdict{border:1px solid var(--ok);background:var(--panel2);padding:16px}
+.verdict h5{color:var(--ok);font-family:var(--disp);font-size:16px;letter-spacing:.06em;display:flex;gap:9px;align-items:center;margin-bottom:8px}
+.verdict p{color:var(--dim);font-size:13px}
+.verdict .rk{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2);color:var(--warn);font-size:12.5px}
+.verdict .rk b{color:var(--ink)}
+
+/* coluna direita */
+#rightCol{display:flex;flex-direction:column;min-height:0}
+#topoWrap{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:relative}
+#topoWrap::before,#topoWrap::after,#rightCol .corner::before,#rightCol .corner::after{content:"";position:absolute;width:12px;height:12px;border-color:var(--acc);border-style:solid}
+#topoWrap::before{top:6px;left:6px;border-width:1px 0 0 1px}
+#topoWrap::after{top:6px;right:6px;border-width:1px 1px 0 0}
+#rightCol .corner::before{bottom:6px;left:6px;border-width:0 0 1px 1px}
+#rightCol .corner::after{bottom:6px;right:6px;border-width:0 1px 1px 0}
+.panel-t{display:flex;gap:8px;align-items:center;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.panel-t .ic{color:var(--acc)}
+#topoSvg{width:100%;display:block;background:var(--inset);border:1px solid var(--line)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--faint);letter-spacing:.05em}
+.legend i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+#logWrap{flex:1;min-height:110px;display:flex;flex-direction:column;padding:12px 16px 14px;position:relative}
+#logList{flex:1;overflow-y:auto;font-size:11.5px;line-height:1.7;color:var(--dim)}
+#logList .t{color:var(--faint);margin-right:8px}
+#logList .g{color:var(--ok)} #logList .a{color:var(--acc)} #logList .r{color:var(--bad)}
+
+/* topo svg */
+.dev{opacity:0;transform:translateY(6px);transition:opacity .5s,transform .5s}
+.dev.show{opacity:1;transform:none}
+.tlink{stroke:#3a4230;stroke-width:1.6;fill:none;transition:stroke .5s}
+.tlink.up{stroke:var(--ok);opacity:.75}
+.tlink.netA{stroke:var(--netA)} .tlink.netB{stroke:var(--netB)} .tlink.netF{stroke:var(--netF)}
+.tlink.tr{stroke-dasharray:5 5;animation:dashmove 1.2s linear infinite;stroke:var(--faint)}
+@keyframes dashmove{to{stroke-dashoffset:-20}}
+.dlbl{font-family:var(--mono);font-size:10.5px;fill:var(--ink)}
+.dip{font-family:var(--mono);font-size:8.5px}
+.ghost .ic2{stroke-dasharray:4 3;opacity:.55}
+.led{animation:ledpulse 1.6s infinite}
+@keyframes ledpulse{50%{opacity:.25}}
+
+/* stamp */
+#stamp{position:fixed;inset:0;display:none;place-items:center;z-index:120;pointer-events:none}
+#stamp.on{display:grid}
+#stampIn{font-family:var(--disp);font-weight:700;font-size:clamp(28px,4vw,46px);letter-spacing:.14em;color:var(--ok);border:4px solid var(--ok);padding:16px 34px;transform:rotate(-7deg) scale(2.6);opacity:0;background:rgba(11,13,9,.85);animation:stampin .55s cubic-bezier(.2,1.6,.4,1) forwards;text-transform:uppercase}
+@keyframes stampin{to{transform:rotate(-7deg) scale(1);opacity:1}}
+
+/* toast */
+#toastHost{position:fixed;top:66px;right:16px;z-index:150;display:flex;flex-direction:column;gap:8px}
+.toast{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--acc);padding:11px 14px;font-size:12.5px;color:var(--ink);max-width:330px;animation:tin .3s}
+.toast.ok{border-left-color:var(--ok)} .toast.err{border-left-color:var(--bad)}
+.toast .ic{margin-top:1px;color:var(--acc)} .toast.ok .ic{color:var(--ok)} .toast.err .ic{color:var(--bad)}
+@keyframes tin{from{transform:translateX(30px);opacity:0}}
+.toast.out{transition:.3s;opacity:0;transform:translateX(30px)}
+
+/* modal */
+#modalHost{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;background:rgba(5,6,4,.78)}
+#modalHost.on{display:flex}
+.modal{width:min(720px,92vw);max-height:84vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line2);padding:24px 26px}
+.modal h3{font-family:var(--disp);font-size:19px;letter-spacing:.05em;color:var(--acc);display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.modal h4{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin:18px 0 8px}
+.modal p,.modal li{color:var(--dim);font-size:13px}
+.modal ul{padding-left:18px} .modal li{margin:4px 0}
+.modal b{color:var(--ink)}
+.modal .mclose{margin-top:20px;border:1px solid var(--line2);color:var(--dim);padding:9px 18px;font-family:var(--disp);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+.modal .mclose:hover{border-color:var(--acc);color:var(--acc)}
+.modal table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+.modal td{padding:6px 8px;border-bottom:1px dashed var(--line);color:var(--dim)}
+.modal td:first-child{color:var(--ink);white-space:nowrap}
+.modal code{background:var(--inset);border:1px solid var(--line);padding:1px 6px;font-size:11.5px;color:var(--netB)}
+
+/* certificado */
+#certWrap{position:fixed;inset:0;z-index:190;display:none;align-items:center;justify-content:center;background:rgba(5,6,4,.9);overflow-y:auto;padding:30px 14px}
+#certWrap.on{display:flex}
+.cert{width:min(760px,94vw);background:var(--panel);border:1px solid var(--acc);position:relative;padding:6px}
+.cert-in{border:1px dashed var(--line2);padding:44px 46px;text-align:center}
+.cert .top{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--faint)}
+.cert h1{font-family:var(--disp);font-weight:700;font-size:32px;letter-spacing:.1em;margin:14px 0 4px;color:var(--acc)}
+.cert .nm{font-family:var(--disp);font-weight:700;font-size:26px;margin:22px 0 2px;border-bottom:1px solid var(--line2);display:inline-block;padding:0 26px 8px}
+.cert .rl{color:var(--dim);font-size:13px;max-width:520px;margin:10px auto 0}
+.cert .meta{display:flex;justify-content:center;gap:34px;margin:26px 0;flex-wrap:wrap}
+.cert .meta div{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.14em}
+.cert .meta b{display:block;font-family:var(--disp);font-size:16px;color:var(--ink);letter-spacing:.05em;margin-top:3px}
+.cert .sign{display:flex;justify-content:space-between;margin-top:40px;color:var(--faint);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.cert .sign span{border-top:1px solid var(--line2);padding-top:8px;width:200px}
+.certbtns{display:flex;gap:10px;justify-content:center;margin-top:18px}
+@media print{
+  body>*:not(#certWrap){display:none!important}
+  body{overflow:visible;background:#fff}
+  #certWrap{display:flex!important;position:static;background:#fff;padding:0}
+  .cert{border-color:#000} .cert-in{border-color:#999}
+  .certbtns{display:none}
+}
+@media (max-width:1240px){#app{grid-template-columns:220px minmax(0,1fr) 330px}}
+@media (max-width:1000px){
+  body{overflow:auto}
+  #app{display:flex;flex-direction:column;height:auto;min-height:100vh}
+  nav{display:flex;overflow-x:auto;padding:10px}
+  .ph,.navprog{display:none}
+  .mnav{width:auto;white-space:nowrap;border:1px solid var(--line)}
+  main{overflow:visible}
+  #rightCol{flex:none}
+  #topbar{flex-wrap:wrap;height:auto;padding:10px 14px;gap:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- sprite de ícones -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="i-volx" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+  <symbol id="i-rot" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2-9.4L1 10"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-net" viewBox="0 0 24 24"><rect x="2" y="9" width="20" height="6" rx="1"/><circle cx="6.5" cy="12" r="1"/><circle cx="17.5" cy="12" r="1"/><path d="M12 2v7M12 15v7"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+</svg>
+
+<!-- ===== BOOT ===== -->
+<div id="boot">
+  <div id="bootInner">
+    <div id="bootLines"></div>
+    <div id="bootTitle" style="display:none">OPERAÇÃO <span>BACKBONE</span></div>
+    <div id="bootSub" style="display:none">Protocolo de treinamento em redes · Ordem de serviço #0042</div>
+    <form id="bootForm">
+      <input id="techName" maxlength="28" placeholder="Identifique-se, técnico…" autocomplete="off">
+      <button class="btn-acc" type="submit">Assinar contrato</button>
+    </form>
+    <button id="bootSkip" style="display:none">pular introdução</button>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <header id="topbar">
+    <div class="brand"><b>BACKBONE</b><small>desafio de redes · pt</small></div>
+    <span id="hudName"></span>
+    <span id="hudRank">Estagiário</span>
+    <div class="xpwrap"><div class="xpbar"><i id="xpFill"></i></div><span id="xpTxt">0 XP</span></div>
+    <span id="hudClock"><svg class="ic"><use href="#i-clock"/></svg><span id="clock">00:00</span></span>
+    <div class="tbtns">
+      <button class="tbtn" id="sndBtn" title="Som"><svg class="ic"><use href="#i-vol"/></svg></button>
+      <button class="tbtn" id="tutBtn" title="Guia do instrutor"><svg class="ic"><use href="#i-book"/></svg></button>
+      <button class="tbtn" id="rstBtn" title="Reiniciar operação"><svg class="ic"><use href="#i-rot"/></svg></button>
+    </div>
+  </header>
+
+  <nav id="nav"><div class="navprog"><i id="navFill"></i></div><div id="navList"></div></nav>
+  <main id="main"><div class="mwrap" id="mwrap"></div></main>
+
+  <aside id="rightCol">
+    <section id="topoWrap">
+      <div class="panel-t"><svg class="ic"><use href="#i-net"/></svg> Topologia da missão</div>
+      <svg id="topoSvg" viewBox="0 0 660 560"></svg>
+      <div class="legend">
+        <span><i style="background:var(--netA)"></i>REDE A · 192.168.10.0/24</span>
+        <span><i style="background:var(--netB)"></i>REDE B · 192.168.20.0/24</span>
+        <span><i style="background:var(--netF)"></i>FINANCEIRO · 192.168.30.0/24</span>
+      </div>
+    </section>
+    <section id="logWrap" class="corner">
+      <div class="panel-t"><svg class="ic"><use href="#i-term"/></svg> Log da operação</div>
+      <div id="logList"></div>
+    </section>
+  </aside>
+</div>
+
+<div id="stamp"><div id="stampIn"></div></div>
+<div id="toastHost"></div>
+<div id="modalHost"><div class="modal" id="modalBox"></div></div>
+<div id="certWrap"></div>
+
+<script>
+/* ============================================================
+   OPERAÇÃO BACKBONE — jogo-guia para montar a rede no Packet Tracer
+   ============================================================ */
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ic=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`;
+
+/* ---------- estado persistente ---------- */
+const DEF={name:'',xp:0,done:[],cur:'m1',qs:{},tk:{},pairs:{},diag:'',
+  sim:{sc:null,cmdCount:0,solved:false,bonus:false},t0:null,tEnd:null,muted:false,wrong:0};
+let save;
+try{save=Object.assign({},DEF,JSON.parse(localStorage.getItem('backbone-save')||'{}'));}catch(e){save=Object.assign({},DEF);}
+save.sim=Object.assign({},DEF.sim,save.sim);
+const persist=()=>localStorage.setItem('backbone-save',JSON.stringify(save));
+
+/* ---------- áudio ---------- */
+let AC=null;
+function tone(f,d,type='square',v=.05,delay=0){
+  if(save.muted)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+delay;
+    o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,t);
+    g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d);
+  }catch(e){}
+}
+const snd={
+  click:()=>tone(660,.05,'square',.03),
+  type:()=>tone(1100+Math.random()*300,.02,'square',.015),
+  ok:()=>{tone(740,.09);tone(1108,.14,'square',.05,.09);},
+  err:()=>tone(160,.22,'sawtooth',.06),
+  done:()=>{tone(660,.1);tone(880,.1,'square',.05,.1);tone(1320,.2,'square',.05,.2);},
+  stamp:()=>tone(140,.18,'sawtooth',.08)
+};
+
+/* ---------- log / toast ---------- */
+function logAdd(msg,cls=''){
+  const box=$('#logList');const t=fmtTime(Date.now()-(save.t0||Date.now()));
+  const d=document.createElement('div');
+  d.innerHTML=`<span class="t">[${t}]</span><span class="${cls}">${esc(msg)}</span>`;
+  box.appendChild(d);
+  while(box.children.length>60)box.removeChild(box.firstChild);
+  box.scrollTop=box.scrollHeight;
+}
+function toast(msg,type=''){
+  const d=document.createElement('div');d.className='toast '+type;
+  d.innerHTML=`${ic(type==='err'?'alert':type==='ok'?'check':'zap')}<span>${msg}</span>`;
+  $('#toastHost').appendChild(d);
+  setTimeout(()=>{d.classList.add('out');setTimeout(()=>d.remove(),350);},3800);
+}
+function fmtTime(ms){
+  const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60,p=n=>String(n).padStart(2,'0');
+  return h?`${p(h)}:${p(m)}:${p(ss)}`:`${p(m)}:${p(ss)}`;
+}
+
+/* ---------- patentes ---------- */
+const RANKS=[[0,'Estagiário'],[2,'Técnico Aprendiz'],[4,'Técnico Júnior'],[6,'Técnico Pleno'],[8,'Analista de Redes'],[10,'Especialista em Infra'],[11,'Arquiteto de Redes']];
+const rankFor=n=>{let r=RANKS[0][1];for(const[k,v]of RANKS)if(n>=k)r=v;return r;};
+
+/* ============================================================
+   DADOS DAS MISSÕES
+   ============================================================ */
+const PHASES={
+  p1:'Fase I · Cablagem',p2:'Fase II · Endereçamento',p3:'Fase III · Roteamento',
+  p4:'Fase IV · Serviços de rede',p5:'Fase V · Diagnóstico',p6:'Contrato final'
+};
+const MISSIONS=[
+/* ---------- M1 ---------- */
+{ id:'m1',code:'M-01',phase:'p1',title:'A ilha desconectada',sub:'Topologia física · ~15 min',xp:100,
+  brief:`<p>A <b>Nexa Logística Ltda.</b> contratou você como técnico de redes. O 2º andar tem dois setores — <b>Administrativo</b> e <b>Laboratório</b> — hoje completamente isolados, além de um servidor interno sem uso.</p>
+  <p>Sua primeira entrega: montar a infraestrutura física no <b>Cisco Packet Tracer</b>. Siga o diagrama ao lado — ele reage ao seu progresso.</p>`,
+  steps:[
+    `No Packet Tracer, posicione os dispositivos: <b>1 roteador 1941</b>, <b>2 switches 2960</b>, <b>4 PCs</b> e <b>1 Server</b>.`,
+    `Distribua conforme o diagrama: <b>Switch0</b> e <b>Switch1</b> nas laterais do <b>Router0</b>; PC0, PC1 e Server0 no Switch0; PC2 e PC3 no Switch1.`,
+    `Conecte todos os cabos, observando cada ponta do diagrama.`,
+    `<b>Não responda nada ainda.</b> Aguarde alguns segundos e observe os ícones das pontas dos cabos: <b>verde</b> = link estabelecido. Algum ficou vermelho/âmbar? O cabo (ou a porta) está errado — troque antes de continuar.`
+  ],
+  hint:{ic:'zap',t:`<b>Regra de bolso antes de escolher o cabo:</b> dispositivos <b>SEMELHANTES</b> (PC–PC, switch–switch, PC–router) pedem cabo <b>cruzado</b>; dispositivos <b>DIFERENTES</b> (PC–switch, switch–router) pedem cabo <b>direto</b>. Use isso para responder às perguntas — e confirme nos LEDs.`},
+  quiz:[
+    {q:'Qual cabo liga o PC0 ao Switch0?',o:['Cabo direto (straight-through)','Cabo cruzado (crossover)','Cabo console','Fibra óptica'],a:0,ex:'Correto: dispositivos diferentes (ex.: PC e switch) usam cabo direto. Se os LEDs ficaram verdes, você acertou na prática.'},
+    {q:'Qual cabo liga o Switch0 ao Router0?',o:['Cabo cruzado (crossover)','Cabo direto (straight-through)','Cabo console','Serial DCE'],a:1,ex:'Isso mesmo: switch e roteador são dispositivos diferentes — cabo direto, LED verde.'},
+    {q:'E se você precisasse ligar dois PCs diretamente, sem switch?',o:['Cabo direto','Cabo cruzado','Cabo console','Não é possível'],a:1,ex:'Dispositivos semelhantes: cabo cruzado. Cada par de pinos trocado para a comunicação funcionar.'}
+  ],
+  tasks:['Todas as interfaces dos cabos estão com LED verde no Packet Tracer.'],
+  log:'M-01 CONCLUÍDA — Infraestrutura física montada.'
+},
+/* ---------- M2 ---------- */
+{ id:'m2',code:'M-02',phase:'p2',title:'Administrativo online',sub:'Endereçamento estático · Rede A · ~15 min',xp:120,
+  brief:`<p>Cablagem aprovada. Agora o setor <b>Administrativo</b> precisa de identidade: endereços IP da rede <b>192.168.10.0/24</b>.</p>
+  <p>Antes de responder às perguntas, discuta com a dupla/grupo: <b>qual máscara</b> combina com essa rede? <b>quem</b> deve ser o gateway dos computadores?</p>`,
+  table:[
+    ['Dispositivo','Endereço IP','Papel','netA'],
+    ['Router0 (Gig0/0)','192.168.10.1','Gateway da rede A','A'],
+    ['PC0','192.168.10.10','Estação — Administrativo','A'],
+    ['PC1','192.168.10.11','Estação — Administrativo','A'],
+    ['Server0','192.168.10.100','Servidor interno','A']
+  ],
+  steps:[
+    `Em cada PC: <b>Desktop → IP Configuration</b> e preencha IP, máscara e gateway (você respondeu o que vai em cada campo acima).`,
+    `No <b>Desktop → Command Prompt</b> do PC0, teste: <b>ping 192.168.10.11</b> e depois <b>ping 192.168.10.100</b>.`
+  ],
+  quiz:[
+    {q:'Qual máscara corresponde a 192.168.10.0/24?',o:['255.255.255.0','255.255.0.0','255.0.0.0','255.255.255.255'],a:0,ex:'/24 = 24 bits ligados = 255.255.255.0. Ela é quem diz "meu vizinho termina aqui".'},
+    {q:'Qual endereço os PCs do Administrativo devem usar como gateway padrão?',o:['192.168.10.100 (o servidor)','192.168.20.1','192.168.10.1 (o roteador)','192.168.10.255'],a:2,ex:'O gateway é a porta do roteador na MESMA rede do PC: 192.168.10.1. É a saída para qualquer outro destino.'}
+  ],
+  tasks:['PC0 consegue pingar PC1 (192.168.10.11).','PC0 consegue pingar Server0 (192.168.10.100).'],
+  cp:'CHECKPOINT 1',log:'CHECKPOINT 1 VALIDADO — Rede Administrativo (192.168.10.0/24) operacional.'
+},
+/* ---------- M3 ---------- */
+{ id:'m3',code:'M-03',phase:'p2',title:'Laboratório online',sub:'Endereçamento estático · Rede B · ~10 min',xp:120,
+  brief:`<p>Agora repita a dose no <b>Laboratório</b>: rede <b>192.168.20.0/24</b>. Você já sabe a lógica — máscara e gateway você deduz sozinho desta vez.</p>`,
+  table:[
+    ['Dispositivo','Endereço IP','Papel','netB'],
+    ['Router0 (Gig0/1)','192.168.20.1','Gateway da rede B','B'],
+    ['PC2','192.168.20.10','Estação — Laboratório','B'],
+    ['PC3','192.168.20.11','Estação — Laboratório','B']
+  ],
+  steps:[
+    `Configure PC2 e PC3 em <b>Desktop → IP Configuration</b>, com a máscara e o gateway corretos.`,
+    `No Command Prompt do PC2: <b>ping 192.168.20.11</b>.`
+  ],
+  quiz:[
+    {q:'Qual é o gateway correto para PC2 e PC3?',o:['192.168.10.1','192.168.20.1','192.168.20.10','192.168.20.255'],a:1,ex:'A porta do roteador NA rede B: 192.168.20.1. Cada rede tem seu próprio gateway.'},
+    {q:'A partir do PC2, qual comando verifica se o PC3 responde?',o:['ipconfig','tracert 192.168.20.11','ping 192.168.20.11','show ip interface brief'],a:2,ex:'ping destino: o teste direto de alcançabilidade. ipconfig só mostra configuração.'}
+  ],
+  tasks:['PC2 consegue pingar PC3 (192.168.20.11).'],
+  cp:'CHECKPOINT 2',log:'CHECKPOINT 2 VALIDADO — Rede Laboratório (192.168.20.0/24) operacional.'
+},
+/* ---------- M4 ---------- */
+{ id:'m4',code:'M-04',phase:'p2',title:'O muro invisível',sub:'Investigação · ~10 min',xp:150,
+  brief:`<p>Tudo funciona… <b>dentro</b> de cada setor. Mas a diretora pediu: "quero o PC do Laboratório conversando com o servidor do Administrativo".</p>
+  <p><b>Execução de campo:</b> no PC0, rode <b>ping 192.168.20.10</b>. O resultado vai falhar — e isso é proposital. Sua missão agora é entender <b>por quê</b>.</p>`,
+  hint:{ic:'alert',t:`Siga o rastro do pacote: <b>PC0 (192.168.10.10)</b> → entrega ao gateway <b>192.168.10.1</b> → <b>ROUTER</b> → sai pela porta <b>192.168.20.1</b> → <b>PC2 (192.168.20.10)</b>. As duas redes são mundos separados — e o roteador ainda não sabe que precisa trabalhar.`},
+  quiz:[
+    {q:'PC0 (192.168.10.10) e PC2 (192.168.20.10) estão na mesma rede?',o:['Sim — as duas começam com 192.168','Sim — o switch liga tudo no mesmo chão','Não — são redes /24 distintas','Não — porque os cabos são diferentes'],a:2,ex:'Com máscara 255.255.255.0, o terceiro octeto define a rede: 10 ≠ 20. São dois segmentos lógicos diferentes.'},
+    {q:'Então, por que o ping do PC0 ao PC2 falhou?',o:['Os cabos estão com LED vermelho','O roteador ainda não foi configurado para rotear entre as redes','O switch0 bloqueou o tráfego','O PC2 está desligado'],a:1,ex:'Exatamente. A física funciona; falta instruir o roteador. Redes diferentes SÓ se conversam através de roteamento — é por isso que ele existe.'}
+  ],
+  tasks:[],
+  log:'M-04 CONCLUÍDA — Diagnóstico conceitual: redes distintas exigem roteamento.'
+},
+/* ---------- M5 ---------- */
+{ id:'m5',code:'M-05',phase:'p3',title:'Ensinando o roteador',sub:'CLI do Router0 · ~20 min',xp:200,
+  brief:`<p>Hora de configurar as <b>duas interfaces</b> do Router0 — uma porta olhando para cada rede. Clique no roteador, aba <b>CLI</b>, e digite:</p>`,
+  cli:[{t:'Router0 · CLI',c:`enable
+configure terminal
+
+interface gigabitEthernet 0/0
+ ip address 192.168.10.1 255.255.255.0
+ no shutdown
+ exit
+
+interface gigabitEthernet 0/1
+ ip address 192.168.20.1 255.255.255.0
+ no shutdown
+ exit
+
+do show ip interface brief`}],
+  steps:[
+    `Digite o bloco de comandos na aba CLI do Router0 (ajuste <b>gigabitEthernet</b> ao nome real das interfaces do seu modelo).`,
+    `Rode <b>show ip interface brief</b> e confira: as duas interfaces precisam terminar em <b>up / up</b>, com os IPs corretos.`,
+    `O teste de verdade: no PC0, <b>ping 192.168.20.10</b>.`
+  ],
+  quiz:[
+    {q:'O que o comando no shutdown faz dentro de uma interface?',o:['Apaga o endereço IP','Desliga a interface com segurança','Ativa a interface (sai do estado administratively down)','Reinicia o roteador'],a:2,ex:'Interfaces de roteador Cisco já nascem desligadas. Sem "no shutdown", nada passa por ali — por mais certo que o IP esteja.'},
+    {q:'No show ip interface brief, o que prova que a interface está pronta para trabalhar?',o:['IP-Address preenchido, status up, protocol up','administratively down','any / unassigned','0.0.0.0'],a:0,ex:'up/up = camada física e camada de dados ativas. Uma linha "down/down" ou "administratively down" é porta morta.'}
+  ],
+  tasks:['show ip interface brief exibe as duas interfaces up/up.','PC0 consegue pingar 192.168.20.10.'],
+  cp:'CHECKPOINT 3',log:'CHECKPOINT 3 VALIDADO — Roteamento entre as redes A e B ativo. PC0 → PC2 responde.'
+},
+/* ---------- M6 ---------- */
+{ id:'m6',code:'M-06',phase:'p3',title:'O caminho do pacote',sub:'tracert · camada 2 vs camada 3 · ~10 min',xp:150,
+  brief:`<p>A rede inteira respira. Agora vamos <b>ver</b> o caminho: no PC0, execute <b>tracert 192.168.20.10</b> e observe cada salto. No diagrama ao lado, a rota aparece tracejada.</p>`,
+  hint:{ic:'zap',t:`<b>Detalhe importante:</b> o tracert lista apenas dispositivos que <b>roteiam</b> (têm IP e diminuem o TTL). O caminho lógico é PC0 → Switch0 → Router0 → Switch1 → PC2, mas os switches não aparecem como saltos: são equipamentos de <b>camada 2</b>, eles encaminham quadros, não pacotes IP.`},
+  quiz:[
+    {q:'Ao rodar tracert 192.168.20.10 no PC0, quais saltos aparecem?',o:['Switch0, Router0 e Switch1, nessa ordem','Somente 192.168.10.1','Nenhum — o comando falha','192.168.10.1 e, em seguida, 192.168.20.10'],a:3,ex:'O gateway (10.1) e o próprio destino (20.10). Os switches ficam invisíveis para o tracert.'},
+    {q:'Por que os switches não aparecem como saltos no tracert?',o:['Porque estão desligados','Porque são mais rápidos que o roteador','Porque atuam na camada 2: não roteiam nem decrementam TTL','Porque o tracert só funciona em servidores'],a:2,ex:'Switches comuns comutam quadros Ethernet; não participam do roteamento IP. O TTL só cai em cada roteador.'}
+  ],
+  tasks:['tracert executado e os saltos anotados no caderno.'],
+  log:'M-06 CONCLUÍDA — Rota PC0 → SW0 → Router0 → SW1 → PC2 compreendida.'
+},
+/* ---------- M7 ---------- */
+{ id:'m7',code:'M-07',phase:'p4',title:'A empresa cresceu',sub:'DHCP no Router0 · ~20 min',xp:200,
+  brief:`<p>Novos funcionários, novos PCs — e o administrador se recusa a configurar IP na mão para sempre. A diretiva: <b>todos os computadores recebem endereço automaticamente</b> (IP + máscara + gateway + DNS).</p>
+  <p>Quem vai distribuir os endereços é o próprio <b>Router0</b>, com dois pools de <b>DHCP</b>. Aba CLI do roteador:</p>`,
+  cli:[{t:'Router0 · pools DHCP',c:`configure terminal
+
+ip dhcp excluded-address 192.168.10.1 192.168.10.9
+ip dhcp excluded-address 192.168.10.100
+ip dhcp pool REDE-ADMIN
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 192.168.10.100
+ exit
+
+ip dhcp excluded-address 192.168.20.1 192.168.20.9
+ip dhcp pool REDE-LAB
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+ dns-server 192.168.10.100
+ exit`}],
+  steps:[
+    `Digite os dois pools no CLI do Router0. As <b>excluded-address</b> preservam gateways e o servidor.`,
+    `Em cada PC: <b>Desktop → IP Configuration → DHCP</b>. Aguarde a mensagem de sucesso.`,
+    `No Command Prompt de cada PC, rode <b>ipconfig</b> e anote qual endereço cada um recebeu.`
+  ],
+  quiz:[
+    {q:'Qual comando confirma o endereço que o PC acabou de receber?',o:['show version','ipconfig','netstat','tracert'],a:1,ex:'ipconfig revela IP, máscara, gateway e DNS atuais — a carteira de identidade da placa de rede.'},
+    {q:'Além de IP e máscara, o pool DHCP também entrega:',o:['Senha do roteador','Nome dos computadores','Gateway padrão e servidor DNS','Rotas estáticas'],a:2,ex:'default-router vira o gateway do cliente; dns-server vira o DNS. Por isso o pool já aponta o DNS para o Server0 (192.168.10.100) — você vai usar isso daqui a duas missões.'}
+  ],
+  tasks:['PC0 e PC1 receberam IPs 192.168.10.x via DHCP.','PC2 e PC3 receberam IPs 192.168.20.x via DHCP.'],
+  log:'M-07 CONCLUÍDA — DHCP ativo: zero configuração manual nas estações.'
+},
+/* ---------- M8 ---------- */
+{ id:'m8',code:'M-08',phase:'p4',title:'O servidor entra em cena',sub:'Serviço HTTP · ~10 min',xp:150,
+  brief:`<p>O "pequeno servidor interno" prometido no contrato: vamos publicar a intranet da Nexa no <b>Server0</b>.</p>`,
+  steps:[
+    `Clique no <b>Server0 → aba Services → HTTP</b>. Deixe <b>HTTP: On</b> (e HTTPS se quiser). Se quiser caprichar, edite o index.html e coloque o nome da empresa.`,
+    `Em qualquer PC: <b>Desktop → Web Browser</b> e acesse <b>http://192.168.10.100</b>.`
+  ],
+  quiz:[
+    {q:'PC2 está na rede 192.168.20.0 e acessa http://192.168.10.100. O que torna isso possível?',o:['O switch1 repete o sinal até o servidor','O roteador roteia o tráfego entre as duas redes','O DNS traduz o endereço','O cabo direto entre os prédios'],a:1,ex:'É o roteamento que você configurou na M-05 trabalhando em silêncio. Sem o roteador, nenhuma página atravessaria a fronteira.'},
+    {q:'Qual serviço do Server0 precisa estar ON para essa página existir?',o:['FTP','EMAIL','SYSLOG','HTTP'],a:3,ex:'HTTP é o protocolo que entrega páginas web ao navegador.'
+    }],
+  tasks:['PC0 abre a página em http://192.168.10.100.','PC2 (rede B!) também abre a página.'],
+  cp:'CHECKPOINT 4',log:'CHECKPOINT 4 VALIDADO — Intranet acessível das duas redes.'
+},
+/* ---------- M9 ---------- */
+{ id:'m9',code:'M-09',phase:'p4',title:'Ninguém decora IP',sub:'Serviço DNS · ~15 min',xp:200,
+  brief:`<p>Reclamação no mural: <i>"ninguém vai decorar 192.168.10.100"</i>. Solução: um servidor <b>DNS</b> para responder pelo nome <b>www.empresa.local</b>.</p>
+  <p>No <b>Server0 → Services → DNS</b>: serviço <b>On</b>, e crie um registro <b>A Record</b>: nome <b>www.empresa.local</b> → endereço <b>192.168.10.100</b> → Add.</p>
+  <p>O DHCP da M-07 já entrega esse DNS para todos os PCs. Depois, teste no navegador: <b>http://www.empresa.local</b>.</p>`,
+  steps:[
+    `Ative o serviço DNS no Server0 e cadastre o registro A.`,
+    `Nos PCs, feche e reabra o Web Browser e acesse <b>http://www.empresa.local</b>.`,
+    `Complete o quadro de conceitos abaixo — ele é a síntese de toda a operação.`
+  ],
+  pairs:[
+    ['IP',['Identifica o destino final do pacote','Traduz o nome www.empresa.local em 192.168.10.100','Entrega a página web ao navegador','Interliga redes diferentes e escolhe o caminho'],0],
+    ['DNS',['Identifica o destino final do pacote','Traduz o nome www.empresa.local em 192.168.10.100','Entrega a página web ao navegador','Interliga redes diferentes e escolhe o caminho'],1],
+    ['HTTP',['Identifica o destino final do pacote','Traduz o nome www.empresa.local em 192.168.10.100','Entrega a página web ao navegador','Interliga redes diferentes e escolhe o caminho'],2],
+    ['ROUTER',['Identifica o destino final do pacote','Traduz o nome www.empresa.local em 192.168.10.100','Entrega a página web ao navegador','Interliga redes diferentes e escolhe o caminho'],3]
+  ],
+  tasks:['http://www.empresa.local abre no PC0.','http://www.empresa.local abre no PC2.'],
+  log:'M-09 CONCLUÍDA — DNS ativo: www.empresa.local responde em toda a rede.'
+},
+/* ---------- M10 ---------- */
+{ id:'m10',code:'M-10',phase:'p5',title:'Sabotagem',sub:'Troubleshooting · terminal simulado · ~20 min',xp:250,
+  brief:`<p>Redes de verdade quebram — e quebram <b>sem explicar o motivo</b>. Aqui você treina o método que separa técnicos de curiosos: uma hipótese de cada vez, do mais próximo ao mais longe.</p>
+  <p><b>Método da cadeia:</b> minha configuração está certa? → pingo o gateway? → chego na outra rede? → o servidor responde por IP? → responde pelo nome?</p>
+  <p>Abaxo, um <b>laboratório de sabotagem</b>: foi plantada uma falha desconhecida. Interrogue a rede e <b>feche o caso</b>. Depois, o instrutor sabota o Packet Tracer real — encontre e corrija <b>sem apagar a topologia</b>.</p>`,
+  sim:true,
+  tasks:['Caso fechado no simulador de diagnóstico.','Sabotagem real do instrutor encontrada e corrigida no Packet Tracer.'],
+  log:'M-10 CONCLUÍDA — Técnico certificado em troubleshooting.'
+},
+/* ---------- FINAL ---------- */
+{ id:'fin',code:'FINAL',phase:'p6',title:'Setor Financeiro',sub:'Capstone · sem passo a passo · ~30 min',xp:400,
+  brief:`<p>Última ordem de serviço, e agora <b>sem instruções</b>:</p>
+  <p><b>"A empresa abriu o setor Financeiro. Crie a terceira rede 192.168.30.0/24, com um novo switch e três computadores recebendo configuração automática por DHCP. Todos devem acessar www.empresa.local. Atenção: existe um problema proposital na infraestrutura — identifique-o e corrija-o. Você NÃO pode alterar as redes Administrativo e Laboratório."</b></p>`,
+  hint:{ic:'alert',t:`Aviso de campo: o modelo de roteador entregue (1941) tem <b>apenas duas portas GigabitEthernet</b> — e as duas já estão ocupadas. Como uma terceira rede se conecta? A resposta está no hardware: desligue o roteador,abra o slot físico e instale um <b>módulo de porta</b> (ex.: HWIC-1GE-SFP), religue e configure a nova interface. Alternativas válidas: um segundo roteador ou um switch de camada 3.`},
+  quiz:[
+    {q:'O Router 1941 tem só 2 portas Gigabit. Qual solução permite conectar a terceira rede a ele?',o:['Trocar os cabos por crossover','Aumentar a máscara de rede para /16','Desligar o roteador e instalar um módulo de interface (ex.: HWIC-1GE-SFP)','Usar um hub no lugar do switch2'],a:2,ex:'Com o equipamento desligado, o slot do 1941 aceita módulos de expansão — assim nasce a interface para a rede 30.'},
+    {q:'Para os 3 novos PCs receberem IP automaticamente, você precisa:',o:['Configurar IP estático em cada PC','Criar um novo pool DHCP no roteador para 192.168.30.0/24','Desligar o DHCP das outras redes','Ligar o switch2 direto ao Server0'],a:1,ex:'Um pool por rede: network 192.168.30.0 255.255.255.0, default-router 192.168.30.1 e dns-server 192.168.10.100.'}
+  ],
+  tasks:[
+    'Switch2 + 3 PCs conectados ao Router0 (nova interface/module).',
+    'Nova interface configurada: 192.168.30.1 255.255.255.0 + no shutdown.',
+    'Pool DHCP criado para 192.168.30.0/24 (gateway + DNS).',
+    'Os 3 PCs recebem IP automaticamente (confirmado no ipconfig).',
+    'Os 3 acessam http://www.empresa.local.',
+    'O problema proposital foi identificado e corrigido — sem tocar nas redes 10 e 20.'
+  ],
+  diag:true,
+  log:'CONTRATO #0042 ENCERRADO — Operação Backbone cumprida.'
+}
+];
+const byId=id=>MISSIONS.find(m=>m.id===id);
+const idxOf=id=>MISSIONS.findIndex(m=>m.id===id);
+
+/* ============================================================
+   NAVEGAÇÃO
+   ============================================================ */
+function unlocked(i){return i===0||save.done.includes(MISSIONS[i-1].id);}
+function renderNav(){
+  let h='',lastPhase='';
+  MISSIONS.forEach((m,i)=>{
+    if(m.phase!==lastPhase){h+=`<div class="ph">${PHASES[m.phase]}</div>`;lastPhase=m.phase;}
+    const done=save.done.includes(m.id),lock=!unlocked(i),act=save.cur===m.id;
+    h+=`<button class="mnav ${done?'done':''} ${act?'active':''} ${lock?'locked':''}" data-go="${m.id}" ${lock?'disabled':''}>
+      <span class="num">${m.code}</span>
+      <span class="ti"><b>${m.title}</b><small>${m.sub.split('·')[0]}</small></span>
+      <span class="st">${done?ic('check'):lock?ic('lock'):ic('chev')}</span></button>`;
+  });
+  $('#navList').innerHTML=h;
+  $('#navFill').style.width=(save.done.length/MISSIONS.length*100)+'%';
+  $('#hudRank').textContent=rankFor(save.done.length);
+  $('#xpTxt').textContent=save.xp+' XP';
+  $('#hudName').innerHTML=save.name?`${ic('user')} <b>${esc(save.name)}</b>`:'';
+  const tot=MISSIONS.reduce((a,m)=>a+m.xp,0);
+  $('#xpFill').style.width=Math.min(100,save.xp/tot*100)+'%';
+}
+ $('#navList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-go]');if(!b||b.disabled)return;
+  save.cur=b.dataset.go;persist();snd.click();renderNav();renderMission();$('#main').scrollTop=0;
+});
+
+/* ============================================================
+   RENDER DA MISSÃO
+   ============================================================ */
+function iptab(rows){
+  const [h,...b]=rows;
+  return `<table class="iptab"><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${
+    b.map(r=>`<tr class="${r[3]==='B'?'hr':''}"><td>${r[0]}</td><td class="num">${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</table>`;
+}
+function cliBlock(b){
+  return `<div class="cli"><div class="cli-h"><span>${esc(b.t)}</span><button class="copy" data-code="${esc(b.c)}">${ic('copy')} copiar</button></div><pre>${esc(b.c)}</pre></div>`;
+}
+function quizHTML(m){
+  const st=save.qs[m.id]||[];
+  return m.quiz.map((q,qi)=>`
+   <div class="q ${st[qi]?'solved':''}" data-q="${qi}">
+     <div class="q-q">${esc(q.q)}</div>
+     <div class="opts">${q.o.map((o,oi)=>
+       `<button class="opt" data-m="${m.id}" data-qi="${qi}" data-oi="${oi}" ${st[qi]?'disabled':''}>${esc(o)}</button>`).join('')}
+     </div>
+     <div class="q-ex">${esc(q.ex)}</div>
+   </div>`).join('');
+}
+function pairsHTML(m){
+  const pv=save.pairs[m.id]||[];
+  return m.pairs.map((p,pi)=>`
+   <div class="pair ${pv[pi]===p[2]?'right':''}" data-pi="${pi}">
+     <span class="term">${p[0]}</span>
+     <select class="pair-sel" data-m="${m.id}" data-pi="${pi}" ${pv[pi]===p[2]?'disabled':''}>
+       <option value="-1">— selecione a função —</option>
+       ${p[1].map((o,oi)=>`<option value="${oi}" ${pv[pi]===oi?'selected':''}>${esc(o)}</option>`).join('')}
+     </select>
+   </div>`).join('');
+}
+function tasksHTML(m){
+  const st=save.tk[m.id]||[];
+  return m.tasks.map((t,ti)=>`
+   <button class="tsk ${st[ti]?'on':''}" data-tk="${ti}"><span class="bx">${ic('check')}</span><span>${esc(t)}</span></button>`).join('');
+}
+function valState(m){
+  const qs=(save.qs[m.id]||[]).filter(Boolean).length;
+  const tk=(save.tk[m.id]||[]).filter(Boolean).length;
+  const pr=m.pairs?(save.pairs[m.id]||[]).filter((v,i)=>v===m.pairs[i][2]).length:0;
+  if(m.sim)return save.sim.solved&&tk===m.tasks.length;
+  return qs===m.quiz.length&&pr===m.pairs.length&&tk===m.tasks.length;
+}
+function renderMission(){
+  const m=byId(save.cur),done=save.done.includes(m.id);
+  let h=`<div class="m-head"><div class="m-code">${m.code}</div>
+    <div class="m-tt"><h2>${m.title}</h2><div class="m-sub">${m.sub}</div></div>
+    ${done?`<span class="done-badge">${ic('check')} CONCLUÍDA</span>`:`<div class="m-xp">+${m.xp} XP</div>`}</div>`;
+  h+=`<div class="sec"><div class="sec-h">${ic('flag')} Briefing</div><div class="brief">${m.brief}</div></div>`;
+  if(m.table)h+=`<div class="sec"><div class="sec-h">${ic('net')} Planta de endereços</div>${iptab(m.table)}</div>`;
+  if(m.steps)h+=`<div class="sec"><div class="sec-h">${ic('chev')} Protocolo de execução</div><ol class="steps">${m.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>`;
+  if(m.cli)h+=`<div class="sec"><div class="sec-h">${ic('term')} Comandos</div>${m.cli.map(cliBlock).join('')}</div>`;
+  if(m.hint)h+=`<div class="sec hint ${m.hint.red?'red':m.hint.grn?'grn':''}">${ic(m.hint.ic)}<div>${m.hint.t}</div></div>`;
+  if(m.quiz)h+=`<div class="sec"><div class="sec-h">${ic('alert')} Interrogatório — responda antes de validar</div>${quizHTML(m)}</div>`;
+  if(m.pairs)h+=`<div class="sec"><div class="sec-h">${ic('globe')} Síntese conceitual</div>${pairsHTML(m)}</div>`;
+  if(m.sim)h+=`<div class="sec"><div class="sec-h">${ic('search')} Laboratório de sabotagem</div><div id="simHost"></div></div>`;
+  if(m.tasks)h+=`<div class="sec"><div class="sec-h">${ic('check')} Checklist de validação${m.cp?` — ${m.cp}`:''}</div>${tasksHTML(m)}</div>`;
+  if(m.diag)h+=`<div class="sec"><div class="sec-h">${ic('term')} Laudo final (para o instrutor)</div>
+    <textarea id="diagText" placeholder="Descreva qual problema proposital você encontrou, como o diagnosticou (quais comandos usou) e como corrigiu…">${esc(save.diag)}</textarea></div>`;
+  h+=`<div class="valbar">${done?`<span class="done-badge">${ic('check')} ${m.cp||'MISSÃO'} VALIDADO</span>`:
+    `<button id="valBtn" ${valState(m)?'':'disabled'}>${ic('award')} Validar ${m.cp||'missão'}</button><span id="valHint"></span>`}</div>`;
+  $('#mwrap').innerHTML=h;
+  if(m.sim)renderSim();
+  updateHint();
+}
+function updateHint(){
+  const m=byId(save.cur);if(!m||save.done.includes(m.id))return;
+  const el=$('#valHint');if(!el)return;
+  if(valState(m)){el.textContent='Todas as condições atendidas. Valide o checkpoint.';return;}
+  const miss=[];
+  const st=save.qs[m.id]||[];
+  if(m.quiz&&st.filter(Boolean).length<m.quiz.length)miss.push('responda o interrogatório');
+  if(m.pairs){const pv=save.pairs[m.id]||[];if(pv.filter((v,i)=>v===m.pairs[i][2]).length<m.pairs.length)miss.push('complete a síntese conceitual');}
+  if(m.tasks){const tk=save.tk[m.id]||[];if(tk.filter(Boolean).length<m.tasks.length)miss.push('cumpra o checklist');}
+  el.textContent='Falta: '+miss.join(' · ');
+}
+
+/* ---------- delegação de eventos do painel ---------- */
+ $('#mwrap').addEventListener('click',e=>{
+  const cp=e.target.closest('.copy');
+  if(cp){
+    const txt=cp.dataset.code;
+    (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(
+      ()=>toast('Comandos copiados para a área de transferência.','ok'),
+      ()=>toast('Não foi possível copiar aqui — selecione e copie manualmente.','err'));
+    snd.click();return;
+  }
+  const opt=e.target.closest('.opt');
+  if(opt&&!opt.disabled){
+    const m=byId(opt.dataset.m),q=m.quiz[+opt.dataset.qi],ok=+opt.dataset.oi===q.a;
+    if(ok){
+      opt.classList.add('ok');
+      opt.parentElement.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+      save.qs[m.id]=save.qs[m.id]||[];save.qs[m.id][+opt.dataset.qi]=true;persist();
+      snd.ok();
+      const card=opt.closest('.q');card.classList.add('solved');
+      logAdd(`Interrogatório: "${q.q.slice(0,46)}…" — resposta correta.`);
+    }else{
+      opt.classList.add('bad');save.wrong++;snd.err();
+      setTimeout(()=>opt.classList.remove('bad'),700);
+    }
+    updateHint();return;
+  }
+  const tk=e.target.closest('.tsk');
+  if(tk){
+    const m=byId(save.cur),i=+tk.dataset.tk;
+    save.tk[m.id]=save.tk[m.id]||[];save.tk[m.id][i]=!save.tk[m.id][i];persist();
+    tk.classList.toggle('on',save.tk[m.id][i]);snd.click();updateHint();return;
+  }
+});
+ $('#mwrap').addEventListener('change',e=>{
+  const sel=e.target.closest('.pair-sel');
+  if(sel){
+    const m=byId(sel.dataset.m),pi=+sel.dataset.pi,corr=m.pairs[pi][2];
+    save.pairs[m.id]=save.pairs[m.id]||[];save.pairs[m.id][pi]=+sel.value;persist();
+    sel.closest('.pair').classList.toggle('right',+sel.value===corr);
+    if(+sel.value===corr){sel.disabled=true;snd.ok();}else snd.err();
+    updateHint();return;
+  }
+});
+ $('#mwrap').addEventListener('input',e=>{
+  if(e.target.id==='diagText'){save.diag=e.target.value;persist();}
+});
+ $('#mwrap').addEventListener('click',e=>{
+  if(e.target.closest('#valBtn')){completeMission(save.cur);}
+});
+
+/* ============================================================
+   VALIDAÇÃO
+   ============================================================ */
+function completeMission(id){
+  const m=byId(id);
+  save.done.push(id);save.xp+=m.xp;persist();
+  snd.stamp();snd.done();
+  const st=$('#stampIn');st.textContent=(m.cp||'MISSÃO')+' VALIDADO';
+  $('#stamp').classList.add('on');setTimeout(()=>$('#stamp').classList.remove('on'),1500);
+  logAdd(m.log,'g');
+  toast(`<b>${m.code}</b> concluída · +${m.xp} XP · patente: ${rankFor(save.done.length)}`,'ok');
+  const ni=idxOf(id)+1;
+  if(ni<MISSIONS.length){
+    save.cur=MISSIONS[ni].id;persist();
+    setTimeout(()=>{renderNav();renderMission();$('#main').scrollTop=0;},900);
+  }else{
+    save.tEnd=Date.now();persist();
+    renderNav();
+    setTimeout(showCert,1700);
+  }
+  renderTopo();
+}
+
+/* ============================================================
+   TOPOLOGIA SVG VIVA
+   ============================================================ */
+const DEV={
+  pc0:{x:60,y:80,t:'pc',n:'PC0',ip:'192.168.10.10',net:'A',m:'m2'},
+  pc1:{x:60,y:170,t:'pc',n:'PC1',ip:'192.168.10.11',net:'A',m:'m2'},
+  srv:{x:60,y:330,t:'srv',n:'Server0',ip:'192.168.10.100',net:'A',m:'m2'},
+  sw0:{x:170,y:210,t:'sw',n:'Switch0',m:'m1'},
+  r0:{x:330,y:210,t:'r',n:'Router0',m:'m1'},
+  sw1:{x:490,y:210,t:'sw',n:'Switch1',m:'m1'},
+  pc2:{x:600,y:80,t:'pc',n:'PC2',ip:'192.168.20.10',net:'B',m:'m3'},
+  pc3:{x:600,y:330,t:'pc',n:'PC3',ip:'192.168.20.11',net:'B',m:'m3'},
+  sw2:{x:330,y:400,t:'sw',n:'Switch2',fin:true,m:'fin'},
+  f0:{x:190,y:510,t:'pc',n:'F-PC0',ip:'192.168.30.10',net:'F',fin:true,m:'fin'},
+  f1:{x:330,y:510,t:'pc',n:'F-PC1',ip:'192.168.30.11',net:'F',fin:true,m:'fin'},
+  f2:{x:470,y:510,t:'pc',n:'F-PC2',ip:'192.168.30.12',net:'F',fin:true,m:'fin'}
+};
+const LINKS=[
+  ['pc0','sw0','60,100 60,200 142,200','A','m2'],
+  ['pc1','sw0','60,190 60,210 142,210','A','m2'],
+  ['srv','sw0','60,310 60,220 142,220','A','m2'],
+  ['sw0','r0','198,210 302,210','','m1'],
+  ['r0','sw1','358,210 462,210','','m1'],
+  ['sw1','pc2','518,200 600,200 600,100','B','m3'],
+  ['sw1','pc3','518,220 600,220 600,310','B','m3'],
+  ['r0','sw2','330,238 330,374','F','fin'],
+  ['sw2','f0','320,426 320,470 190,470 190,490','F','fin'],
+  ['sw2','f1','330,426 330,490','F','fin'],
+  ['sw2','f2','340,426 340,470 470,470 470,490','F','fin']
+];
+const NETC={A:'#ffb454',B:'#5fd4d0',F:'#57d97a'};
+const done=id=>save.done.includes(id);
+
+function devIcon(d){
+  const {x,y,t}=d;
+  if(t==='pc')return `<g class="ic2" stroke="#c9cdb8" stroke-width="1.8" fill="none">
+    <rect x="${x-17}" y="${y-14}" width="34" height="24" rx="2"/>
+    <line x1="${x-8}" y1="${y+15}" x2="${x+8}" y2="${y+15}"/><line x1="${x}" y1="${y+10}" x2="${x}" y2="${y+15}"/>
+    <rect x="${x-12}" y="${y-9}" width="24" height="14" fill="none" stroke-width="1"/></g>`;
+  if(t==='srv')return `<g class="ic2" stroke="#c9cdb8" stroke-width="1.8" fill="none">
+    <rect x="${x-15}" y="${y-21}" width="30" height="42" rx="2"/>
+    <line x1="${x-8}" y1="${y-11}" x2="${x+8}" y2="${y-11}"/><line x1="${x-8}" y1="${y-1}" x2="${x+8}" y2="${y-1}"/><line x1="${x-8}" y1="${y+9}" x2="${x+8}" y2="${y+9}"/>
+    <circle cx="${x+9}" cy="${y-16}" r="1.6" fill="#ffb454" stroke="none"/></g>`;
+  if(t==='sw')return `<g class="ic2" stroke="#c9cdb8" stroke-width="1.8" fill="none">
+    <rect x="${x-28}" y="${y-13}" width="56" height="26" rx="3"/>
+    <path d="M${x-16} ${y-4} h20 m0 0 l-5 -4 m5 4 l-5 4" stroke="#57d97a" stroke-width="1.6"/>
+    <path d="M${x+16} ${y+4} h-20 m0 0 l5 -4 m-5 4 l5 4" stroke="#ffb454" stroke-width="1.6"/></g>`;
+  return `<g class="ic2" stroke="#c9cdb8" stroke-width="1.8" fill="none">
+    <circle cx="${x}" cy="${y}" r="26"/>
+    <path d="M${x-13} ${y-5} h16 m0 0 l-4.5 -4 m4.5 4 l-4.5 4" stroke="#57d97a" stroke-width="1.7"/>
+    <path d="M${x+13} ${y+6} h-16 m0 0 l4.5 -4 m-4.5 4 l4.5 4" stroke="#ffb454" stroke-width="1.7"/>
+    <circle class="led" cx="${x}" cy="${y-17}" r="2.4" fill="#57d97a" stroke="none"/></g>`;
+}
+function renderTopo(){
+  const building1=save.cur==='m1'&&!done('m1');
+  const buildingF=save.cur==='fin'&&!done('fin');
+  let s='';
+  // links
+  for(const[a,b,pts,net,mm]of LINKS){
+    const dm=DEV[a].fin?DEV[a].m:mm;
+    if(!done(dm)&&!(dm==='m1'&&building1)&&!(dm==='fin'&&buildingF)&&save.cur!==dm)continue;
+    let cls='tlink';
+    if(done(mm)){cls+=net?' net'+net:' up';}
+    s+=`<polyline class="${cls}" points="${pts}"/>`;
+  }
+  // rota tracert destacada
+  if(done('m6'))s+=`<polyline class="tlink tr" points="60,100 60,205 598,205 598,100"/>`;
+  // dispositivos
+  for(const k in DEV){
+    const d=DEV[k],dm=d.fin?d.m:d.m;
+    const visible=done(dm)||(save.cur===dm)||(dm==='m1'&&building1)||(dm==='fin'&&buildingF)||(dm==='m2'&&done('m1'))||(dm==='m3'&&done('m1'));
+    if(!visible)continue;
+    const ghost=(!done(dm)&&(save.cur===dm));
+    let extra='';
+    if(d.net&&done(dm)){
+      if(d.fin&&done('fin'))extra=`<text class="dip" x="${d.x}" y="${d.y+34}" text-anchor="middle" fill="${NETC[d.net]}">DHCP · ${d.ip}</text>`;
+      else if(done('m7'))extra=`<text class="dip" x="${d.x}" y="${d.y+34}" text-anchor="middle" fill="${NETC[d.net]}">${d.ip}</text><text class="dip" x="${d.x}" y="${d.y+44}" text-anchor="middle" fill="#57d97a">via DHCP</text>`;
+      else extra=`<text class="dip" x="${d.x}" y="${d.y+34}" text-anchor="middle" fill="${NETC[d.net]}">${d.ip}</text>`;
+    }
+    if(k==='r0'&&done('m5'))extra=`<text class="dip" x="${d.x}" y="${d.y-32}" text-anchor="middle" fill="#ffb454">.10.1</text><text class="dip" x="${d.x}" y="${d.y+40}" text-anchor="middle" fill="#5fd4d0">.20.1</text>`;
+    if(k==='srv'&&done('m8'))extra+=`<text class="dip" x="${d.x}" y="${d.y-26}" text-anchor="middle" fill="#57d97a">HTTP${done('m9')?' · DNS':''}</text>`;
+    if(k==='srv'&&done('m9'))extra+=`<text class="dip" x="${d.x}" y="${d.y-16}" text-anchor="middle" fill="#5fd4d0">www.empresa.local</text>`;
+    s+=`<g class="dev ${ghost?'ghost':''} show">${devIcon(d)}
+      <text class="dlbl" x="${d.x}" y="${d.y+(d.t==='pc'?-22:-30)}" text-anchor="middle">${d.n}</text>${extra}</g>`;
+  }
+  // pacotes
+  const pkt=(path,color,dur,begin)=>`<circle r="3" fill="${color}" opacity=".95"><animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite" path="${path}"/></circle>`;
+  if(done('m2'))s+=pkt('M60,100 L60,205 L140,205',NETC.A,2.2,0)+pkt('M140,215 L60,215 L60,308',NETC.A,2.2,1.1);
+  if(done('m3'))s+=pkt('M598,100 L598,195 L520,195',NETC.B,2.2,.5);
+  if(done('m5'))s+=pkt('M60,100 L60,205 L598,205 L598,100',NETC.A,3.4,0)+pkt('M598,215 L60,215 L60,308',NETC.B,3.4,1.7);
+  if(done('m8'))s+=pkt('M598,100 L598,215 L62,215 L62,308','#ffd166',4,0);
+  if(done('fin'))s+=pkt('M330,488 L330,240','#57d97a',2.6,.8);
+  $('#topoSvg').innerHTML=s;
+}
+
+/* ============================================================
+   SIMULADOR DE SABOTAGEM (M-10)
+   ============================================================ */
+const SABS=[
+  {id:'gw',label:'Gateway incorreto em um PC',verdict:'Um PC estava com gateway <b>192.168.30.1</b> — um endereço que não existe na rede dele. Por isso ele falava com os vizinhos locais, mas nunca saía do setor. <b>Correção:</b> Desktop → IP Configuration → gateway 192.168.20.1 (ou volte para DHCP).'},
+  {id:'cable',label:'Cabo de rede desconectado',verdict:'O cabo entre o <b>PC2 e o Switch1</b> estava desconectado — IP inútil sem camada física. O sinal: APIPA 169.254.x.x e LED apagado. <b>Correção:</b> reconecte o cabo direto e aguarde o LED verde.'},
+  {id:'intdown',label:'Interface do roteador desligada',verdict:'A <b>GigabitEthernet0/1</b> do roteador estava em <b>shutdown</b>: rede B inteira isolada, rede A intacta. <b>Correção:</b> CLI → <code>interface g0/1</code> → <code>no shutdown</code>.'},
+  {id:'dns',label:'DNS com endereço errado',verdict:'O pool DHCP entregava <b>192.168.10.99</b> como DNS. IPs respondiam, nomes não — falha clássica de resolução. <b>Correção:</b> dentro do pool: <code>dns-server 192.168.10.100</code>.'},
+  {id:'srvip',label:'IP do servidor alterado',verdict:'O <b>Server0</b> estava com <b>192.168.10.200</b>, mas o DNS e todos os acessos apontam para 192.168.10.100. <b>Correção:</b> devolva o IP 192.168.10.100 ao servidor.'}
+];
+function newSab(){
+  let p;do{p=SABS[Math.floor(Math.random()*SABS.length)];}while(SABS.length>1&&p.id===save.sim.sc);
+  save.sim={sc:p.id,cmdCount:0,solved:false,bonus:save.sim.bonus};persist();
+  renderMission();updateHint();
+  logAdd('Nova sabotagem plantada no simulador. Boa sorte.','a');
+}
+function simCmds(dev){
+  if(dev==='Router0')return[['brief','show ip interface brief'],['route','show ip route']];
+  const isA=(dev==='PC0'||dev==='PC1'),net=isA?'10':'20',cross=isA?'192.168.20.10':'192.168.10.10';
+  return[['ipconfig','ipconfig'],['pgw','ping 192.168.'+net+'.1 (gateway)'],['psrv','ping 192.168.10.100 (servidor)'],
+    ['pcross','ping '+cross+' (outra rede)'],['pname','ping www.empresa.local'],['tracert','tracert '+cross],
+    ['web','navegador: www.empresa.local'],['webip','navegador: http://192.168.10.100']];
+}
+function simOut(dev,cmd){
+  const S=save.sim.sc,L=[],P=(c,t)=>L.push({c,t});
+  const row=(a,b,c,d)=>{P('',`  ${a.padEnd(22)}${b.padEnd(16)}${c.padEnd(24)}${d}`)};
+  if(dev==='Router0'){
+    if(cmd==='brief'){
+      P('dim','Interface              IP-Address       Status                Protocol');
+      row('GigabitEthernet0/0','192.168.10.1','up','up');P('ok','  ↑ OK');
+      if(S==='intdown'){row('GigabitEthernet0/1','192.168.20.1','administratively down','down');P('err','  ↑ INTERFACE DESLIGADA (shutdown)');}
+      else{row('GigabitEthernet0/1','192.168.20.1','up','up');P('ok','  ↑ OK');}
+      return L;
+    }
+    P('dim','Códigos: C = connected');
+    P('ok','C  192.168.10.0/24 is directly connected, GigabitEthernet0/0');
+    if(S==='intdown'){P('wrn','AVISO: 192.168.20.0/24 AUSENTE da tabela de rotas');}
+    else P('ok','C  192.168.20.0/24 is directly connected, GigabitEthernet0/1');
+    return L;
+  }
+  const isA=(dev==='PC0'||dev==='PC1'),net=isA?'10':'20';
+  const ip=dev==='PC0'?'192.168.10.10':dev==='PC1'?'192.168.10.11':dev==='PC2'?'192.168.20.10':'192.168.20.11';
+  const gw='192.168.'+net+'.1',cross=isA?'192.168.20.10':'192.168.10.10';
+  const dnsBad=S==='dns',gwBad=S==='gw'&&dev==='PC3',noLink=S==='cable'&&dev==='PC2',isoB=S==='intdown'&&!isA,srvDead=S==='srvip';
+  if(cmd==='ipconfig'){
+    P('',`Configuração IP — ${dev} (adaptador Ethernet0)`);
+    if(noLink){P('wrn','  Estado da mídia . . . : DESCONECTADO');P('','  Endereço IP . . . . . : 169.254.22.9 (APIPA)');P('wrn','  LED da placa de rede . : APAGADO');return L;}
+    P('','  Endereço IP . . . . . : '+ip);
+    P('','  Máscara de sub-rede . : 255.255.255.0');
+    if(gwBad){P('err','  Gateway padrão  . . . : 192.168.30.1');P('wrn','  AVISO: gateway fora da sua rede 192.168.20.0/24');}
+    else P('','  Gateway padrão  . . . : '+gw);
+    if(dnsBad){P('err','  Servidor DNS  . . . . : 192.168.10.99');P('wrn','  AVISO: DNS difere do documentado (192.168.10.100)');}
+    else P('','  Servidor DNS  . . . . : 192.168.10.100');
+    P('ok','  Link local . . . . . . : ATIVO (LED verde)');
+    return L;
+  }
+  if(noLink){P('err','General failure — não há caminho físico ativo nesta placa.');return L;}
+  const to=(host,fail)=>{P('dim',`Disparando ${host} com 32 bytes:`);if(fail){P('err','Esgotado o tempo limite do pedido (Request timed out).');P('err','Enviados = 4 · Recebidos = 0 · Perdidos = 100%');}else P('ok',`Resposta de ${host}: bytes=32 tempo=1ms TTL=128`);};
+  if(cmd==='pgw')return to(gw,gwBad||isoB),L;
+  if(cmd==='psrv')return to('192.168.10.100',gwBad||isoB||srvDead),L;
+  if(cmd==='pcross')return to(cross,gwBad||isoB),L;
+  if(cmd==='pname'){
+    if(dnsBad){P('err','Ping request could not find host www.empresa.local. Verifique o nome e tente de novo.');return L;}
+    P('dim','Resolvendo www.empresa.local…');P('ok','www.empresa.local → 192.168.10.100');
+    return to('192.168.10.100',gwBad||isoB||srvDead),L;
+  }
+  if(cmd==='tracert'){
+    if(gwBad||isoB){P('dim',`Rastreando rota para ${cross}:`);P('err',' 1   * * *   Esgotado o tempo limite');return L;}
+    P('dim',`Rastreando rota para ${cross}:`);
+    P('',` 1   ${gw}    1 ms`);
+    P('ok',` 2   ${cross}    2 ms  — destino alcançado em 2 saltos`);
+    return L;
+  }
+  if(cmd==='web'){
+    if(dnsBad){P('dim','GET http://www.empresa.local …');P('err','DNS_PROBE_FAILURE — o nome não foi resolvido.');return L;}
+    if(gwBad||isoB||srvDead){P('dim','GET http://www.empresa.local …');P('err','Não foi possível conectar ao servidor.');return L;}
+    P('dim','GET http://www.empresa.local …');P('ok','200 OK — página “Intranet Nexa” carregada (1,2 KB)');return L;
+  }
+  if(cmd==='webip'){
+    if(gwBad||isoB||srvDead){P('dim','GET http://192.168.10.100 …');P('err','Não foi possível conectar ao servidor.');return L;}
+    P('dim','GET http://192.168.10.100 …');P('ok','200 OK — página “Intranet Nexa” carregada (1,2 KB)');return L;
+  }
+  return L;
+}
+function renderSim(){
+  const host=$('#simHost');if(!host)return;
+  if(!save.sim.sc){save.sim.sc=SABS[0].id;persist();}
+  const sab=SABS.find(s=>s.id===save.sim.sc);
+  if(save.sim.solved){
+    host.innerHTML=`<div class="sim"><div class="verdict"><h5>${ic('check')} CASO FECHADO — falha identificada</h5>
+      <p>${sab.verdict}</p><div class="rk">Desempenho: <b>${save.sim.cmdCount} comando(s) usado(s)</b>.</div></div>
+      <div class="sim-acc"><button id="newSab" style="display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line2);color:var(--dim);padding:9px 16px;font-size:12px;letter-spacing:.08em;text-transform:uppercase">${ic('rot')} Sortear outra sabotagem e treinar de novo</button></div></div>`;
+    return;
+  }
+  const dev=$('#simDev')?$('#simDev').value:'PC0';
+  host.innerHTML=`<div class="sim">
+    <div class="sim-top"><span class="sab">${ic('alert')} Sabotagem ativa: origem desconhecida (${save.sim.cmdCount} comando(s))</span>
+      <button id="newSab">${ic('rot')} nova sabotagem</button></div>
+    <div class="sim-grid">
+      <div class="sim-l">
+        <label>Dispositivo interrogado</label>
+        <select id="simDev">${['PC0','PC1','PC2','PC3','Router0'].map(d=>`<option ${d===dev?'selected':''}>${d}</option>`).join('')}</select>
+        <label style="margin-top:6px">Ferramentas</label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${simCmds(dev).map(([k,l])=>`<button class="scmd" data-k="${k}" data-l="${esc(l)}">&gt; ${esc(l)}</button>`).join('')}
+        </div>
+      </div>
+      <div class="sim-c" id="simCon"><div class="ln dim">// console de diagnóstico — interrogue a rede antes de acusar</div></div>
+    </div>
+    <div class="sim-acc"><h5>${ic('search')} Acusação final — qual é a sabotagem?</h5>
+      <div class="acc-grid">${SABS.map(s=>`<button class="acc-opt" data-acc="${s.id}">${s.label}</button>`).join('')}</div>
+      <button id="closeCase">${ic('flag')} fechar o caso</button></div>
+  </div>`;
+}
+ $('#mwrap').addEventListener('click',e=>{
+  if(e.target.closest('#newSab')){newSab();return;}
+  const b=e.target.closest('.scmd');
+  if(b){
+    const dev=$('#simDev').value,con=$('#simCon');
+    save.sim.cmdCount++;persist();
+    con.querySelector('.ln.dim')?.remove();
+    let h=`<div class="ln cmd">${dev}&gt; ${esc(b.dataset.l)}</div>`;
+    simOut(dev,b.dataset.k).forEach(l=>h+=`<div class="ln ${l.c}">${esc(l.t)}</div>`);
+    h+=`<div class="ln dim">&nbsp;</div>`;
+    con.insertAdjacentHTML('beforeend',h);con.scrollTop=con.scrollHeight;
+    document.querySelector('.sim-top .sab').innerHTML=`${ic('alert')} Sabotagem ativa: origem desconhecida (${save.sim.cmdCount} comando(s))`;
+    snd.click();return;
+  }
+  const acc=e.target.closest('.acc-opt');
+  if(acc){document.querySelectorAll('.acc-opt').forEach(a=>a.classList.remove('sel'));acc.classList.add('sel');snd.click();return;}
+  if(e.target.closest('#closeCase')){
+    const sel=document.querySelector('.acc-opt.sel');
+    if(!sel){toast('Acuse uma opção antes de fechar o caso.','err');snd.err();return;}
+    if(sel.dataset.acc===save.sim.sc){
+      const first=!save.sim.bonus;
+      save.sim.solved=true;
+      let bonusTxt='';
+      if(first){
+        save.sim.bonus=true;
+        const b=save.sim.cmdCount<=3?50:save.sim.cmdCount<=6?25:0;
+        if(b){save.xp+=b;bonusTxt=` · Bônus de investigação: +${b} XP`;}
+      }
+      persist();snd.done();
+      const sab=SABS.find(s=>s.id===save.sim.sc);
+      const n=save.sim.cmdCount;
+      const rk=n<=3?'Diagnóstico cirúrgico — três comandos ou menos.':n<=6?'Investigação eficiente e metodica.':'Caso fechado — na base da paciência.';
+      sel.parentElement.querySelectorAll('.acc-opt').forEach(a=>{a.disabled=true;if(a.dataset.acc===save.sim.sc)a.classList.add('ok');});
+      sel.closest('.sim-acc').innerHTML=`<div class="verdict"><h5>${ic('check')} CASO FECHADO</h5><p>${sab.verdict}</p>
+        <div class="rk"><b>${rk}</b> (${n} comando(s)${bonusTxt}) — repita com outra sabotagem para afiar o método.</div>
+        <button id="newSab" style="margin-top:12px;display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line2);color:var(--dim);padding:9px 16px;font-size:12px;letter-spacing:.08em;text-transform:uppercase">${ic('rot')} nova sabotagem</button></div>`;
+      save.tk.m10=save.tk.m10||[];save.tk.m10[0]=true;persist();
+      document.querySelectorAll('.tsk')[0]?.classList.add('on');
+      updateHint();renderNav();
+      logAdd('Caso fechado no simulador: '+sab.label.toLowerCase()+'.','g');
+    }else{save.wrong++;snd.err();toast('Acusação refutada. A falha continua lá fora — volte ao console.','err');
+      sel.classList.add('bad');setTimeout(()=>sel.classList.remove('sel','bad'),800);}
+  }
+});
+ $('#mwrap').addEventListener('change',e=>{if(e.target.id==='simDev'){renderSim();snd.click();}});
+
+/* ============================================================
+   CERTIFICADO
+   ============================================================ */
+function showCert(){
+  const total=save.tEnd-(save.t0||save.tEnd);
+  $('#certWrap').innerHTML=`<div class="cert"><div class="cert-in">
+    <div class="top">Nexa Logística Ltda · Departamento de Tecnologia · Ordem de Serviço #0042</div>
+    <h1>CERTIFICADO DE CONCLUSÃO</h1>
+    <div class="top">— Operação Backbone · Infraestrutura de Redes —</div>
+    <div class="nm">${esc(save.name)}</div>
+    <p class="rl">planejou, construiu, automatizou e <b>diagnosticou</b> a infraestrutura de redes da empresa:
+    duas redes locais roteadas, DHCP, servidor web interno, DNS e um terceiro setor projetado e entregue —
+    com falhas sabotadas encontradas e corrigidas no caminho.</p>
+    <div class="meta">
+      <div>Patente final<b>${rankFor(save.done.length)}</b></div>
+      <div>Experiência<b>${save.xp} XP</b></div>
+      <div>Tempo de operação<b>${fmtTime(total)}</b></div>
+      <div>Data<b>${new Date().toLocaleDateString('pt-BR')}</b></div>
+    </div>
+    <div class="sign"><span>Dpto. de Tecnologia — Nexa</span><span>Instrutor(a) de Redes</span></div>
+  </div></div>
+  <div class="certbtns"><button class="btn-acc" id="printBtn" style="display:inline-flex;gap:8px;align-items:center">${ic('print')} Imprimir certificado</button>
+  <button class="mclose" id="closeCert" style="border:1px solid var(--line2);color:var(--dim);padding:12px 20px;font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em">fechar</button></div>`;
+  $('#certWrap').classList.add('on');
+  $('#printBtn').onclick=()=>window.print();
+  $('#closeCert').onclick=()=>$('#certWrap').classList.remove('on');
+}
+
+/* ============================================================
+   MODAL / INSTRUTOR / RESET
+   ============================================================ */
+function openModal(html){$('#modalBox').innerHTML=html;$('#modalHost').classList.add('on');}
+ $('#modalHost').addEventListener('click',e=>{if(e.target.id==='modalHost'||e.target.closest('.mclose'))$('#modalHost').classList.remove('on');});
+ $('#tutBtn').onclick=()=>{
+  openModal(`<h3>${ic('book')} Guia do instrutor</h3>
+  <h4>Gabarito rápido</h4>
+  <table>
+    <tr><td>M-01</td><td>PC–Switch: direto · Switch–Router: direto · PC–PC: cruzado</td></tr>
+    <tr><td>M-02</td><td>Máscara 255.255.255.0 · gateway 192.168.10.1</td></tr>
+    <tr><td>M-03</td><td>gateway 192.168.20.1 · teste com ping 192.168.20.11</td></tr>
+    <tr><td>M-04</td><td>Redes distintas; falha porque o roteador não estava configurado</td></tr>
+    <tr><td>M-05</td><td>no shutdown = ativa a interface · pronto = up/up</td></tr>
+    <tr><td>M-06</td><td>Saltos: 192.168.10.1 → 192.168.20.10; switches são camada 2</td></tr>
+    <tr><td>M-07</td><td>ipconfig · pool entrega gateway + DNS</td></tr>
+    <tr><td>M-08</td><td>Roteamento entre redes · serviço HTTP</td></tr>
+    <tr><td>M-09</td><td>IP identifica · DNS traduz · HTTP entrega · Router interliga</td></tr>
+    <tr><td>FINAL</td><td>Módulo HWIC (ex.: HWIC-1GE-SFP) com roteador desligado + pool DHCP 192.168.30.0/24</td></tr>
+  </table>
+  <h4>Receitas de sabotagem (M-10 real)</h4>
+  <ul>
+    <li><b>Gateway errado:</b> PC → IP Configuration → Static → gateway 192.168.30.1</li>
+    <li><b>Cabo:</b> selecione o cabo PC2–Switch1 e Delete</li>
+    <li><b>Interface:</b> CLI Router0 → <code>interface g0/1</code> → <code>shutdown</code></li>
+    <li><b>DNS:</b> no pool: <code>dns-server 192.168.10.99</code></li>
+    <li><b>IP do servidor:</b> Server0 → IP Configuration → 192.168.10.200</li>
+  </ul>
+  <h4>Sabotagem sugerida para o capstone</h4>
+  <ul><li>Esqueça o <code>no shutdown</code> na nova interface, ou omita o <code>dns-server</code> no pool 30, ou crie o pool 30 com network errada — os PCs ficam sem IP e o aluno precisa descobrir.</li></ul>
+  <h4>Como conduzir</h4>
+  <ul><li>Projete o jogo; cada dupla executa no Packet Tracer; o jogo só valida com quiz + checklist — os pings de verdade acontecem no PT.</li>
+  <li>Na M-01, exija que observem os LEDs <b>antes</b> de liberar as respostas do cabo.</li></ul>
+  <button class="mclose">fechar</button>`);
+};
+ $('#rstBtn').onclick=()=>{
+  openModal(`<h3>${ic('rot')} Reiniciar operação</h3>
+  <p>Isso apaga o progresso, o XP e o nome do técnico neste navegador. O Packet Tracer dos alunos não é afetado.</p>
+  <button class="mclose" id="rstNo">cancelar</button>
+  <button class="btn-acc" id="rstYes" style="margin-left:10px;background:var(--bad)">apagar tudo</button>`);
+  $('#rstYes').onclick=()=>{localStorage.removeItem('backbone-save');location.reload();};
+  $('#rstNo').onclick=()=>$('#modalHost').classList.remove('on');
+};
+
+/* ---------- som on/off ---------- */
+function syncSnd(){$('#sndBtn').innerHTML=ic(save.muted?'volx':'vol');}
+ $('#sndBtn').onclick=()=>{save.muted=!save.muted;persist();syncSnd();if(!save.muted)snd.ok();};
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+const BOOTL=[
+  ['dim','NEXA LOGÍSTICA LTDA — DEPARTAMENTO DE TI'],
+  ['','> inicializando terminal de treinamento ............ <ok>OK</ok>'],
+  ['','> carregando ordem de serviço #0042 ................ <ok>OK</ok>'],
+  ['','> varrendo andar: setor ADMINISTRATIVO ............. <bad>ISOLADO</bad>'],
+  ['','> varrendo andar: setor LABORATÓRIO ................ <bad>ISOLADO</bad>'],
+  ['','> procurando técnico responsável ................... <em>VOCÊ</em>']
+];
+async function runBoot(){
+  const box=$('#bootLines');
+  for(const[cls,txt]of BOOTL){
+    const d=document.createElement('span');d.className='bl';
+    d.innerHTML=esc(txt).replace(/&lt;ok&gt;/g,'<span class="gd">OK</span>').replace(/&lt;bad&gt;/g,'<span style="color:var(--bad)">ISOLADO</span>').replace(/&lt;em&gt;/g,'<span class="em">VOCÊ</span>');
+    if(cls)d.className+=' '+cls;
+    box.appendChild(d);snd.type();
+    await new Promise(r=>setTimeout(r,420));
+  }
+  const c=document.createElement('span');c.className='bl';c.innerHTML='<span class="cursor"></span>';box.appendChild(c);
+  $('#bootTitle').style.display='block';$('#bootSub').style.display='block';
+  $('#bootForm').classList.add('on');$('#bootSkip').style.display='block';
+  $('#techName').focus();
+}
+function startApp(){
+  $('#boot').style.display='none';$('#app').classList.add('on');
+  if(!save.t0)save.t0=Date.now();
+  persist();renderNav();renderMission();renderTopo();syncSnd();
+  logAdd(`Contrato #0042 assinado por ${save.name}. Missão iniciada.`,'a');
+  toast(`Bem-vindo(a), <b>${esc(save.name)}</b>. A primeira ordem de serviço espera.`,'ok');
+}
+ $('#bootForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const v=$('#techName').value.trim();
+  if(!v){$('#techName').style.borderColor='var(--bad)';snd.err();return;}
+  save.name=v;persist();snd.done();startApp();
+});
+ $('#bootSkip').onclick=()=>{
+  const v=$('#techName').value.trim()||'Técnico Anônimo';
+  save.name=v;persist();snd.done();startApp();
+};
+setInterval(()=>{$('#clock').textContent=fmtTime(Date.now()-(save.t0||Date.now()));},1000);
+
+/* ---------- inicialização ---------- */
+if(save.name){ // sessão salva: retorna direto ao trabalho
+  $('#boot').style.display='none';$('#app').classList.add('on');
+  renderNav();renderMission();renderTopo();syncSnd();
+  setTimeout(()=>toast('Sessão restaurada. Progresso de '+save.done.length+'/'+MISSIONS.length+' missões.','ok'),600);
+}else{runBoot();}
+</script>
+</body>
+</html>
