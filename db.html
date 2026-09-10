@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 SQL QUEST — O Resgate do Banco</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Consolas, sans-serif; }
+  body {
+    background: radial-gradient(circle at 20% 20%, #0f2b1e 0%, #0a1410 50%, #050a08 100%);
+    color:#e8f5e9; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:16px;
+  }
+  #app {
+    width:100%; max-width:760px; background:#0d1f17; border:1px solid #1db95455;
+    border-radius:18px; box-shadow:0 0 40px #1db95422; padding:28px; position:relative; overflow:hidden;
+  }
+  .hidden { display:none !important; }
+  h1 { color:#1db954; font-size:1.9em; text-align:center; letter-spacing:1px; }
+  h2 { color:#1db954; margin-bottom:12px; }
+  .sub { text-align:center; color:#9fd8b4; margin-top:6px; }
+  .card { background:#12281d; border:1px solid #1db95433; border-radius:12px; padding:18px; margin:14px 0; }
+  .btn {
+    display:inline-block; background:linear-gradient(135deg,#1db954,#0f8a3d); color:#04140a; border:none;
+    padding:13px 30px; border-radius:10px; font-size:1.05em; font-weight:bold; cursor:pointer; margin:8px 6px 0 0;
+    transition:.2s; letter-spacing:.5px;
+  }
+  .btn:hover { transform:translateY(-2px); box-shadow:0 6px 18px #1db95455; }
+  .btn.secondary { background:#1e3a2b; color:#9fd8b4; border:1px solid #1db95444; }
+  .btn.hintbtn { background:#3a2f10; color:#ffd54f; border:1px solid #ffd54f55; font-size:.9em; padding:9px 18px; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px; font-size:.95em; }
+  .badge { background:#173324; border:1px solid #1db95455; padding:5px 14px; border-radius:20px; color:#1db954; font-weight:bold; }
+  .stat { color:#ffd54f; font-weight:bold; }
+  .streak { color:#ff7043; font-weight:bold; }
+  .bar { height:10px; background:#12281d; border-radius:6px; overflow:hidden; margin:8px 0 18px; }
+  .bar > div { height:100%; background:linear-gradient(90deg,#1db954,#a5ff6a); width:0%; transition:width .4s; }
+  .qtext { font-size:1.15em; line-height:1.5; margin-bottom:16px; }
+  code, pre {
+    background:#06110c; border:1px solid #1db95433; border-radius:8px; color:#a5ff6a;
+    font-family:Consolas, monospace;
+  }
+  code { padding:2px 8px; }
+  pre { padding:12px 14px; overflow-x:auto; margin:10px 0; font-size:.92em; line-height:1.5; }
+  .opt {
+    display:block; width:100%; text-align:left; background:#12281d; color:#e8f5e9;
+    border:2px solid #1db95433; border-radius:10px; padding:14px 16px; margin:9px 0;
+    font-size:1em; cursor:pointer; transition:.15s;
+  }
+  .opt:hover:not(:disabled) { border-color:#1db954; background:#173324; transform:translateX(4px); }
+  .opt .key { color:#1db954; font-weight:bold; margin-right:8px; }
+  .opt.correct { border-color:#1db954; background:#0f3a20; }
+  .opt.wrong { border-color:#e53935; background:#3a1210; }
+  .hintbox {
+    background:#2a230d; border:1px dashed #ffd54f; border-radius:10px; padding:14px; margin:12px 0;
+    color:#ffe082; animation:pop .3s ease;
+  }
+  .feedback { border-radius:10px; padding:14px; margin-top:14px; animation:pop .3s ease; line-height:1.55; }
+  .feedback.ok { background:#0f3a20; border:1px solid #1db954; }
+  .feedback.no { background:#3a1210; border:1px solid #e53935; }
+  @keyframes pop { from { transform:scale(.96); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .center { text-align:center; }
+  .big { font-size:3em; }
+  .cheat li { margin:8px 0 8px 18px; line-height:1.5; }
+  .cheat code { font-size:.88em; }
+  .stars { font-size:2em; letter-spacing:6px; }
+  .medal { font-size:4.5em; animation:pop .5s ease; }
+  table.rub { width:100%; border-collapse:collapse; margin-top:10px; font-size:.92em; }
+  table.rub td { border:1px solid #1db95433; padding:8px 10px; }
+  .mutebtn { position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.3em; cursor:pointer; }
+  .confetti { position:fixed; top:-20px; font-size:1.4em; animation:fall linear forwards; z-index:99; pointer-events:none; }
+  @keyframes fall { to { transform:translateY(105vh) rotate(720deg); opacity:.2; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <button class="mutebtn" id="mute" title="Som">🔊</button>
+
+  <!-- ===== TELA INICIAL ===== -->
+  <div id="scrStart" class="center">
+    <div class="big">🗄️⚔️</div>
+    <h1>SQL QUEST</h1>
+    <p class="sub">O Resgate do Banco de Dados</p>
+    <div class="card" style="text-align:left">
+      <b>📜 A história:</b> Você é a(o) nova(o) <b>DBA júnior</b> da Jala Corp.
+      Às 23:59 de domingo, o banco <code>empresa</code> entra em colapso e o sistema de
+      folha de pagamento para! Só alguém que domina <b>Views</b>, <b>Procedures</b> e
+      <b>Triggers</b> pode salvá-lo antes do deadline. 🕛
+      <br><br>
+      <b>🎮 Como jogar:</b>
+      <ul class="cheat">
+        <li>✅ Acerto: <b>+100 pts</b> &nbsp;|&nbsp; 🔥 Sequência: bônus progressivo</li>
+        <li>💡 Dica: <b>−30 pts</b> — use à vontade! A dica te ensina, não entrega tudo.</li>
+        <li>📖 Cada resposta vem com <b>explicação completa</b> do comando.</li>
+        <li>🏁 Nota final conforme a rubrica: Muito Bom / Bom / Precisa Melhorar.</li>
+      </ul>
+    </div>
+    <button class="btn" onclick="startGame()">▶ INICIAR MISSÃO</button>
+  </div>
+
+  <!-- ===== INTRO DE NÍVEL ===== -->
+  <div id="scrLevel" class="hidden">
+    <div class="center"><span style="font-size:3em" id="lvlIcon"></span></div>
+    <h2 class="center" id="lvlTitle"></h2>
+    <div class="card cheat" id="lvlCheat"></div>
+    <div class="center"><button class="btn" id="lvlBtn"></button></div>
+  </div>
+
+  <!-- ===== PERGUNTA ===== -->
+  <div id="scrGame" class="hidden">
+    <div class="topbar">
+      <span class="badge" id="gLevel"></span>
+      <span>Questão <b id="gNum"></b>/<span id="gTotal"></span></span>
+      <span class="stat" id="gScore">0 pts</span>
+      <span class="streak" id="gStreak"></span>
+    </div>
+    <div class="bar"><div id="gBar"></div></div>
+    <div class="qtext" id="gQ"></div>
+    <div id="gOpts"></div>
+    <div id="gHintBox"></div>
+    <button class="btn hintbtn" id="gHintBtn" onclick="useHint()">💡 Pedir dica (−30 pts)</button>
+    <div id="gFeedback"></div>
+    <div class="center"><button class="btn hidden" id="gNext" onclick="nextQuestion()">Próxima ➜</button></div>
+  </div>
+
+  <!-- ===== RESULTADO ===== -->
+  <div id="scrEnd" class="hidden center">
+    <div class="medal" id="endMedal"></div>
+    <h2 id="endTitle"></h2>
+    <p class="sub" id="endSub"></p>
+    <div class="stars" id="endStars"></div>
+    <div class="card" style="text-align:left">
+      <b>📊 Desempenho:</b><br>
+      Acertos: <b id="endHits"></b> &nbsp;|&nbsp; Pontos: <b id="endScore"></b>
+      &nbsp;|&nbsp; Dicas usadas: <b id="endHints"></b>
+      <table class="rub">
+        <tr><td>🏆 ≥ 90%</td><td><b>Muito Bom</b> — DBA Sênior! Domina os comandos.</td></tr>
+        <tr><td>⭐ 70–89%</td><td><b>Bom</b> — Algumas dúvidas pontuais a revisar.</td></tr>
+        <tr><td>📖 50–69%</td><td><b>Precisa Melhorar</b> — Reveja o material e tente de novo.</td></tr>
+        <tr><td>💪 &lt; 50%</td><td><b>Não apresentou (ainda!)</b> — Estude os módulos e recarregue.</td></tr>
+      </table>
+      <div id="endReview" style="margin-top:12px"></div>
+    </div>
+    <button class="btn" onclick="location.reload()">🔄 Jogar novamente</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ================== BANCO DE PERGUNTAS ================== */
+const LEVELS = [
+  { icon:"👁️", nome:"NÍVEL 1 — Views",
+    cheat:`<b>🧠 Revisão rápida (dicas de resolução):</b>
+    <li><code>CREATE VIEW nome AS SELECT...</code> cria a tabela virtual.</li>
+    <li><code>CREATE OR REPLACE</code> ou <code>ALTER VIEW</code> modificam sem excluir.</li>
+    <li><code>WITH CHECK OPTION</code> = trava de segurança nos INSERT/UPDATE pela view.</li>
+    <li>Views com <code>GROUP BY / DISTINCT / UNION</code> <b>não</b> são atualizáveis!</li>
+    <li>View = sempre atualizada | <code>TEMPORARY TABLE</code> = foto da sessão.</li>
+    <li>Excluir: <code>DROP VIEW [IF EXISTS] nome;</code></li>` },
+  { icon:"⚙️", nome:"NÍVEL 2 — Procedimentos Armazenados",
+    cheat:`<b>🧠 Revisão rápida (dicas de resolução):</b>
+    <li><code>DELIMITER $$</code> antes do bloco — o <code>;</code> interno não pode encerrar o CREATE.</li>
+    <li>Executar: <code>CALL nome(args);</code> (não é SELECT!)</li>
+    <li>Parâmetros: <code>IN</code> entra, <code>OUT</code> sai, <code>INOUT</code> vai e volta.</li>
+    <li>Capturar erro: <code>DECLARE EXIT HANDLER FOR SQLEXCEPTION...</code></li>
+    <li>Lançar erro: <code>SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='...'</code></li>
+    <li>Laços: <code>WHILE</code> (testa antes) | <code>REPEAT</code> (testa depois).</li>
+    <li>Tudo-ou-nada: <code>START TRANSACTION ... COMMIT / ROLLBACK</code>.</li>` },
+  { icon:"⚡", nome:"NÍVEL 3 — Triggers",
+    cheat:`<b>🧠 Revisão rápida (dicas de resolução):</b>
+    <li>Trigger dispara <b>sozinho</b> em INSERT / UPDATE / DELETE — ninguém dá CALL.</li>
+    <li>Momentos: <code>BEFORE</code> (validar/bloquear) e <code>AFTER</code> (registrar log).</li>
+    <li><code>NEW.coluna</code> = valor novo | <code>OLD.coluna</code> = valor antigo.</li>
+    <li>Bloquear operação inválida: <code>SIGNAL SQLSTATE '45000'</code> num BEFORE.</li>
+    <li>Listar: <code>SHOW TRIGGERS;</code> | Remover: <code>DROP TRIGGER nome;</code></li>` }
+];
+
+const QS = [
+/* ---------- NÍVEL 1: VIEWS ---------- */
+{ n:0, q:`O sistema de RH precisa de uma <b>"tabela virtual"</b> que mostre apenas funcionários ativos — sem duplicar dados no disco. Qual comando cria esse objeto?`,
+  o:["<code>CREATE TABLE vw_ativos AS SELECT...</code>","<code>CREATE VIEW vw_ativos AS SELECT...</code>","<code>CREATE INDEX vw_ativos ON...</code>","<code>CREATE PROCEDURE vw_ativos...</code>"],
+  a:1,
+  dica:`Views NÃO armazenam dados — só guardam a consulta SQL. O comando é CREATE + o nome do objeto "virtual" (4 letras, começa com V...).`,
+  expl:`✅ <code>CREATE VIEW vw_ativos AS SELECT ... WHERE ativo = 1;</code> — a view é uma tabela virtual: os dados continuam só na tabela-base, mas você consulta a view como se fosse tabela (<code>SELECT * FROM vw_ativos;</code>).` },
+
+{ n:0, q:`A view <code>vw_ativos</code> já existe, mas precisa ganhar a coluna <code>data_admissao</code> <b>sem ser excluída e recriada do zero</b>. Qual comando modifica a definição dela?`,
+  o:["<code>UPDATE VIEW vw_ativos SET...</code>","<code>MODIFY VIEW vw_ativos AS...</code>","<code>ALTER VIEW vw_ativos AS SELECT...</code>","<code>CHANGE vw_ativos TO...</code>"],
+  a:2,
+  dica:`Tabelas usam ALTER TABLE... então views usam ALTER + quê? 😉 (Dica extra: <code>CREATE OR REPLACE VIEW</code> também resolveria!).`,
+  expl:`✅ <code>ALTER VIEW vw_ativos AS SELECT ..., data_admissao FROM ...</code> — substitui a definição. Alternativa igualmente válida: <code>CREATE OR REPLACE VIEW</code>. Para conferir: <code>SHOW CREATE VIEW vw_ativos;</code>` },
+
+{ n:0, q:`Foi criada: <pre>CREATE VIEW vw_tec AS
+SELECT nome, salario, id_departamento
+FROM funcionarios
+WHERE id_departamento = 1
+WITH CHECK OPTION;</pre>
+O que acontece ao executar <code>INSERT INTO vw_tec VALUES ('Ana', 5000, 3);</code>?`,
+  o:["Insere normalmente no departamento 3","Erro — a linha viola o filtro da view","A linha entra, mas fica invisível","A view é recriada automaticamente"],
+  a:1,
+  dica:`O <code>WITH CHECK OPTION</code> é uma trava: só passam linhas que a PRÓPRIA view conseguiria EXIBIR depois. O departamento 3 apareceria nessa view?`,
+  expl:`✅ Erro! Com <code>WITH CHECK OPTION</code>, INSERT/UPDATE pela view só é aceito se a linha resultante continuar visível pela view (aqui, apenas <code>id_departamento = 1</code>). Sem essa cláusula, a linha entraria "escondida" — um bug clássico!` },
+
+{ n:0, q:`Qual destas views <b>NÃO pode ser atualizada</b> (INSERT/UPDATE/DELETE através dela)?`,
+  o:["<code>SELECT nome, email FROM funcionarios</code>","<code>SELECT nome, d.nome FROM f JOIN d...</code> (JOIN simples)","<code>SELECT d.nome, COUNT(*) ... GROUP BY d.nome</code>","<code>SELECT nome, salario WHERE salario &gt; 5000</code>"],
+  a:2,
+  dica:`Pense: se a view mostra "Tecnologia: 3 funcionários", qual LINHA da tabela-base o MySQL alteraria num UPDATE? Agregação "resumo" várias linhas em uma...`,
+  expl:`✅ Views com agregação (<code>COUNT/SUM/AVG</code>), <code>GROUP BY</code>, <code>HAVING</code>, <code>DISTINCT</code> ou <code>UNION</code> NÃO são atualizáveis — o banco não consegue mapear a linha agregada de volta a linhas específicas da tabela-base.` },
+
+{ n:0, q:`Qual é a principal diferença entre uma <b>VIEW</b> e uma <b>TEMPORARY TABLE</b>?`,
+  o:["View reflete dados sempre atualizados; temporária é 'foto' do momento","Temporária é virtual; view é física e ocupa espaço","View dura apenas a sessão; temporária é permanente","Não há diferença prática entre elas"],
+  a:0,
+  dica:`A view guarda só o texto SQL — toda consulta reexecuta sobre os dados REAIS. E a temporária? Ela é física e... para de existir quando?`,
+  expl:`✅ <b>View</b> = virtual; consulta a tabela-base em tempo real. <b>Temporary table</b> = física, visível só na sua sessão e destruída ao fim dela; os dados são do instante da criação. Use view para relatórios/segurança, temporária para cálculos intermediários.` },
+
+/* ---------- NÍVEL 2: PROCEDURES ---------- */
+{ n:1, q:`Ao criar uma procedure com vários comandos dentro, por que usamos <code>DELIMITER $$</code> antes do <code>CREATE PROCEDURE</code>?`,
+  o:["Para acelerar a execução da procedure","Para que os ';' internos não encerrem o CREATE antecipadamente","É obrigatório quando há parâmetros IN","Serve para abrir uma transação automática"],
+  a:1,
+  dica:`O cliente MySQL considera <code>;</code> o FIM de um comando. Dentro da procedure há vários <code>;</code>... precisamos avisar onde o bloco REALMENTE termina.`,
+  expl:`✅ Sem o <code>DELIMITER $$</code>, o MySQL "acharia" que o comando acabou no primeiro <code>;</code> interno e geraria erro de sintaxe. Ao final: <code>END $$</code> e <code>DELIMITER ;</code> para restaurar.` },
+
+{ n:1, q:`Como você <b>executa</b> a procedure <code>sp_listar()</code> no MySQL?`,
+  o:["<code>SELECT sp_listar();</code>","<code>EXEC sp_listar();</code>","<code>RUN sp_listar();</code>","<code>CALL sp_listar();</code>"],
+  a:3,
+  dica:`Procedures não são consultadas com SELECT (isso é para FUNÇÕES). Existe um comando específico de "chamar" — tem 4 letras e começa com C.`,
+  expl:`✅ <code>CALL sp_listar();</code> — em MySQL, procedures sempre são invocadas com CALL. (EXEC é do SQL Server; SELECT chama funções, não procedures.)` },
+
+{ n:1, q:`Uma procedure deve <b>receber</b> um id de departamento e <b>devolver</b> o total de funcionários. Quais modos de parâmetro usar na assinatura?`,
+  o:["(OUT p_id INT, IN p_total INT)","(IN p_id INT, OUT p_total INT)","(IN p_id INT, IN p_total INT)","(RETURN p_id INT, PARAM p_total INT)"],
+  a:1,
+  dica:`Regra mnemônica: <b>IN</b> = Informação que entra 🔽 | <b>OUT</b> = Output que sai 🔼 | <b>INOUT</b> = vai e volta. Quem entra primeiro? O id...`,
+  expl:`✅ <code>(IN p_id INT, OUT p_total INT)</code> — dentro do corpo: <code>SELECT COUNT(*) INTO p_total FROM funcionarios WHERE id_departamento = p_id;</code> e fora: <code>CALL sp(1, @t); SELECT @t;</code>` },
+
+{ n:1, q:`Dentro de uma procedure, você quer <b>capturar qualquer erro de SQL</b> e executar ROLLBACK. Qual recurso nativo do MySQL faz isso?`,
+  o:["<code>TRY ... CATCH</code>","<code>DECLARE EXIT HANDLER FOR SQLEXCEPTION</code>","<code>ON ERROR ROLLBACK</code>","<code>CATCH SQLERROR THEN</code>"],
+  a:1,
+  dica:`MySQL NÃO tem TRY/CATCH (isso é Java/SQL Server). O mecanismo nativo usa DECLARE + uma palavra que significa "manipulador" (HANDLER).`,
+  expl:`✅ <code>DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; ... END;</code> — EXIT sai do bloco ao capturar; CONTINUE executaria o próximo comando. Outros tipos: <code>SQLWARNING</code> e <code>NOT FOUND</code>.` },
+
+{ n:1, q:`Para <b>bloquear</b> uma inserção com a mensagem personalizada <i>"Salário não pode ser negativo!"</i>, qual comando LANÇA o erro de dentro do código?`,
+  o:["<code>RAISE ERROR 'mensagem'</code>","<code>THROW 45000 'mensagem'</code>","<code>SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='...'</code>","<code>ERROR 'mensagem'</code>"],
+  a:2,
+  dica:`Traduza: "sinalizar". O comando dispara um sinal de erro com o SQLSTATE reservado 45000 para erros do usuário. Começa com S...`,
+  expl:`✅ <code>SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Salário não pode ser negativo!';</code> — interrompe a operação e devolve o erro ao chamador. Muito usado com IF para validações de regra de negócio.` },
+
+{ n:1, q:`Qual estrutura de repetição testa a condição <b>ANTES</b> de executar o bloco (pode executar zero vezes)?`,
+  o:["<code>REPEAT ... UNTIL cond END REPEAT;</code>","<code>FOR i IN 1..10 DO ...</code>","<code>WHILE cond DO ... END WHILE;</code>","<code>DO ... WHILE cond;</code>"],
+  a:2,
+  dica:`Duas estruturas existem no MySQL: a que testa ANTES (enquanto...) e a que testa DEPOIS (repita... até — executa no mínimo 1 vez). E MySQL não tem FOR!`,
+  expl:`✅ <code>WHILE cond DO ... END WHILE;</code> testa antes. <code>REPEAT ... UNTIL cond END REPEAT;</code> testa depois (roda pelo menos 1x). Há ainda <code>LOOP ... LEAVE</code> (break manual). Perfeito para reajustes em lote!` },
+
+{ n:1, q:`Qual é a diferença-chave entre <b>PROCEDURE</b> e <b>FUNCTION (UDF)</b> no MySQL?`,
+  o:["Procedure sempre retorna valor único; função nunca retorna","Função retorna valor obrigatoriamente (RETURNS) e pode ser usada dentro de um SELECT","Função só serve para INSERT; procedure para SELECT","São idênticas, mudando apenas o nome do comando"],
+  a:1,
+  dica:`Compare as chamadas: procedure → <code>CALL x();</code> isolada. Função → <code>SELECT x(coluna) FROM t;</code> embutida na consulta. Qual exige RETURNS?`,
+  expl:`✅ Função: <code>CREATE FUNCTION ... RETURNS INT ... RETURN v;</code> — retorno obrigatório e uso dentro de SELECT/WHERE. Procedure: chamada via CALL, pode devolver vários result sets e gerenciar transações (COMMIT/ROLLBACK).` },
+
+{ n:1, q:`Uma procedure migrará funcionários inativos de <code>funcionarios</code> para <code>funcionarios_arquivados</code> com garantia de <b>tudo-ou-nada</b>. Qual combinação garante isso?`,
+  o:["DELETE sem WHERE + INSERT rápido","DROP TABLE e recriar do backup","START TRANSACTION ... COMMIT, com handler que faz ROLLBACK em erro","AUTO_INCREMENT=0 antes de migrar"],
+  a:2,
+  dica:`"Tudo ou nada" é a definição de T________ (transação). E se der erro no meio? O EXIT HANDLER deve desfazer tudo com R_______...`,
+  expl:`✅ <code>START TRANSACTION;</code> → INSERT no arquivo → DELETE na origem → <code>COMMIT;</code>. Com <code>DECLARE EXIT HANDLER FOR SQLEXCEPTION</code> fazendo <code>ROLLBACK;</code>, nunca fica metade migrado — atomicidade total!` },
+
+/* ---------- NÍVEL 3: TRIGGERS ---------- */
+{ n:2, q:`O auditor exige que <b>TODO</b> salário alterado gere log automaticamente — <b>sem que ninguém precise chamar nada</b>. Qual objeto faz isso sozinho?`,
+  o:["STORED PROCEDURE","VIEW","TRIGGER","FUNCTION"],
+  a:2,
+  dica:`Procedure e Function dependem de alguém chamar (CALL/SELECT). View não executa ações. Qual objeto "dispara" SOZINHO num evento da tabela? 🔫`,
+  expl:`✅ O <b>TRIGGER</b> é associado a uma tabela e dispara automaticamente em INSERT/UPDATE/DELETE. Ex.: <code>CREATE TRIGGER tr_log AFTER UPDATE ON funcionarios FOR EACH ROW ...</code> — perfeito para auditoria sem tocar na aplicação!` },
+
+{ n:2, q:`Dentro de um trigger de UPDATE na tabela <code>funcionarios</code>, como você referencia o salário <b>ANTIGO</b> e o <b>NOVO</b>?`,
+  o:["<code>ANTIGO.salario</code> e <code>NOVO.salario</code>","<code>BEFORE.salario</code> e <code>AFTER.salario</code>","<code>OLD.salario</code> e <code>NEW.salario</code>","<code>PREV.salario</code> e <code>NEXT.salario</code>"],
+  a:2,
+  dica:`Em inglês: antigo = ? (3 letras) | novo = ? (3 letras). Em triggers de DELETE só existe o antigo; em INSERT só o novo!`,
+  expl:`✅ <code>OLD.salario</code> (valor antes) e <code>NEW.salario</code> (valor depois). Uso clássico de histórico: <code>IF OLD.salario &lt;&gt; NEW.salario THEN INSERT INTO historico ...</code>` },
+
+{ n:2, q:`Um trigger deve <b>IMPEDIR</b> salário negativo ANTES da linha ser gravada. Qual combinação correta?`,
+  o:["AFTER INSERT + ROLLBACK geral","BEFORE INSERT + <code>SIGNAL SQLSTATE '45000'</code> quando NEW.salario &lt; 0","BEFORE INSERT + <code>SET OLD.salario = 0</code>","UPDATE trigger + DELETE da linha"],
+  a:1,
+  dica:`Para BLOQUEAR, o trigger precisa rodar ANTES da gravação (B_____?). E para abortar a operação, lance o erro com o comando S______ do nível 2! 😉`,
+  expl:`✅ <code>BEFORE INSERT ... IF NEW.salario &lt; 0 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Salário negativo!'; END IF;</code> — o SIGNAL aborta a operação. AFTER só roda DEPOIS (bom para LOG, tarde para bloquear). E OLD não existe em BEFORE INSERT!` },
+
+{ n:2, q:`Para auditar o banco, você quer <b>listar todos os triggers</b> existentes. Qual comando usa?`,
+  o:["<code>SELECT * FROM triggers;</code>","<code>LIST TRIGGERS;</code>","<code>DESCRIBE TRIGGERS;</code>","<code>SHOW TRIGGERS;</code>"],
+  a:3,
+  dica:`Siga o padrão do MySQL: SHOW TABLES, SHOW DATABASES, SHOW CREATE VIEW... qual verbo elas todas usam?`,
+  expl:`✅ <code>SHOW TRIGGERS;</code> — ou via catálogo: <code>SELECT TRIGGER_NAME, EVENT_MANIPULATION, ACTION_TIMING FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA='empresa';</code> | Remover: <code>DROP TRIGGER IF EXISTS nome;</code>` }
+];
+
+/* ================== ESTADO ================== */
+let idx = 0, score = 0, streak = 0, hits = 0, hintsUsed = 0;
+let wrongList = [], answered = false, hintOn = false;
+const $ = id => document.getElementById(id);
+
+/* ================== SOM ================== */
+let muted = false;
+let actx = null;
+function beep(freqs, dur=0.12, type="sine", vol=0.15){
+  if(muted) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    freqs.forEach((f,i)=>{
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(vol, actx.currentTime + i*dur);
+      g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + i*dur + dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start(actx.currentTime + i*dur); o.stop(actx.currentTime + i*dur + dur);
+    });
+  }catch(e){}
+}
+ $("mute").onclick = () => { muted = !muted; $("mute").textContent = muted ? "🔇" : "🔊"; };
+
+/* ================== FLUXO ================== */
+function show(id){ ["scrStart","scrLevel","scrGame","scrEnd"].forEach(s=>$(s).classList.add("hidden")); $(id).classList.remove("hidden"); }
+
+function startGame(){ beep([440,660],0.1); showLevel(0); }
+
+function showLevel(n){
+  const lvl = LEVELS[n];
+  $("lvlIcon").textContent = lvl.icon;
+  $("lvlTitle").textContent = lvl.nome;
+  $("lvlCheat").innerHTML = "<ul class='cheat'>" + lvl.cheat + "</ul>";
+  $("lvlBtn").textContent = "▶ Começar " + lvl.nome.split("—")[0];
+  $("lvlBtn").onclick = () => { beep([523,659,784],0.09); showQuestion(firstOf(n)); };
+  show("scrLevel");
+}
+
+function firstOf(n){ return QS.findIndex(q => q.n === n); }
+function nextOfSameLevel(n, from){ for(let i=from+1;i<QS.length;i++) if(QS[i].n===n) return i; return -1; }
+
+function showQuestion(i){
+  idx = i; answered = false; hintOn = false;
+  const q = QS[i], lvl = LEVELS[q.n];
+  $("gLevel").textContent = lvl.icon + " " + lvl.nome.split("—")[1].trim();
+  $("gNum").textContent = QS.filter((x,j)=>x.n===q.n && j<=i).length;
+  $("gTotal").textContent = QS.filter(x=>x.n===q.n).length;
+  $("gBar").style.width = (i / QS.length * 100) + "%";
+  $("gScore").textContent = score + " pts";
+  $("gStreak").textContent = streak >= 2 ? "🔥 x" + streak : "";
+  $("gQ").innerHTML = q.q;
+  $("gHintBox").innerHTML = "";
+  $("gHintBtn").disabled = false;
+  $("gFeedback").innerHTML = "";
+  $("gNext").classList.add("hidden");
+
+  const keys = ["①","②","③","④"];
+  $("gOpts").innerHTML = "";
+  q.o.forEach((opt,j)=>{
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.innerHTML = "<span class='key'>" + keys[j] + "</span>" + opt;
+    b.onclick = () => answer(j, b);
+    $("gOpts").appendChild(b);
+  });
+  show("scrGame");
+}
+
+function useHint(){
+  if(answered || hintOn) return;
+  hintOn = true; hintsUsed++;
+  score = Math.max(0, score - 30);
+  $("gScore").textContent = score + " pts";
+  $("gHintBox").innerHTML = "<div class='hintbox'>💡 <b>Dica de resolução:</b><br>" + QS[idx].dica + "</div>";
+  $("gHintBtn").disabled = true;
+  beep([700],0.1,"triangle");
+}
+
+function answer(j, btn){
+  if(answered) return;
+  answered = true;
+  const q = QS[idx];
+  const opts = document.querySelectorAll(".opt");
+  opts.forEach(b => b.disabled = true);
+  opts[q.a].classList.add("correct");
+
+  if(j === q.a){
+    streak++; hits++;
+    const bonus = streak >= 2 ? Math.min(streak*20, 100) : 0;
+    const pts = (hintOn ? 70 : 100) + bonus;
+    score += pts;
+    $("gFeedback").innerHTML = "<div class='feedback ok'>✅ <b>Correto!</b> +" + pts + " pts" +
+      (bonus ? " (🔥 sequência +" + bonus + ")" : "") + (hintOn ? " <i>(usou dica: base 70)</i>" : "") +
+      "<br><br>" + q.expl + "</div>";
+    beep([523,659,784,1047],0.09);
+    confetti(12);
+  } else {
+    btn.classList.add("wrong");
+    streak = 0;
+    wrongList.push(q);
+    $("gFeedback").innerHTML = "<div class='feedback no'>❌ <b>Não foi essa...</b> A resposta certa está destacada em verde.<br><br>" + q.expl + "</div>";
+    beep([330,247,196],0.14,"sawtooth",0.12);
+  }
+  $("gScore").textContent = score + " pts";
+  $("gNext").classList.remove("hidden");
+  $("gNext").textContent = (nextOfSameLevel(q.n, idx) !== -1) ? "Próxima ➜" : "Avançar 🏁";
+}
+
+function nextQuestion(){
+  const q = QS[idx];
+  const nxt = nextOfSameLevel(q.n, idx);
+  if(nxt !== -1){ showQuestion(nxt); return; }
+  const nextLvl = q.n + 1;
+  if(nextLvl < LEVELS.length && firstOf(nextLvl) !== -1){ showLevel(nextLvl); return; }
+  showEnd();
+}
+
+function showEnd(){
+  const pct = Math.round(hits / QS.length * 100);
+  $("endHits").textContent = hits + "/" + QS.length;
+  $("endScore").textContent = score;
+  $("endHints").textContent = hintsUsed;
+
+  let medal, title, sub, stars;
+  if(pct >= 90){ medal="🏆"; title="MUITO BOM — DBA Lendário!"; sub="Você domina os comandos e salvaria o banco antes das 23:59!"; stars="⭐⭐⭐⭐⭐"; confetti(80); }
+  else if(pct >= 70){ medal="🥈"; title="BOM — DBA em ascensão!"; sub="Algumas dúvidas pontuais — revise as questões erradas."; stars="⭐⭐⭐⭐"; confetti(30); }
+  else if(pct >= 50){ medal="🥉"; title="PRECISA MELHORAR"; sub="Releia o material didático e encare o desafio novamente!"; stars="⭐⭐⭐"; }
+  else { medal="📚"; title="MISSÃO INCOMPLETA"; sub="Volte aos módulos de Views, Procedures e Triggers — o banco conta com você!"; stars="⭐⭐"; }
+
+  $("endMedal").textContent = medal;
+  $("endTitle").textContent = title;
+  $("endSub").textContent = sub;
+  $("endStars").textContent = stars;
+
+  if(wrongList.length){
+    $("endReview").innerHTML = "<b>🔎 Para revisar:</b><ul class='cheat'>" +
+      wrongList.map(q => "<li>" + q.q.replace(/<[^>]+>/g,"").slice(0,80) + "…</li>").join("") + "</ul>";
+  } else {
+    $("endReview").innerHTML = "🌟 <b>Perfeito!</b> Nenhuma questão errada. Pronto para a Atividade #1!";
+  }
+  beep([392,523,659,784,1047],0.12);
+  show("scrEnd");
+}
+
+function confetti(n){
+  const em = ["🎉","✨","💾","🟩","⭐"];
+  for(let i=0;i<n;i++){
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.textContent = em[Math.floor(Math.random()*em.length)];
+    c.style.left = Math.random()*100 + "vw";
+    c.style.animationDuration = (2 + Math.random()*2) + "s";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 4200);
+  }
+}
+
+/* Teclado: 1-4 responde, Enter avança, H = dica */
+document.addEventListener("keydown", e => {
+  if($("scrGame").classList.contains("hidden")) return;
+  if(e.key === "h" || e.key === "H") useHint();
+  if(["1","2","3","4"].includes(e.key)){
+    const b = document.querySelectorAll(".opt")[+e.key - 1];
+    if(b && !answered) b.click();
+  }
+  if(e.key === "Enter" && answered) $("gNext").click();
+});
+</script>
+</body>
+</html>
