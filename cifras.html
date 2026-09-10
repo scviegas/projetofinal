@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Arquivo Morto · o cofre das sete fechaduras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDE8DC; --paper2:#E2DBC8; --ink:#171310; --soft:#6E6455;
+  --red:#D6371C; --line:rgba(23,19,16,.18);
+  --disp:'Archivo Black',sans-serif; --mono:'IBM Plex Mono',monospace;
+  --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scrollbar-color:#4a443a var(--paper)}
+body{background:var(--paper);color:var(--ink);font-family:var(--mono);min-height:100vh;-webkit-font-smoothing:antialiased}
+.noise{position:fixed;inset:0;background-image:var(--noise);opacity:.055;pointer-events:none;z-index:60}
+::selection{background:var(--red);color:var(--paper)}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.hidden{display:none!important}
+.screen{animation:fadeUp .5s ease both;min-height:100vh}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes bump{40%{transform:scale(1.25)}}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+/* ─── botões ─── */
+.btn{font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+ padding:13px 22px;border:2px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;
+ transition:transform .14s,box-shadow .14s,background .14s,color .14s}
+.btn:hover{background:var(--red);border-color:var(--red);transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink)}
+.btn:active{transform:translate(0,0);box-shadow:none}
+.btn2{background:transparent;color:var(--ink)}
+.btn2:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn-block{width:100%}
+.txt-btn{font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+ background:none;border:1.5px solid var(--line);color:var(--soft);padding:8px 11px;cursor:pointer;transition:.15s}
+.txt-btn:hover:not(:disabled){border-color:var(--ink);color:var(--ink)}
+.txt-btn:disabled{opacity:.35;cursor:default}
+
+/* ─── intro ─── */
+.wrap{max-width:880px;margin:0 auto;padding:64px 26px 90px}
+.overline{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--soft);display:flex;align-items:center;gap:14px}
+.overline::after{content:'';flex:1;height:2px;background:var(--ink)}
+.title{font-family:var(--disp);font-size:clamp(58px,11vw,138px);line-height:.9;text-transform:uppercase;margin:26px 0 8px}
+.title .out{color:transparent;-webkit-text-stroke:2.5px var(--ink)}
+.subtitle{font-size:12px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--red);margin-bottom:24px}
+.lede{font-size:14px;line-height:1.8;color:var(--soft);max-width:62ch;margin-bottom:34px}
+.lede strong{color:var(--ink)}
+.idx-head{font-size:10px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:2px}
+.idx-row{display:grid;grid-template-columns:46px 1fr auto 90px;gap:10px;align-items:baseline;padding:11px 8px;border-bottom:1px solid var(--line);font-size:13px;transition:.12s;cursor:default}
+.idx-row .n{font-family:var(--disp);font-size:15px;color:var(--red)}
+.idx-row .dots{border-bottom:2px dotted var(--line);transform:translateY(-3px)}
+.idx-row .yr{font-size:11px;color:var(--soft);text-align:right;letter-spacing:.06em}
+.idx-row:hover{background:var(--ink);color:var(--paper)}
+.idx-row:hover .n{color:var(--paper)}
+.idx-row:hover .yr{color:rgba(237,232,220,.6)}
+.start-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:34px}
+.best-line{font-size:11px;letter-spacing:.12em;color:var(--soft)}
+.stamp-deco{position:absolute;top:52px;right:36px;border:3px solid var(--red);outline:1.5px solid var(--red);outline-offset:3px;
+ color:var(--red);font-family:var(--disp);font-size:13px;letter-spacing:.24em;padding:8px 10px 8px 14px;transform:rotate(7deg);opacity:.85;pointer-events:none}
+.barcode{width:130px;height:30px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 5px,var(--ink) 5px 6px,transparent 6px 11px);opacity:.85}
+.intro-wrap{position:relative}
+.foot-note{margin-top:44px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--soft)}
+
+/* ─── HUD ─── */
+.hud{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+ padding:12px 22px;border-bottom:2px solid var(--ink);background:var(--paper);font-size:10.5px;font-weight:700;letter-spacing:.14em}
+.hud strong{font-size:14px;letter-spacing:.04em}
+.hud-cell{display:flex;align-items:center;gap:9px;white-space:nowrap}
+#hud-score{display:inline-block}
+#hud-score.bump{animation:bump .3s}
+.locks{display:flex;gap:5px;margin:0 auto}
+.lock{width:25px;height:25px;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.lock.done{background:var(--red);border-color:var(--red);color:var(--paper)}
+.lock.cur{border-color:var(--red);color:var(--red);animation:pulseB 1.1s infinite}
+@keyframes pulseB{50%{background:var(--red);color:var(--paper)}}
+
+/* ─── grade do jogo ─── */
+.game-grid{max-width:1180px;margin:0 auto;padding:34px 22px 90px;display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:36px;align-items:start}
+.game-grid.locked .panel{opacity:.55;pointer-events:none;transition:opacity .4s}
+.panel{border:2px solid var(--ink);background:var(--paper)}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--ink);color:var(--paper);padding:10px 14px;font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
+.panel-head .tag{color:rgba(237,232,220,.55);font-weight:400;letter-spacing:.12em}
+.panel-body{padding:18px 20px 22px;position:relative}
+.blurb{font-size:12.5px;line-height:1.7;color:var(--soft);border-left:3px solid var(--red);padding-left:12px;margin-bottom:20px}
+.sec-label{font-size:9.5px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--soft);margin-bottom:12px}
+
+/* carimbo DESTRANCADA */
+.stamp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5}
+.stamp-inner{display:flex;flex-direction:column;align-items:center;gap:4px;border:4px solid var(--red);outline:1.5px solid var(--red);outline-offset:3px;
+ color:var(--red);background:rgba(237,232,220,.82);padding:12px 24px;font-family:var(--disp);font-size:clamp(24px,4vw,34px);letter-spacing:.14em;
+ transform:rotate(-7deg) scale(2.3);opacity:0}
+.stamp-inner small{font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:.32em}
+.panel-body.solved .stamp-inner{animation:stampIn .5s cubic-bezier(.25,1.5,.35,1) .12s forwards}
+@keyframes stampIn{0%{opacity:0;transform:rotate(-7deg) scale(2.3)}70%{opacity:1;transform:rotate(-7deg) scale(.96)}100%{opacity:.95;transform:rotate(-7deg) scale(1)}}
+
+/* resultado do nível */
+.result{border-top:2px solid var(--ink);margin-top:22px;padding-top:18px;display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center;animation:fadeUp .4s ease both}
+.result .lr-line{font-size:11px;font-weight:700;letter-spacing:.26em}
+.result .lr-pts{font-family:var(--disp);font-size:30px;color:var(--red)}
+.result .lr-detail{font-size:11px;color:var(--soft);letter-spacing:.05em;line-height:1.6}
+
+/* ─── ferramentas por nível ─── */
+.letters{display:flex;gap:8px;flex-wrap:wrap}
+.lt{width:44px;height:52px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;
+ font-family:var(--disp);font-size:22px;cursor:pointer;background:var(--paper);transition:.12s;user-select:none}
+.lt:hover{background:var(--ink);color:var(--paper)}
+.readout{margin-top:16px;padding-top:12px;border-top:1.5px dashed var(--line);font-size:13px;font-weight:700;letter-spacing:.08em;min-height:34px}
+.readout b{color:var(--red)}
+.mirror-strip{display:grid;grid-template-columns:repeat(13,1fr);gap:5px}
+.mcell{border:1.5px solid var(--line);padding:7px 2px 6px;text-align:center;cursor:pointer;transition:.12s;user-select:none}
+.mcell .p{font-family:var(--disp);font-size:16px;display:block}
+.mcell .m{font-size:10px;color:var(--soft);letter-spacing:.1em}
+.mcell:hover{border-color:var(--ink)}
+.mcell.on{background:var(--ink);border-color:var(--ink)}
+.mcell.on .p{color:var(--paper)}
+.mcell.on .m{color:var(--red)}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:300px;overflow:auto;padding-right:4px}
+.chip{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border:1.5px solid var(--line);
+ padding:8px 10px;background:none;cursor:pointer;font-family:var(--mono);transition:.12s}
+.chip b{font-size:10px;color:var(--red);letter-spacing:.08em}
+.chip span{font-size:13px;font-weight:700;letter-spacing:.22em}
+.chip:hover{border-color:var(--ink)}
+.chip.on{background:var(--ink);border-color:var(--ink)}
+.chip.on span{color:var(--paper)}
+.chip.on b{color:var(--red)}
+.cipher-big{font-family:var(--disp);font-size:clamp(38px,6vw,58px);letter-spacing:.14em;min-height:70px;display:flex;align-items:center;gap:16px}
+.cipher-big .k-tag{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--red)}
+.mrow{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.mgroup{display:flex;align-items:center;gap:5px;padding-bottom:4px;border-bottom:2px solid var(--ink)}
+.mdot{width:9px;height:9px;border-radius:50%;background:var(--ink);display:inline-block}
+.mdash{width:26px;height:9px;background:var(--ink);display:inline-block}
+.msep{color:var(--soft);font-weight:700;margin:0 4px}
+.lamp{width:48px;height:48px;border-radius:50%;border:2.5px solid var(--ink);flex:none;transition:background .06s}
+.lamp.on{background:var(--red)}
+.mref{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:5px}
+.mref div{border:1.5px solid var(--line);padding:5px 8px;font-size:12px;display:flex;gap:7px;align-items:baseline}
+.mref b{font-family:var(--disp);font-size:13px}
+.mref span{letter-spacing:.12em;color:var(--soft)}
+.pg-wrap{overflow-x:auto}
+table.pg{border-collapse:collapse;width:100%}
+table.pg th,table.pg td{border:1.5px solid var(--line);width:34px;height:34px;text-align:center;font-size:13px;font-weight:700}
+table.pg th{color:var(--red);font-size:11px;background:var(--paper2)}
+table.pg td{cursor:pointer;transition:.1s}
+table.pg td:hover{background:var(--ink);color:var(--paper)}
+table.pg td.flash{background:var(--red);color:var(--paper)}
+.pairs{display:flex;gap:8px;flex-wrap:wrap}
+.pair-chip{border:2px solid var(--ink);padding:8px 12px;font-family:var(--disp);font-size:19px;cursor:pointer;transition:.12s;user-select:none}
+.pair-chip:hover{background:var(--red);border-color:var(--red);color:var(--paper)}
+#zig .rail{stroke:var(--line);stroke-width:1.5;stroke-dasharray:2 6}
+#zig .zpath{fill:none;stroke:var(--ink);stroke-width:2}
+#zig .zl{font-family:var(--disp);font-size:21px;fill:var(--ink);opacity:0;transform:translateY(-9px);transition:opacity .35s,transform .35s}
+#zig.dist .zl{opacity:1;transform:none}
+#zig .zn{font-family:var(--mono);font-weight:700;font-size:10px;fill:var(--red);opacity:0;transition:opacity .3s}
+#zig.dist .zn{opacity:1}
+.howto{margin:0 0 16px 16px;font-size:12px;line-height:1.8;color:var(--soft)}
+.howto b{color:var(--ink)}
+.bits-note{font-size:10px;letter-spacing:.18em;color:var(--soft);text-align:center;margin-bottom:12px;font-weight:700}
+.bytes{display:flex;flex-wrap:wrap;gap:18px}
+.byte-g{display:flex;flex-direction:column;gap:7px}
+.sws{display:flex;gap:4px}
+.sw{width:19px;height:26px;border:1.5px solid var(--ink);background:transparent;cursor:pointer;padding:0;transition:background .1s}
+.sw.on{background:var(--red);border-color:var(--red)}
+.dec{font-size:12px;font-weight:700;text-align:center;letter-spacing:.1em}
+.dec small{display:block;font-size:8.5px;letter-spacing:.24em;color:var(--soft);font-weight:700}
+.atable{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.atable div{border:1.5px solid var(--line);padding:5px 9px;font-size:12px;display:flex;justify-content:space-between}
+.atable b{font-family:var(--disp)}
+.atable span{color:var(--soft)}
+.vig-pairs{display:flex;gap:6px;flex-wrap:wrap}
+.vp{display:flex;flex-direction:column;align-items:center;width:34px}
+.vp .k{font-size:11px;font-weight:700;color:var(--red);letter-spacing:.1em}
+.vp .c{font-family:var(--disp);font-size:22px;border-top:2px solid var(--ink);width:100%;text-align:center;padding-top:3px}
+.calc{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:10px}
+.calc label{font-size:9px;font-weight:700;letter-spacing:.22em;color:var(--soft);display:block;margin-bottom:5px;text-transform:uppercase}
+.calc select{width:100%;font-family:var(--mono);font-weight:700;font-size:16px;padding:9px;border:2px solid var(--ink);background:var(--paper);cursor:pointer}
+.calc .btn{padding:10px 14px;font-size:11px}
+.vg-out{display:flex;align-items:center;gap:14px;border:1.5px dashed var(--line);padding:10px 14px;margin-bottom:16px;min-height:56px}
+.vg-out .big{font-family:var(--disp);font-size:30px;min-width:40px;text-align:center;color:var(--red)}
+.vg-out .fx{font-size:12px;font-weight:700;letter-spacing:.05em;line-height:1.5}
+.vt-wrap{overflow:auto;max-height:340px;border:1.5px solid var(--line)}
+table.vt{border-collapse:collapse;font-size:9.5px}
+table.vt th,table.vt td{width:14px;height:15px;min-width:14px;text-align:center;font-weight:500;padding:0;border:1px solid rgba(23,19,16,.07)}
+table.vt th{background:var(--paper2);color:var(--red);font-weight:700;position:sticky;z-index:2}
+table.vt thead th{top:0}
+table.vt tbody th{left:0}
+table.vt td{cursor:crosshair}
+table.vt td.hl{background:var(--red);color:var(--paper);font-weight:700}
+table.vt th.hl2{background:var(--red);color:var(--paper)}
+.vt-read{margin-top:9px;font-size:11.5px;font-weight:700;letter-spacing:.08em;min-height:18px}
+.vt-read b{color:var(--red)}
+
+/* ─── rodapé do painel de ferramentas ─── */
+.tool-foot{border-top:2px solid var(--ink);padding:16px 18px 18px}
+.tool-foot label{display:block;font-size:9px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--soft);margin-bottom:8px}
+.ans-row{display:flex;gap:8px}
+.ans-input{flex:1;min-width:0;border:2px solid var(--ink);background:transparent;font-family:var(--mono);font-weight:700;
+ font-size:17px;letter-spacing:.28em;text-transform:uppercase;padding:11px 12px}
+.ans-input:focus{outline:none;border-color:var(--red)}
+.ans-input.err{animation:shake .35s;border-color:var(--red)}
+.foot-line{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.kbd-note{font-size:9px;letter-spacing:.16em;color:var(--soft);text-transform:uppercase}
+.hint-callout{margin-top:12px;border:1.5px dashed var(--red);color:var(--red);padding:10px 12px;font-size:11.5px;line-height:1.6;font-weight:500;animation:fadeUp .3s ease both}
+
+/* ─── toast ─── */
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);background:var(--ink);color:var(--paper);
+ font:700 12px var(--mono);letter-spacing:.08em;padding:12px 20px;opacity:0;pointer-events:none;transition:.25s;z-index:80;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.err{background:var(--red)}
+
+/* ─── tela final ─── */
+#screen-end{position:relative;display:flex;align-items:center;justify-content:center;padding:60px 22px;overflow:hidden}
+.vault{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:min(300px,64vw);transition:transform .8s cubic-bezier(.6,0,.3,1),opacity .7s}
+.vault.away{transform:translate(-50%,-50%) rotate(50deg) scale(.4);opacity:0;pointer-events:none}
+#vHandle{transform-box:fill-box;transform-origin:center;transition:transform 1s cubic-bezier(.5,.1,.2,1)}
+.vault.open #vHandle{transform:rotate(120deg)}
+.end-card{max-width:620px;width:100%;opacity:0;transform:translateY(22px);transition:.7s ease .1s;position:relative;z-index:2}
+.end-card.show{opacity:1;transform:none}
+.end-title{font-family:var(--disp);font-size:clamp(38px,7vw,68px);line-height:.95;text-transform:uppercase;margin:14px 0 6px}
+.end-title .out{color:transparent;-webkit-text-stroke:2px var(--ink)}
+.end-sub{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:24px}
+.report{border-top:2px solid var(--ink);padding-top:16px;display:flex;flex-direction:column;gap:10px}
+.rrow{display:flex;align-items:baseline;gap:10px;font-size:13px}
+.rrow .dots{flex:1;border-bottom:2px dotted var(--line);transform:translateY(-3px)}
+.rrow b{font-size:14px}
+.rrow.score{border-top:3px double var(--ink);padding-top:12px;margin-top:4px}
+.rrow.score b{font-family:var(--disp);font-size:28px;color:var(--red)}
+.rank{align-self:flex-start;border:3px solid var(--red);outline:1.5px solid var(--red);outline-offset:3px;color:var(--red);
+ padding:9px 12px 9px 18px;font-weight:700;font-size:13px;letter-spacing:.22em;transform:rotate(-3deg);margin:14px 0 4px;text-transform:uppercase}
+.end-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:22px}
+
+@media (max-width:1020px){
+  .game-grid{grid-template-columns:1fr;padding:22px 14px 70px;gap:24px}
+  .hud{padding:10px 12px;gap:10px;font-size:9.5px}
+  .locks{order:5;width:100%;justify-content:center}
+  .wrap{padding:48px 18px 70px}
+  .stamp-deco{right:12px;top:34px;font-size:10px}
+  .mirror-strip{grid-template-columns:repeat(9,1fr)}
+  .calc{grid-template-columns:1fr 1fr}
+  .calc .btn{grid-column:1/-1}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="noise" aria-hidden="true"></div>
+
+<!-- ══════ INTRO ══════ -->
+<section id="screen-intro" class="screen">
+  <div class="wrap intro-wrap">
+    <div class="stamp-deco">CONFIDENCIAL</div>
+    <p class="overline">Diretoria de segurança · processo nº 71/09 · não circule</p>
+    <h1 class="title">Arquivo<br><span class="out">Morto</span></h1>
+    <p class="subtitle">O cofre das sete fechaduras</p>
+    <p class="lede">Em 1971, a última arquivista do 9º andar trancou o cofre do arquivo morto e nunca mais apareceu. Sete fechaduras o protegem — <strong>cada uma com uma cifra clássica de outra época</strong>. Você é o decodificador contratado para reabri-lo. Cada fechadura exige uma senha exata: leia o texto interceptado, use a ferramenta certa e digite a palavra.</p>
+    <p class="idx-head">Índice das fechaduras</p>
+    <div id="index"></div>
+    <div class="start-row">
+      <button id="startBtn" class="btn">Forçar a 1ª fechadura →</button>
+      <span class="best-line hidden" id="bestLine"></span>
+    </div>
+    <div class="foot-note">
+      <span>7 cifras · 1 cofre · nada sai do seu navegador</span>
+      <div class="barcode" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ JOGO ══════ -->
+<section id="screen-game" class="screen hidden">
+  <header class="hud">
+    <div class="hud-cell">FECHADURA <strong id="hud-level">01/07</strong></div>
+    <div class="hud-cell"><strong id="hud-time">00:00</strong></div>
+    <div class="locks" id="locks"></div>
+    <div class="hud-cell"><strong id="hud-score">0</strong>&nbsp;PTS</div>
+    <button id="sndBtn" class="txt-btn" type="button">Som: ligado</button>
+    <button id="quitBtn" class="txt-btn" type="button">Sair</button>
+  </header>
+
+  <main class="game-grid" id="gameGrid">
+    <article class="panel">
+      <div class="panel-head"><span id="stageTitle">§ 01 — ATBASH</span><span class="tag" id="stageTag">ARQUIVO Nº 01</span></div>
+      <div class="panel-body" id="stageBody"></div>
+    </article>
+    <aside class="panel">
+      <div class="panel-head"><span>Banco de ferramentas</span><span class="tag" id="toolTag">FECHADURA 01</span></div>
+      <div class="panel-body" id="toolBody" style="border-bottom:2px solid var(--ink)"></div>
+      <div class="tool-foot">
+        <label for="ans">Senha encontrada</label>
+        <form id="ansForm" class="ans-row">
+          <input id="ans" class="ans-input" autocomplete="off" spellcheck="false" maxlength="14" aria-label="Senha encontrada"/>
+          <button class="btn" type="submit">Testar</button>
+        </form>
+        <div class="foot-line">
+          <span class="kbd-note">enter testa a senha · erros custam 25 pts</span>
+          <button id="hintBtn" class="txt-btn" type="button">Dica −120</button>
+        </div>
+        <div id="hintBox" class="hint-callout hidden"></div>
+      </div>
+    </aside>
+  </main>
+</section>
+
+<!-- ══════ FINAL ══════ -->
+<section id="screen-end" class="screen hidden">
+  <svg class="vault" id="vault" viewBox="0 0 240 240" aria-hidden="true">
+    <circle cx="120" cy="120" r="112" fill="var(--paper2)" stroke="var(--ink)" stroke-width="3"/>
+    <g fill="var(--ink)" id="bolts"></g>
+    <circle cx="120" cy="120" r="80" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/>
+    <g id="vHandle" stroke="var(--red)" stroke-width="9" stroke-linecap="round">
+      <line x1="120" y1="120" x2="120" y2="52"/><line x1="120" y1="120" x2="179" y2="154"/><line x1="120" y1="120" x2="61" y2="154"/>
+    </g>
+    <circle cx="120" cy="120" r="15" fill="var(--ink)"/>
+  </svg>
+  <div class="end-card" id="endCard">
+    <p class="overline">Relatório de abertura · processo nº 71/09</p>
+    <h2 class="end-title">Cofre <span class="out">aberto</span></h2>
+    <p class="end-sub">A palavra dentro era LIBERDADE</p>
+    <div class="report">
+      <div class="rrow"><span>Fechaduras destrancadas</span><span class="dots"></span><b id="rSolved">—</b></div>
+      <div class="rrow"><span>Tentativas negadas</span><span class="dots"></span><b id="rWrong">—</b></div>
+      <div class="rrow"><span>Dicas consultadas</span><span class="dots"></span><b id="rHints">—</b></div>
+      <div class="rrow"><span>Tempo de operação</span><span class="dots"></span><b id="rTime">—</b></div>
+      <div class="rrow score"><span>PONTUAÇÃO FINAL</span><span class="dots"></span><b id="rScore">—</b></div>
+    </div>
+    <div class="rank" id="rank"></div>
+    <p class="best-line" id="endBest" style="margin-top:10px"></p>
+    <div class="end-actions">
+      <button id="againBtn" class="btn">Fechar o cofre e recomeçar →</button>
+    </div>
+  </div>
+</section>
+
+<div id="toast" role="status"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ════════ dados das 7 fechaduras ════════ */
+const LEVELS=[
+ {name:'ATBASH',year:'séc. VI a.C.',cipher:'SVTIVWL',answer:'SEGREDO',
+  blurb:'Inverter o alfabeto: a primeira letra troca com a última, a segunda com a penúltima. Usado há ~2.500 anos para o hebraico — A⇄Z, B⇄Y, C⇄X…',
+  hint:'O espelho é fixo: cifrada S vira plana H, cifrada V vira plana E. Toque nas letras e monte a palavra.'},
+ {name:'CÉSAR',year:'58 a.C.',cipher:'JVMYL',answer:'COFRE',
+  blurb:'Cada letra foi deslocada k posições no alfabeto. Júlio César usava k=3. Com apenas 25 chaves possíveis, a força bruta sempre vence.',
+  hint:'São só 25 linhas. Percorra o k até surgir uma palavra portuguesa — a fechadura é um objeto, não um conceito.'},
+ {name:'MORSE',year:'1838',cipher:'OURO',answer:'OURO',
+  blurb:'Pontos e traços inventados para o telégrafo. Cada letra tem seu ritmo próprio — ouça a transmissão e consulte a tabela.',
+  hint:'Três traços (— — —) são a letra O. Dois pontos e um traço (··−) são a letra U.'},
+ {name:'POLIÚBIO',year:'~150 a.C.',cipher:'TESOURO',answer:'TESOURO',
+  blurb:'Um quadrado grego 5×5: cada letra vira um par linha-coluna. I e J dividem a mesma casa. O primeiro número é a linha; o segundo, a coluna.',
+  hint:'44 = linha 4, coluna 4. Toque em cada par interceptado e observe onde a grade acende.'},
+ {name:'CERCA',year:'1865',cipher:'BEADIANR',answer:'BANDEIRA',
+  blurb:'Escrever a mensagem em zigue-zague sobre 3 trilhos e ler trilho a trilho. Popular na Guerra Civil Americana. Para decifrar: distribuir e ler na diagonal.',
+  hint:'As 2 primeiras letras cifradas vão para o trilho 1; as 4 seguintes para o trilho 2; as 2 últimas para o trilho 3. Depois siga os números 1→8.'},
+ {name:'BINÁRIO',year:'1963 · ASCII',cipher:'CHAVE',answer:'CHAVE',
+  blurb:'No ASCII, toda letra é um número: A=65, B=66… E todo número pode ser escrito em binário, ligando posições que valem 128, 64, 32, 16, 8, 4, 2 e 1.',
+  hint:'Some os pesos das posições ligadas de cada grupo e procure o total na tabela ASCII. 01000011 = 64+2+1 = 67.'},
+ {name:'VIGENÈRE',year:'1553',cipher:'DWMWFOSRP',key:'SOL',answer:'LIBERDADE',
+  blurb:'Uma César cujo deslocamento muda letra a letra segundo uma chave — por 300 anos chamada de “a cifra indecifrável”. Chave interceptada: SOL. Para decifrar: P = (C − K) mod 26.',
+  hint:'Na linha da letra da chave, ache a letra cifrada; a coluna dela é a letra plena. Ex.: chave S com cifrada D → coluna L.'}
+];
+const MORSE={A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',
+ L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..'};
+const PG_ROWS=['ABCDE','FGHIJ','KLMNOP','PQRST'+'UVWXY'?'PQRST':'','UVWXY','Z']&&['ABCDE','FGHIJ','KLMNOP','PQRST','UVWXY'];
+PG_ROWS[5]='Z';
+
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const fmt=s=>pad(Math.floor(s/60))+':'+pad(Math.floor(s%60));
+const A=i=>String.fromCharCode(65+(((i%26)+26)%26));
+const code=ch=>ch.charCodeAt(0)-65;
+const shiftText=(s,k)=>[...s].map(c=>A(code(c)+k)).join('');
+const morseGlyphs=m=>[...m].map(c=>c==='.'?'·':'—').join('');
+const norm=v=>v.toUpperCase().replace(/[^A-Z]/g,'');
+
+/* ════════ áudio (WebAudio, sintetizado) ════════ */
+let actx=null,muted=false;
+function ac(){ if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+ if(actx&&actx.state==='suspended')actx.resume(); return actx; }
+function beep(f,dur,type,gain,delay,slide){
+ if(muted)return; const c=ac(); if(!c)return;
+ const t=c.currentTime+(delay||0),o=c.createOscillator(),v=c.createGain();
+ o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
+ if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);
+ v.gain.setValueAtTime(gain||.05,t); v.gain.exponentialRampToValueAtTime(.0001,t+dur);
+ o.connect(v); v.connect(c.destination); o.start(t); o.stop(t+dur+.05); }
+const sBlip =()=>beep(880,.045,'square',.03);
+const sClack=()=>{beep(320,.03,'square',.04);beep(240,.03,'square',.04,.04)};
+const sErr  =()=>beep(170,.28,'sawtooth',.05,0,90);
+const sOk   =()=>{beep(523,.09,'triangle',.06);beep(784,.09,'triangle',.06,.09);beep(1047,.2,'triangle',.06,.18)};
+const sStamp=()=>beep(120,.16,'sine',.14,0,50);
+const sVault=()=>{beep(70,1.1,'sine',.13,0,36);beep(220,.05,'square',.05,.55);beep(160,.06,'square',.05,.75)};
+
+/* ════════ estado ════════ */
+const S={screen:'intro',level:0,score:0,solved:false,levelWrong:0,totalWrong:0,totalHints:0,
+ levelStart:0,elapsed:0,totalTime:0,timerId:null,morseT:[]};
+let lampEl=null,restoreBin=null;
+
+/* ════════ helpers de UI ════════ */
+function toast(msg,err){ const t=$('toast'); t.textContent=msg;
+ t.className='show'+(err?' err':''); clearTimeout(toast.__t);
+ toast.__t=setTimeout(()=>t.className='',2400); }
+function updateScoreHUD(anim){ const el=$('hud-score');
+ el.textContent=S.score.toLocaleString('pt-BR');
+ if(anim!==false){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');} }
+function updateLocks(){ const box=$('locks'); box.innerHTML='';
+ for(let i=0;i<7;i++){ const d=document.createElement('span'); d.className='lock';
+  d.textContent=i+1;
+  if(i<S.level-1||(i===S.level-1&&S.solved)){d.classList.add('done');d.textContent='✓';}
+  else if(i===S.level-1)d.classList.add('cur');
+  box.appendChild(d); } }
+function stopMorse(){ S.morseT.forEach(clearTimeout); S.morseT=[];
+ if(lampEl)lampEl.classList.remove('on'); }
+function startTimer(){ stopTimer(); S.levelStart=performance.now();
+ S.timerId=setInterval(tick,250); tick(); }
+function stopTimer(){ clearInterval(S.timerId); S.timerId=null; }
+function tick(){ S.elapsed=(performance.now()-S.levelStart)/1000;
+ $('hud-time').textContent=fmt(S.elapsed); }
+function timeBonus(){ return Math.max(0,Math.round(200*(1-S.elapsed/120))); }
+function showScreen(id){ ['intro','game','end'].forEach(s=>$('screen-'+s).classList.toggle('hidden',s!==id));
+ S.screen=id; window.scrollTo(0,0); }
+
+/* ════════ construtores das fechaduras ════════ */
+
+/* 01 · ATBASH */
+function buildAtbash(stage,tool){
+ const c=LEVELS[0].cipher;
+ stage.innerHTML='<p class="sec-label">Texto interceptado · toque nas letras</p>'+
+  '<div class="letters">'+[...c].map(x=>'<button class="lt" data-c="'+x+'" type="button">'+x+'</button>').join('')+'</div>'+
+  '<div class="stamp"><div class="stamp-inner">DESTRANCADA<small>fechadura 01 · atbash</small></div></div>';
+ tool.innerHTML='<p class="sec-label">Espelho do alfabeto · plano ⇄ cifrado</p>'+
+  '<div class="mirror-strip">'+Array.from({length:26},(_,i)=>
+   '<div class="mcell" data-i="'+i+'"><span class="p">'+A(i)+'</span><span class="m">'+A(25-i)+'</span></div>').join('')+'</div>'+
+  '<div class="readout" id="abRead">toque numa letra — o espelho devolve o par</div>';
+ const read=$('abRead');
+ function select(i){ tool.querySelectorAll('.mcell').forEach(x=>x.classList.remove('on'));
+  const cell=tool.querySelector('[data-i="'+i+'"]'); cell.classList.add('on');
+  read.innerHTML='cifrada <b>'+A(25-i)+'</b> → plana <b>'+A(i)+'</b>'; sBlip(); }
+ tool.querySelectorAll('.mcell').forEach(cell=>cell.addEventListener('click',()=>select(+cell.dataset.i)));
+ stage.querySelectorAll('.lt').forEach(b=>b.addEventListener('click',()=>select(25-code(b.dataset.c))));
+}
+
+/* 02 · CÉSAR (força bruta) */
+function buildCesar(stage,tool){
+ const c=LEVELS[1].cipher;
+ stage.innerHTML='<p class="sec-label">Texto interceptado · pré-visualização da chave</p>'+
+  '<div class="cipher-big"><span id="czBig">'+c+'</span><span class="k-tag" id="czK">cifrado · k = ?</span></div>'+
+  '<div class="stamp"><div class="stamp-inner">DESTRANCADA<small>fechadura 02 · césar</small></div></div>';
+ tool.innerHTML='<p class="sec-label">Força bruta · as 25 chaves possíveis</p>'+
+  '<div class="chips">'+Array.from({length:25},(_,i)=>{const k=i+1;
+   return '<button class="chip" data-k="'+k+'" type="button"><b>k='+pad(k)+'</b><span>'+shiftText(c,-k)+'</span></button>';}).join('')+'</div>';
+ tool.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{
+  tool.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+  ch.classList.add('on');
+  $('czBig').textContent=shiftText(c,-(+ch.dataset.k));
+  $('czK').textContent='decifrado · k = '+pad(+ch.dataset.k); sBlip(); }));
+}
+
+/* 03 · MORSE */
+function buildMorse(stage,tool){
+ const word=LEVELS[2].cipher;
+ stage.innerHTML='<p class="sec-label">Transmissão sonora · 1838</p>'+
+  '<div class="mrow"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'+
+  [...word].map((L,i)=>{const g='<span class="mgroup">'+
+    [...MORSE[L]].map(s=>'<i class="'+(s==='.'?'mdot':'mdash')+'"></i>').join('')+'</span>';
+   return g+(i<word.length-1?'<span class="msep">/</span>':'');}).join('')+
+  '</div><div class="lamp" id="lamp"></div></div>'+
+  '<div style="margin-top:18px"><button id="mplay" class="btn btn2" type="button">▶ Tocar em morse</button></div>'+
+  '<div class="stamp"><div class="stamp-inner">DESTRANCADA<small>fechadura 03 · morse</small></div></div>';
+ tool.innerHTML='<p class="sec-label">Tabela de referência · alfabeto morse</p>'+
+  '<div class="mref">'+Object.keys(MORSE).map(L=>
+   '<div><b>'+L+'</b><span>'+morseGlyphs(MORSE[L])+'</span></div>').join('')+'</div>';
+ lampEl=$('lamp');
+ $('mplay').addEventListener('click',()=>{ ac(); stopMorse();
+  const btn=$('mplay'); btn.disabled=true; let t=.12;
+  [...word].forEach(L=>{ [...MORSE[L]].forEach(s=>{ const d=s==='.'?.09:.27;
+    beep(600,d,'sine',.07,t);
+    S.morseT.push(setTimeout(()=>lampEl.classList.add('on'),t*1000));
+    S.morseT.push(setTimeout(()=>lampEl.classList.remove('on'),(t+d)*1000));
+    t+=d+.09; }); t+=.24; });
+  S.morseT.push(setTimeout(()=>btn.disabled=false,(t+.1)*1000)); });
+}
+
+/* 04 · POLIÚBIO */
+function buildPolybius(stage,tool){
+ const word=LEVELS[3].cipher;
+ stage.innerHTML='<p class="sec-label">Pares interceptados · linha + coluna</p>'+
+  '<div class="pairs">'+[...word].map(L=>{const i=code(L==='J'?'I':L),r=Math.floor(i/5)+1,c2=i%5+1;
+   return '<button class="pair-chip" data-r="'+r+'" data-c="'+c2+'" type="button">'+r+''+c2+'</button>';}).join('')+'</div>'+
+  '<div class="stamp"><div class="stamp-inner">DESTRANCADA<small>fechadura 04 · poliúbio</small></div></div>';
+ tool.innerHTML='<p class="sec-label">Quadrado 5×5 · linha vermelha = 1º dígito</p>'+
+  '<div class="pg-wrap"><table class="pg" id="pg"></table></div>'+
+  '<div class="readout" id="pgRead">toque num par ou passe o cursor pela grade</div>';
+ const tbl=$('pg'); let html='<tr><th></th>'+[1,2,3,4,5].map(n=>'<th>'+n+'</th>').join('')+'</tr>';
+ PG_ROWS.forEach((row,ri)=>{ html+='<tr><th>'+(ri+1)+'</th>'+[...row].map(L=>
+  '<td data-r="'+(ri+1)+'" data-c="'+(ri*5+code(L)+1)+'">'+L+'</td>').join('')+'</tr>'; });
+ tbl.innerHTML=html;
+ const read=$('pgRead');
+ function flash(r,c){ const td=tbl.querySelector('td[data-r="'+r+'"][data-c="'+c+'"]');
+  if(!td)return; td.classList.add('flash'); sBlip();
+  read.innerHTML='linha <b>'+r+'</b> · coluna <b>'+c+'</b> → <b>'+td.textContent+'</b>';
+  setTimeout(()=>td.classList.remove('flash'),900); }
+ stage.querySelectorAll('.pair-chip').forEach(p=>p.addEventListener('click',()=>flash(+p.dataset.r,+p.dataset.c)));
+ tbl.addEventListener('mouseover',e=>{ const td=e.target;
+  if(td.tagName!=='TD')return; read.innerHTML='linha <b>'+td.dataset.r+'</b> · coluna <b>'+td.dataset.c+'</b> → <b>'+td.textContent+'</b>'; });
+}
+
+/* 05 · CERCA (3 trilhos) */
+function buildFence(stage,tool){
+ const cipher=LEVELS[4].cipher,n=cipher.length,rails=3;
+ const cyc=j=>{const m=j%(2*(rails-1));return m===0?0:m===2?2:1};
+ const xs=j=>34+j*47, ys=[26,70,114];
+ const slots=[[],[],[]]; for(let j=0;j<n;j++)slots[cyc(j)].push(j);
+ const placed=Array(n); let p=0;
+ for(let r=0;r<rails;r++) slots[r].forEach(s=>{placed[s]={x:xs(s),y:ys[r],ch:cipher[p++],order:s}});
+ let letters='',nums='';
+ placed.forEach((o,j)=>{ letters+='<text class="zl" x="'+o.x+'" y="'+(o.y+7)+'" text-anchor="middle" style="transition-delay:'+(j*95)+'ms">'+o.ch+'</text>';
+  nums+='<text class="zn" x="'+o.x+'" y="142" text-anchor="middle" style="transition-delay:'+(n*95+250)+'ms">'+(j+1)+'</text>'; });
+ const path=Array.from({length:n},(_,j)=>xs(j)+','+ys[cyc(j)]).join(' ');
+ stage.innerHTML='<p class="sec-label">Texto cifrado · lido trilho a trilho: '+cipher+'</p>'+
+  '<svg id="zig" viewBox="0 0 400 150" style="width:100%;display:block">'+
+  ys.map(y=>'<line class="rail" x1="10" y1="'+y+'" x2="390" y2="'+y+'"/>').join('')+
+  '<polyline class="zpath" points="'+path+'"/>'+letters+nums+'</svg>'+
+  '<div class="stamp"><div class="stamp-inner">DESTRANCADA<small>fechadura 05 · cerca</small></div></div>';
+ tool.innerHTML='<p class="sec-label">Retejadura da cerca</p>'+
+  '<ol class="howto"><li>Clique em <b>distribuir</b> — as 8 letras cifradas ocupam os 3 trilhos, na ordem.</li>'+
+  '<li>Siga os números <b>1 → 8</b> no zigue-zague.</li>'+
+  '<li>Leia as letras nessa ordem: essa é a mensagem.</li></ol>'+
+  '<button id="weave" class="btn btn2" type="button">Distribuir na cerca →</button>';
+ $('weave').addEventListener('click',()=>{ $('zig').classList.add('dist');
+  $('weave').disabled=true; $('weave').textContent='Distribuído ✓'; sClack(); });
+}
+
+/* 06 · BINÁRIO / ASCII */
+function buildBinary(stage,tool){
+ const word=LEVELS[5].cipher;
+ const init=[...word].map(L=>{const v=code(L)+65;return Array.from({length:8},(_,b)=>!!(v&(128>>b)));});
+ stage.innerHTML='<p class="sec-label">Painel de interruptores · 1 byte por letra</p>'+
+  '<p class="bits-note">128 · 64 · 32 · 16 · 8 · 4 · 2 · 1</p>'+
+  '<div class="bytes">'+init.map((bits,gi)=>'<div class="byte-g" data-g="'+gi+'"><div class="sws">'+
+   bits.map((on,bi)=>'<button class="sw'+(on?' on':'')+'" data-b="'+bi+'" type="button" aria-label="bit '+(128>>bi)+'"></button>').join('')+
+   '</div><div class="dec"><span>'+dec(bits)+'</span><small>BYTE '+(gi+1)+'</small></div></div>').join('')+'</div>'+
+  '<div class="stamp"><div class="stamp-inner">DESTRANCADA<small>fechadura 06 · binário</small></div></div>';
+ tool.innerHTML='<p class="sec-label">Tabela ASCII · maiúsculas</p>'+
+  '<div class="atable">'+Object.keys(MORSE).map(L=>'<div><b>'+L+'</b><span>'+(code(L)+65)+'</span></div>').join('')+'</div>'+
+  '<div style="margin-top:14px"><button id="binReset" class="txt-btn" type="button">Restaurar interruptores</button></div>';
+ function dec(bits){return bits.reduce((a,on,i)=>a+(on?(128>>i):0),0)}
+ function wire(){ stage.querySelectorAll('.byte-g').forEach(g=>{
+   const btns=[...g.querySelectorAll('.sw')],out=g.querySelector('.dec span');
+   btns.forEach(b=>b.onclick=()=>{ b.classList.toggle('on'); sClack();
+    out.textContent=dec(btns.map(x=>x.classList.contains('on'))); }); }); }
+ wire();
+ $('binReset').addEventListener('click',()=>{ restoreBin(); sBlip(); });
+ restoreBin=()=>{ stage.querySelectorAll('.byte-g').forEach((g,gi)=>{
+   g.querySelectorAll('.sw').forEach((b,bi)=>b.classList.toggle('on',init[gi][bi]));
+   g.querySelector('.dec span').textContent=dec(init[gi]); }); };
+}
+
+/* 07 · VIGENÈRE */
+function buildVigenere(stage,tool){
+ const L=LEVELS[6],key=L.key,c=L.cipher;
+ stage.innerHTML='<p class="sec-label">Chave interceptada: '+key+' · alinhamento letra a letra</p>'+
+  '<div class="vig-pairs">'+[...c].map((ch,i)=>'<div class="vp"><span class="k">'+key[i%key.length]+'</span><span class="c">'+ch+'</span></div>').join('')+'</div>'+
+  '<div class="stamp"><div class="stamp-inner">DESTRANCADA<small>fechadura 07 · vigenère</small></div></div>';
+ const opts='<option value="">—</option>'+Object.keys(MORSE).map(x=>'<option>'+x+'</option>').join('');
+ tool.innerHTML='<p class="sec-label">Calculadora · P = (C − K) mod 26</p>'+
+  '<div class="calc"><div><label>Letra da chave (K)</label><select id="vgK">'+opts+'</select></div>'+
+  '<div><label>Letra cifrada (C)</label><select id="vgC">'+opts+'</select></div>'+
+  '<button id="vgUse" class="btn" type="button" disabled>usar →</button></div>'+
+  '<div class="vg-out"><span class="big" id="vgRes">?</span><span class="fx" id="vgFx">escolha K e C — a letra plena aparece aqui</span></div>'+
+  '<p class="sec-label">Tabela de Vigenère · linha = chave · célula = cifrada · coluna = plana</p>'+
+  '<div class="vt-wrap"><table class="vt" id="vt"></table></div>'+
+  '<div class="vt-read" id="vtRead">passe o cursor: ache a célula cifrada na linha da chave</div>';
+ const res=$('vgRes'),fx=$('vgFx'),use=$('vgUse');
+ function calc(){ const k=$('vgK').value,c2=$('vgC').value;
+  if(!k||!c2){res.textContent='?';fx.textContent='escolha K e C — a letra plena aparece aqui';use.disabled=true;return;}
+  const p=(((code(c2)-code(k))%26)+26)%26;
+  res.textContent=A(p);
+  fx.innerHTML='('+code(c2)+' − '+code(k)+') mod 26 = <b style="color:var(--red)">'+p+'</b> → letra plena <b style="color:var(--red)">“'+A(p)+'”</b>';
+  use.disabled=false; sBlip(); }
+ $('vgK').addEventListener('change',calc); $('vgC').addEventListener('change',calc);
+ use.addEventListener('click',()=>{ const inp=$('ans'); inp.value=(inp.value+res.textContent).slice(0,14); sClack(); inp.focus(); });
+ /* tabela */
+ const vt=$('vt'); let h='<thead><tr><th></th>'+Object.keys(MORSE).map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>';
+ Object.keys(MORSE).forEach(k=>{ h+='<tr><th>'+k+'</th>'+Object.keys(MORSE).map(pl=>
+  '<td data-k="'+k+'" data-p="'+pl+'">'+A(code(k)+code(pl))+'</td>').join('')+'</tr>'; });
+ vt.innerHTML=h+'</tbody>';
+ const read=$('vtRead'); let hl=[];
+ vt.addEventListener('mouseover',e=>{ const td=e.target; if(td.tagName!=='TD')return;
+  hl.forEach(x=>x.classList.remove('hl','hl2')); hl=[];
+  td.classList.add('hl'); hl.push(td);
+  const rowTh=td.closest('tr').querySelector('th'),colTh=vt.querySelector('thead th:nth-child('+(code(td.dataset.p)+2)+')');
+  rowTh.classList.add('hl2'); colTh.classList.add('hl2'); hl.push(rowTh,colTh);
+  read.innerHTML='linha (chave) <b>'+td.dataset.k+'</b> · célula (cifrada) <b>'+td.textContent+'</b> → coluna (plana) <b>'+td.dataset.p+'</b>'; });
+ vt.addEventListener('mouseleave',()=>{ hl.forEach(x=>x.classList.remove('hl','hl2')); hl=[];
+  read.textContent='passe o cursor: ache a célula cifrada na linha da chave'; });
+}
+
+const BUILDERS=[buildAtbash,buildCesar,buildMorse,buildPolybius,buildFence,buildBinary,buildVigenere];
+
+/* ════════ fluxo do jogo ════════ */
+function startLevel(i){
+ S.level=i+1; const L=LEVELS[i];
+ S.solved=false; S.levelWrong=0; stopMorse(); stopTimer(); S.elapsed=0;
+ $('stageTitle').textContent='§ '+pad(i+1)+' — '+L.name+' · '+L.year;
+ $('stageTag').textContent='ARQUIVO Nº '+pad(i+1);
+ $('toolTag').textContent='FECHADURA '+pad(i+1);
+ $('hud-level').textContent=pad(i+1)+'/07';
+ $('stageBody').classList.remove('solved');
+ $('gameGrid').classList.remove('locked');
+ $('hintBox').classList.add('hidden');
+ $('hintBtn').disabled=false;
+ $('ans').value=''; $('ans').disabled=false;
+ BUILDERS[i]($('stageBody'),$('toolBody'));
+ updateLocks(); updateScoreHUD(false); startTimer(); $('ans').focus();
+}
+
+ $('ansForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ if(S.solved||S.screen!=='game')return; ac();
+ const val=norm($('ans').value),L=LEVELS[S.level-1];
+ if(!val)return;
+ if(val===L.answer){
+   S.solved=true; stopTimer(); stopMorse();
+   const tb=timeBonus(),base=250+S.level*50;
+   S.score+=base+tb; S.totalTime+=S.elapsed; updateScoreHUD();
+   $('stageBody').classList.add('solved');
+   $('gameGrid').classList.add('locked');
+   $('ans').disabled=true; updateLocks();
+   sOk(); setTimeout(sStamp,240);
+   setTimeout(()=>{
+     const bits=['tempo '+fmt(S.elapsed),'bônus +'+tb];
+     if(S.levelWrong)bits.push(S.levelWrong+' tentativa(s) negada(s) (−'+(S.levelWrong*25)+')');
+     const last=S.level===LEVELS.length;
+     $('stageBody').querySelector('.result')?.remove();
+     const div=document.createElement('div'); div.className='result';
+     div.innerHTML='<p class="lr-line">FECHADURA '+pad(S.level)+' DESTRANCADA · SENHA “'+L.answer+'”</p>'+
+      '<p class="lr-pts">+'+(base+tb).toLocaleString('pt-BR')+' pts</p>'+
+      '<p class="lr-detail">base +'+base+' · '+bits.join(' · ')+'</p>'+
+      '<button class="btn" id="nextBtn" type="button">'+(last?'Girar a manivela e abrir o cofre →':'Próxima fechadura →')+'</button>';
+     $('stageBody').appendChild(div);
+     div.querySelector('#nextBtn').addEventListener('click',()=>{ sBlip(); last?endGame():startLevel(S.level); });
+   },1000);
+ }else{
+   S.levelWrong++; S.totalWrong++;
+   S.score=Math.max(0,S.score-25); updateScoreHUD();
+   const inp=$('ans'); inp.classList.remove('err'); void inp.offsetWidth; inp.classList.add('err');
+   sErr(); toast('“'+val+'” não destranca. Tentativa negada (−25 pts)',true);
+ }
+});
+
+ $('hintBtn').addEventListener('click',()=>{
+ if(S.solved||!$('hintBtn').disabled===false)return;
+ if($('hintBtn').disabled)return;
+ S.totalHints++; S.score=Math.max(0,S.score-120); updateScoreHUD();
+ $('hintBox').textContent=LEVELS[S.level-1].hint;
+ $('hintBox').classList.remove('hidden');
+ $('hintBtn').disabled=true; sBlip();
+ toast('Dica anotada no dossiê (−120 pts)');
+});
+
+/* ════════ final ════════ */
+function endGame(){
+ stopTimer();
+ const rank=S.score>=3900?'LENDÁRIO — CHAVE MESTRA':S.score>=3100?'MESTRE DAS CIFRAS':
+  S.score>=2300?'ANALISTA SÊNIOR':S.score>=1500?'ARQUIVISTA JÚNIOR':'ESTAGIÁRIO DO COFRE';
+ $('rSolved').textContent=LEVELS.length+'/'+LEVELS.length;
+ $('rWrong').textContent=S.totalWrong;
+ $('rHints').textContent=S.totalHints;
+ $('rTime').textContent=fmt(S.totalTime);
+ $('rScore').textContent=S.score.toLocaleString('pt-BR')+' PTS';
+ $('rank').textContent='POSTO: '+rank;
+ let best=null,isNew=false;
+ try{best=JSON.parse(localStorage.getItem('arquivo-morto-best')||'null');}catch(e){}
+ if(!best||S.score>best.score){best={score:S.score};isNew=true;
+  try{localStorage.setItem('arquivo-morto-best',JSON.stringify(best));}catch(e){}}
+ $('endBest').textContent=(isNew?'★ Novo recorde local · ':'Recorde local: ')+(best?best.score.toLocaleString('pt-BR')+' pts':'—');
+ showScreen('end');
+ $('endCard').classList.remove('show');
+ const v=$('vault'); v.classList.remove('away','open');
+ setTimeout(()=>{ v.classList.add('open'); sVault(); },500);
+ setTimeout(()=>{ v.classList.add('away'); $('endCard').classList.add('show'); sStamp(); },1550);
+}
+
+/* ════════ intro + controles ════════ */
+ $('index').innerHTML=LEVELS.map((L,i)=>
+ '<div class="idx-row"><span class="n">'+pad(i+1)+'</span><span>'+L.name+'</span><span class="dots"></span><span class="yr">'+L.year+'</span></div>').join('');
+
+(function bolts(){ const g=$('bolts'); let s='';
+ for(let i=0;i<10;i++){const a=i*Math.PI/5,s2=98;
+  s+='<circle cx="'+(120+s2*Math.cos(a))+'" cy="'+(120+s2*Math.sin(a))+'" r="4.5"/>';}
+ g.innerHTML=s; })();
+
+function renderBest(){ const el=$('bestLine'); let b=null;
+ try{b=JSON.parse(localStorage.getItem('arquivo-morto-best')||'null');}catch(e){}
+ if(b){el.textContent='Recorde local: '+b.score.toLocaleString('pt-BR')+' pts';el.classList.remove('hidden');}
+ else el.classList.add('hidden'); }
+
+ $('startBtn').addEventListener('click',()=>{ ac();
+ S.score=0;S.totalWrong=0;S.totalHints=0;S.totalTime=0;
+ startLevel(0); showScreen('game'); });
+ $('againBtn').addEventListener('click',()=>{ showScreen('intro'); renderBest(); });
+ $('quitBtn').addEventListener('click',()=>{ stopTimer(); stopMorse(); showScreen('intro'); renderBest(); toast('Operação suspensa — o cofre continua selado.'); });
+ $('sndBtn').addEventListener('click',()=>{ muted=!muted;
+ $('sndBtn').textContent=muted?'Som: mudo':'Som: ligado'; if(!muted)sBlip(); });
+
+renderBest();
+})();
+</script>
+</body>
+</html>
