@@ -725,11 +725,14 @@ function tasksHTML(m){
    <button class="tsk ${st[ti]?'on':''}" data-tk="${ti}"><span class="bx">${ic('check')}</span><span>${esc(t)}</span></button>`).join('');
 }
 function valState(m){
+  const quizTotal=m.quiz?.length||0;
+  const taskTotal=m.tasks?.length||0;
+  const pairTotal=m.pairs?.length||0;
   const qs=(save.qs[m.id]||[]).filter(Boolean).length;
   const tk=(save.tk[m.id]||[]).filter(Boolean).length;
   const pr=m.pairs?(save.pairs[m.id]||[]).filter((v,i)=>v===m.pairs[i][2]).length:0;
-  if(m.sim)return save.sim.solved&&tk===m.tasks.length;
-  return qs===m.quiz.length&&pr===m.pairs.length&&tk===m.tasks.length;
+  if(m.sim)return save.sim.solved&&tk===taskTotal;
+  return qs===quizTotal&&pr===pairTotal&&tk===taskTotal;
 }
 function renderMission(){
   const m=byId(save.cur),done=save.done.includes(m.id);
@@ -755,13 +758,21 @@ function renderMission(){
 }
 function updateHint(){
   const m=byId(save.cur);if(!m||save.done.includes(m.id))return;
-  const el=$('#valHint');if(!el)return;
-  if(valState(m)){el.textContent='Todas as condições atendidas. Valide o checkpoint.';return;}
+  const el=$('#valHint');
+  const btn=$('#valBtn');
+  const ready=valState(m);
+
+  // Reavalia o botão sempre que quiz, checklist, pares ou simulador mudarem.
+  if(btn)btn.disabled=!ready;
+  if(!el)return;
+
+  if(ready){el.textContent='Todas as condições atendidas. Valide o checkpoint.';return;}
   const miss=[];
   const st=save.qs[m.id]||[];
   if(m.quiz&&st.filter(Boolean).length<m.quiz.length)miss.push('responda o interrogatório');
   if(m.pairs){const pv=save.pairs[m.id]||[];if(pv.filter((v,i)=>v===m.pairs[i][2]).length<m.pairs.length)miss.push('complete a síntese conceitual');}
   if(m.tasks){const tk=save.tk[m.id]||[];if(tk.filter(Boolean).length<m.tasks.length)miss.push('cumpra o checklist');}
+  if(m.sim&&!save.sim.solved)miss.push('feche corretamente o caso no simulador');
   el.textContent='Falta: '+miss.join(' · ');
 }
 
@@ -820,6 +831,7 @@ function updateHint(){
    ============================================================ */
 function completeMission(id){
   const m=byId(id);
+  if(!m||save.done.includes(id)||!valState(m))return;
   save.done.push(id);save.xp+=m.xp;persist();
   snd.stamp();snd.done();
   const st=$('#stampIn');st.textContent=(m.cp||'MISSÃO')+' VALIDADO';
