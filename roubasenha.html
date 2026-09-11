@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPERAÇÃO ISCA — Simulador de Phishing &amp; Quishing</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23ffb224'/%3E%3Crect x='4' y='4' width='6' height='6' fill='%23111'/%3E%3Crect x='14' y='4' width='6' height='6' fill='%23111'/%3E%3Crect x='4' y='14' width='6' height='6' fill='%23111'/%3E%3Crect x='15' y='15' width='2' height='2' fill='%23111'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+/* ============ BASE ============ */
+:root{
+  --bg:#0b0c0a; --panel:#0f110e; --panel2:#12140f;
+  --line:#242820; --line2:#343a2c;
+  --ink:#e9e7db; --dim:#95988a; --faint:#5f6353;
+  --amber:#ffb224; --amber2:#ffc85e; --red:#ff5237; --green:#5fd97e;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'Archivo',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--sans);
+  overflow:hidden; -webkit-font-smoothing:antialiased;
+}
+body::after{ /* textura CRT sutil */
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:200;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 3px);
+}
+::selection{background:var(--amber);color:#111}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+button{font-family:inherit}
+.mono{font-family:var(--mono)}
+.ic{vertical-align:-2px}
+
+/* ============ ESTRUTURA ============ */
+.frame{height:100dvh;display:flex;flex-direction:column}
+.top{
+  height:60px;flex-shrink:0;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 18px;
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{
+  width:32px;height:32px;background:var(--amber);color:#131207;border-radius:4px;
+  display:grid;place-items:center;flex-shrink:0;
+}
+.brand-t strong{
+  display:block;font-stretch:125%;font-weight:800;font-size:15px;letter-spacing:.05em;line-height:1.1;
+}
+.brand-t span{font:500 9.5px var(--mono);color:var(--dim);letter-spacing:.14em}
+.mode{
+  display:flex;gap:9px;align-items:center;border:1px solid var(--line2);
+  padding:7px 14px;border-radius:999px;font:600 10px var(--mono);letter-spacing:.14em;white-space:nowrap;
+}
+.mode .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pulse 1.6s infinite}
+.mode.victim{border-color:var(--red);color:var(--red)}
+.mode.victim .dot{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.top-right{display:flex;align-items:center;gap:14px}
+.clock{font:600 12px var(--mono);letter-spacing:.08em}
+.clock.sub{color:var(--faint);font-weight:500}
+
+.deck{flex:1;display:grid;grid-template-columns:280px minmax(0,1fr) 330px;min-height:0}
+.col{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+.col:last-child{border-right:0}
+.col-head{
+  flex-shrink:0;display:flex;align-items:center;gap:10px;
+  padding:11px 14px;border-bottom:1px solid var(--line);
+  font:700 10px var(--mono);letter-spacing:.2em;color:var(--dim);
+}
+.col-head .idx{color:var(--amber)}
+.col-head .ctx{margin-left:auto;color:var(--faint);letter-spacing:.1em;font-weight:500}
+.col-head .live{margin-left:auto;color:var(--faint)}
+.col-head .live.on{color:var(--amber);animation:pulse 1.2s infinite}
+.col-head .live.done{color:var(--green)}
+
+.foot{
+  flex-shrink:0;height:38px;border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 18px;
+  font:500 9.5px var(--mono);color:var(--faint);letter-spacing:.06em;
+}
+.foot b{color:var(--dim);font-weight:600}
+
+/* ============ LOG ============ */
+.log{flex:1;overflow-y:auto;padding:12px 14px;font:400 11px/1.75 var(--mono)}
+.le{display:flex;gap:9px;animation:slidein .25s ease both;margin-bottom:2px}
+.le .t{color:var(--faint);flex-shrink:0}
+.le .k{flex-shrink:0;font-weight:700;letter-spacing:.05em;min-width:52px}
+.le .m{color:var(--dim);word-break:break-word}
+.le .m b{color:var(--ink);font-weight:600}
+.k-info{color:var(--dim)} .k-warn{color:var(--amber)} .k-bad{color:var(--red)}
+.k-ok{color:var(--green)} .k-keys{color:var(--amber2)}
+.caret{display:inline-block;width:7px;height:12px;background:var(--amber);vertical-align:-2px;margin-left:3px;animation:pulse 1s infinite}
+.oktag{color:var(--green);font-weight:700;margin-left:6px}
+@keyframes slidein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ============ PALCO ============ */
+.stage{flex:1;overflow-y:auto;padding:26px 30px 34px;scrollbar-gutter:stable}
+#view-setup,#view-running,#view-mail,#view-phish{display:none}
+#stage[data-view="setup"]   #view-setup{display:block}
+#stage[data-view="running"] #view-running{display:block}
+#stage[data-view="mail"]    #view-mail{display:block}
+#stage[data-view="phish"]   #view-phish{display:block}
+
+.kicker{font:600 10px var(--mono);color:var(--amber);letter-spacing:.24em;margin-bottom:10px}
+.h-big{font-stretch:118%;font-weight:800;font-size:clamp(22px,2.6vw,32px);letter-spacing:.01em;line-height:1.05}
+.h-sub{color:var(--dim);font-size:13.5px;line-height:1.6;margin-top:10px;max-width:640px}
+.phase{border:1px solid var(--line);margin-top:22px;background:var(--panel)}
+.phase>header{
+  display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line);
+}
+.pnum{font:700 9.5px var(--mono);letter-spacing:.18em;color:#131207;background:var(--amber);padding:3px 8px;border-radius:2px}
+.phase>header h3{font:700 11px var(--mono);letter-spacing:.18em;color:var(--ink)}
+.phase>header .ph-note{margin-left:auto;font:500 10px var(--mono);color:var(--faint);letter-spacing:.06em}
+.phase-body{padding:16px}
+
+/* pretexts */
+.prow{
+  display:flex;gap:14px;align-items:flex-start;padding:13px 14px;cursor:pointer;
+  border-bottom:1px solid var(--line);transition:background .15s;position:relative;
+}
+.prow:last-child{border-bottom:0}
+.prow:hover{background:var(--panel2)}
+.prow.sel{background:var(--panel2);box-shadow:inset 3px 0 0 var(--amber)}
+.prow .radio{
+  width:15px;height:15px;border:1px solid var(--line2);border-radius:3px;flex-shrink:0;margin-top:2px;
+  display:grid;place-items:center;transition:.15s;
+}
+.prow.sel .radio{border-color:var(--amber)}
+.prow.sel .radio::after{content:'';width:7px;height:7px;background:var(--amber);border-radius:1px}
+.prow h4{font:700 13px var(--sans);letter-spacing:.02em}
+.prow .subj{font:500 11px var(--mono);color:var(--dim);margin-top:3px}
+.prow .gauge{margin-left:auto;text-align:right;flex-shrink:0}
+.glab{font:600 8.5px var(--mono);color:var(--faint);letter-spacing:.14em}
+.cells{display:flex;gap:3px;margin-top:4px;justify-content:flex-end}
+.cells i{width:11px;height:5px;background:var(--line);border-radius:1px}
+.cells i.on{background:var(--amber)}
+.preview-line{
+  padding:10px 14px;border-top:1px dashed var(--line2);
+  font:500 10.5px/1.7 var(--mono);color:var(--dim);
+}
+.preview-line b{color:var(--amber);font-weight:600}
+
+/* infra + qr */
+.duo{display:grid;grid-template-columns:1.15fr .85fr;gap:0}
+.duo>.phase{margin-top:22px;min-width:0}
+.duo>.phase:first-child{border-right:0}
+label.fld{display:block;font:600 9.5px var(--mono);color:var(--faint);letter-spacing:.16em}
+input.txt{
+  width:100%;margin-top:7px;background:#0a0b09;border:1px solid var(--line2);color:var(--ink);
+  font:500 13px var(--mono);padding:11px 12px;border-radius:3px;outline:none;transition:border-color .15s;
+}
+input.txt:focus{border-color:var(--amber)}
+.sim-wrap{margin-top:18px}
+.sim-track{height:7px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden}
+.sim-track i{display:block;height:100%;background:var(--green);width:0;transition:width .5s cubic-bezier(.2,.8,.2,1),background .3s}
+.sim-val{font:700 12px var(--mono);margin-top:8px}
+.sim-val small{color:var(--faint);font-weight:500;margin-left:8px}
+.urlout{
+  margin-top:16px;padding:10px 12px;background:#0a0b09;border:1px dashed var(--line2);border-radius:3px;
+  font:500 10.5px/1.6 var(--mono);color:var(--amber2);word-break:break-all;
+}
+.urlout em{color:var(--faint);font-style:normal;display:block;letter-spacing:.14em;font-size:9px;margin-bottom:3px}
+
+.qrow{display:flex;gap:16px;align-items:flex-start}
+.qr-wrap{position:relative;background:#ece9da;padding:13px;width:168px;flex-shrink:0}
+.qr-wrap svg{display:block;width:100%;height:auto}
+.cnr{position:absolute;width:14px;height:14px;border:2px solid var(--amber)}
+.cnr.tl{top:-2px;left:-2px;border-right:0;border-bottom:0}
+.cnr.tr{top:-2px;right:-2px;border-left:0;border-bottom:0}
+.cnr.bl{bottom:-2px;left:-2px;border-right:0;border-top:0}
+.cnr.br{bottom:-2px;right:-2px;border-left:0;border-top:0}
+.qinfo p{font-size:12px;line-height:1.6;color:var(--dim);margin-bottom:12px}
+.qinfo p b{color:var(--ink)}
+
+/* botões */
+.btn{
+  font:700 11.5px var(--mono);letter-spacing:.12em;padding:12px 20px;cursor:pointer;
+  border:1px solid var(--line2);background:transparent;color:var(--ink);
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;transition:.15s;border-radius:2px;
+}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--amber);border-color:var(--amber);color:#131207}
+.btn.primary:hover{background:#1c1708;color:var(--amber)}
+.btn.big{padding:15px 26px;font-size:12.5px;flex:1}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:var(--red);color:#131207;border-color:var(--red)}
+.launch{display:flex;gap:12px;margin-top:24px}
+
+/* running */
+.camp-card{border:1px solid var(--line);background:var(--panel)}
+.cc-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+.cc-cell{padding:13px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0}
+.cc-cell:nth-child(3n){border-right:0}
+.cc-cell:nth-child(n+4){border-bottom:0}
+.cc-cell .l{font:600 9px var(--mono);color:var(--faint);letter-spacing:.16em}
+.cc-cell .v{font:500 12px var(--mono);margin-top:5px;color:var(--ink);word-break:break-all}
+.cc-cell .v.hot{color:var(--amber2)}
+.tlist{margin-top:20px;border:1px solid var(--line)}
+.trow{
+  display:flex;align-items:center;gap:12px;padding:11px 15px;border-bottom:1px solid var(--line);
+  font:500 12px var(--mono);transition:background .3s;
+}
+.trow:last-child{border-bottom:0}
+.trow .ti{color:var(--faint);font-size:10px;width:20px}
+.trow .tn{font-family:var(--sans);font-weight:700;font-size:13px;min-width:110px}
+.trow .td{color:var(--dim);font-size:11px;flex:1}
+.trow .st{font:700 10px var(--mono);letter-spacing:.12em;padding:4px 9px;border-radius:2px;border:1px solid var(--line2);color:var(--faint)}
+.st.sent{color:var(--dim);border-color:var(--line2)}
+.st.open{color:var(--amber);border-color:var(--amber)}
+.st.click{color:var(--amber);border-color:var(--amber);background:rgba(255,178,36,.08)}
+.st.sub{color:#131207;background:var(--red);border-color:var(--red)}
+.st.safe{color:var(--green);border-color:var(--green)}
+.trow.hit{background:rgba(255,82,55,.06)}
+.done-note{
+  margin-top:20px;border:1px solid var(--green);color:var(--green);padding:14px 16px;
+  display:flex;align-items:center;gap:12px;font:600 11px var(--mono);letter-spacing:.1em;
+}
+
+/* ============ MAIL SIM ============ */
+.mailwrap{border:1px solid var(--line);height:560px;display:flex;flex-direction:column;background:var(--panel)}
+.appchrome{
+  flex-shrink:0;height:36px;border-bottom:1px solid var(--line);display:flex;align-items:center;
+  gap:12px;padding:0 14px;font:600 10.5px var(--mono);letter-spacing:.1em;color:var(--dim);
+}
+.appchrome .sandbox{margin-left:auto;color:var(--faint);border:1px solid var(--line2);padding:2px 8px;border-radius:2px;font-size:9px}
+.mailgrid{flex:1;display:grid;grid-template-columns:230px 1fr;min-height:0}
+.maillist{border-right:1px solid var(--line);overflow-y:auto}
+.mailrow{padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;position:relative}
+.mailrow:hover{background:var(--panel2)}
+.mailrow.sel{background:var(--panel2);box-shadow:inset 3px 0 0 var(--amber)}
+.mailrow .mr-f{font:600 11px var(--mono);display:flex;align-items:center;gap:7px}
+.mailrow .mr-s{font:600 12.5px var(--sans);margin-top:4px;color:var(--ink)}
+.mailrow .mr-p{font:400 10.5px var(--mono);color:var(--faint);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mailrow .mr-t{position:absolute;top:12px;right:12px;font:500 9.5px var(--mono);color:var(--faint)}
+.unread-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
+.mailread{overflow-y:auto;padding:0}
+.mh{padding:16px 20px;border-bottom:1px solid var(--line)}
+.mh .mh-s{font-stretch:112%;font-weight:800;font-size:17px;line-height:1.3}
+.mh .mh-f{font:500 11px var(--mono);color:var(--dim);margin-top:8px}
+.extbanner{
+  margin:14px 20px 0;border:1px solid rgba(255,178,36,.4);background:rgba(255,178,36,.07);
+  color:var(--amber);font:600 10px var(--mono);letter-spacing:.1em;padding:8px 12px;border-radius:2px;
+  display:flex;gap:8px;align-items:center;
+}
+.mbody{padding:18px 22px 26px;font-size:13.5px;line-height:1.7;color:#cfcdc0}
+.mbody p{margin-bottom:14px}
+.mbody .sig{color:var(--faint);font-size:12px;border-top:1px dashed var(--line);padding-top:12px}
+.cta{
+  display:inline-block;background:#1a56db;color:#fff!important;text-decoration:none;font-weight:700;
+  font-size:13px;padding:11px 22px;border-radius:6px;margin:4px 0 12px;
+}
+.cta:hover{background:#1749b8}
+.mailstatus{
+  flex-shrink:0;height:28px;border-top:1px solid var(--line);display:flex;align-items:center;
+  padding:0 14px;font:500 10.5px var(--mono);color:var(--faint);letter-spacing:.04em;
+}
+.mailstatus.warn{color:var(--red)}
+
+/* ============ PHISH PAGE ============ */
+.browser{border:1px solid var(--line);height:580px;display:flex;flex-direction:column;position:relative;background:var(--panel)}
+.bchrome{flex-shrink:0;height:44px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 12px}
+.bbtn{width:28px;height:28px;border:1px solid var(--line2);background:transparent;color:var(--dim);border-radius:3px;display:grid;place-items:center;cursor:pointer}
+.urlbar{
+  flex:1;display:flex;align-items:center;gap:8px;background:#0a0b09;border:1px solid var(--line2);
+  border-radius:5px;padding:6px 12px;font:500 11.5px var(--mono);color:var(--dim);min-width:0;
+}
+.urlbar .lock{color:var(--green);display:flex}
+.urlbar span.u{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btag{font:700 9px var(--mono);letter-spacing:.14em;color:var(--faint);border:1px solid var(--line2);padding:3px 8px;border-radius:2px}
+.ppage{flex:1;overflow-y:auto;background:#eef0f4;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;transition:filter .5s}
+.ppage.dim{filter:grayscale(.95) brightness(.72)}
+.p-top{background:#1e50c8;color:#fff;display:flex;align-items:center;gap:26px;padding:13px 24px}
+.p-top .pl{font-weight:800;letter-spacing:.1em;font-size:15px}
+.p-top .pn{font-size:12.5px;opacity:.85}
+.p-top .ps{margin-left:auto;font-size:11.5px;opacity:.7}
+.p-body{padding:44px 20px 52px;display:grid;place-items:center}
+.p-card{background:#fff;border:1px solid #e2e5ea;border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.09);padding:32px 34px;width:378px;max-width:100%}
+.p-card .plogo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.08em;color:#1e293b;font-size:14px}
+.p-card .plogo i{width:22px;height:22px;background:#1e50c8;border-radius:5px;display:block}
+.p-card h2{font-size:19px;color:#0f172a;margin-top:18px}
+.p-card .psub{font-size:12.5px;color:#64748b;margin-top:4px}
+.p-card form{margin-top:22px}
+.p-card label{display:block;font-size:10.5px;font-weight:700;color:#475569;letter-spacing:.05em;margin-bottom:6px}
+.p-card input{
+  width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:10px 12px;font-size:13.5px;
+  margin-bottom:15px;outline:none;font-family:inherit;
+}
+.p-card input:focus{border-color:#1e50c8;box-shadow:0 0 0 3px rgba(30,80,200,.14)}
+.p-btn{width:100%;background:#1e50c8;color:#fff;border:0;border-radius:6px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.p-btn:hover{background:#17419f}
+.p-help{display:block;text-align:center;font-size:12px;color:#1e50c8;margin-top:14px;text-decoration:none}
+.p-foot{padding:14px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e5ea;background:#fff}
+.p-foot b{color:#64748b}
+.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* marcadores + laudo */
+.mklayer{position:absolute;inset:0;pointer-events:none;z-index:6}
+.mk{
+  position:absolute;width:27px;height:27px;border-radius:50%;background:var(--amber);color:#131207;
+  font:700 12.5px var(--mono);display:grid;place-items:center;transform:translate(-50%,-50%) scale(0);
+  transition:transform .35s cubic-bezier(.2,1.4,.4,1),background .15s;
+}
+.mk.show{transform:translate(-50%,-50%) scale(1)}
+.mk.hot{transform:translate(-50%,-50%) scale(1.35);background:#fff;box-shadow:0 0 0 4px rgba(255,178,36,.45)}
+.laudo{
+  position:absolute;top:44px;right:0;bottom:0;width:min(370px,100%);z-index:7;
+  background:rgba(12,13,10,.98);border-left:1px solid var(--amber);
+  transform:translateX(102%);transition:transform .5s cubic-bezier(.2,.8,.2,1);
+  display:flex;flex-direction:column;
+}
+.laudo.show{transform:none}
+.laudo-h{flex-shrink:0;padding:15px 18px;border-bottom:1px solid var(--line2)}
+.laudo-h .lt{font:700 10px var(--mono);color:var(--red);letter-spacing:.2em}
+.laudo-h h3{font-stretch:115%;font-weight:800;font-size:17px;margin-top:6px}
+.laudo-list{flex:1;overflow-y:auto}
+.finding{padding:14px 18px;border-bottom:1px solid var(--line);cursor:default;animation:slidein .4s both}
+.finding .fh{display:flex;gap:10px;align-items:baseline}
+.finding .fn{width:19px;height:19px;background:var(--amber);color:#131207;border-radius:50%;font:700 10.5px var(--mono);display:grid;place-items:center;flex-shrink:0;transform:translateY(2px)}
+.finding h4{font:700 12.5px var(--sans);letter-spacing:.02em}
+.finding p{font-size:11.5px;line-height:1.65;color:var(--dim);margin-top:6px;padding-left:29px}
+.finding p code{font:600 10.5px var(--mono);color:var(--amber2)}
+.finding:hover{background:var(--panel2)}
+.laudo-b{flex-shrink:0;padding:14px 18px;border-top:1px solid var(--line2)}
+.laudo-b .btn{width:100%}
+
+/* ============ TELEMETRIA ============ */
+.side-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.dialwrap{position:relative;width:190px;margin:22px auto 0}
+.dial{width:100%;display:block}
+.dtrack{fill:none;stroke:var(--line);stroke-width:9;stroke-linecap:round}
+.dfill{fill:none;stroke:var(--green);stroke-width:9;stroke-linecap:round;stroke-dasharray:176;stroke-dashoffset:176;transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1),stroke .4s}
+.dialmid{position:absolute;left:0;right:0;bottom:2px;text-align:center}
+.dialmid span{font:700 34px var(--mono);letter-spacing:-.02em}
+.dialmid .pct{font:600 15px var(--mono);color:var(--faint);margin-left:2px}
+.diallab{text-align:center;font:600 9.5px var(--mono);color:var(--faint);letter-spacing:.22em;margin:8px 0 20px}
+.funnel{border-top:1px solid var(--line)}
+.frow{padding:11px 16px;border-bottom:1px solid var(--line)}
+.frow .fr1{display:flex;align-items:baseline;font:500 10.5px var(--mono)}
+.frow .fl{color:var(--dim);letter-spacing:.14em}
+.frow .fv{margin-left:auto;font-weight:700;font-size:13px}
+.frow .fr2{display:flex;align-items:center;gap:10px;margin-top:7px}
+.fbar{flex:1;height:5px;background:var(--line);border-radius:2px;overflow:hidden}
+.fbar i{display:block;height:100%;background:var(--amber);width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.frow .fp{font:500 10px var(--mono);color:var(--faint);width:38px;text-align:right}
+.creds{flex:1;display:flex;flex-direction:column;min-height:120px}
+.creds-h{
+  flex-shrink:0;padding:11px 16px;font:700 10px var(--mono);letter-spacing:.18em;color:var(--dim);
+  border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;
+}
+.tag{font:700 8.5px var(--mono);letter-spacing:.1em;padding:2px 7px;border-radius:2px}
+.tag.fic{background:rgba(95,217,126,.12);color:var(--green);border:1px solid rgba(95,217,126,.35)}
+.tag.red{background:rgba(255,82,55,.12);color:var(--red);border:1px solid rgba(255,82,55,.4)}
+.tag.amb{background:rgba(255,178,36,.12);color:var(--amber);border:1px solid rgba(255,178,36,.4)}
+.creds-list{flex:1;overflow-y:auto;padding:4px 0}
+.cred{padding:10px 16px;border-bottom:1px solid var(--line);animation:slidein .35s both}
+.cred .cr1{display:flex;font:600 11px var(--mono);gap:8px}
+.cred .cr1 .ct{margin-left:auto;color:var(--faint);font-weight:500;flex-shrink:0}
+.cred .cr2{display:flex;align-items:center;gap:9px;margin-top:5px}
+.pv{font:600 11.5px var(--mono);color:var(--amber2);transition:filter .25s}
+.pv.blur{filter:blur(4.5px)}
+.eye{background:none;border:0;color:var(--faint);cursor:pointer;padding:2px;display:flex}
+.eye:hover{color:var(--ink)}
+.cred .cr3{font:500 10px var(--mono);color:var(--faint);margin-top:4px}
+.empty{padding:18px 16px;font:400 11px var(--mono);color:var(--faint);line-height:1.7}
+
+/* ============ TOASTS ============ */
+.toasts{position:fixed;right:16px;bottom:52px;display:flex;flex-direction:column;gap:8px;z-index:90}
+.toast{
+  background:#14160f;border:1px solid var(--line2);border-left:3px solid var(--amber);
+  padding:11px 15px;font:500 11.5px var(--mono);color:var(--ink);max-width:340px;
+  border-radius:2px;display:flex;gap:9px;align-items:center;animation:slidein .3s both;transition:.3s;
+}
+.toast.bad{border-left-color:var(--red)} .toast.ok{border-left-color:var(--green)} .toast.warn{border-left-color:var(--amber)}
+.toast svg{color:var(--dim)}
+
+/* ============ OVERLAYS ============ */
+.ovl{
+  position:fixed;inset:0;background:rgba(8,9,7,.82);z-index:80;display:grid;place-items:center;
+  padding:20px;opacity:0;visibility:hidden;transition:.3s;overflow-y:auto;
+}
+.ovl.show{opacity:1;visibility:visible}
+.card{
+  width:min(560px,94vw);background:var(--panel);border:1px solid var(--line2);border-radius:4px;
+  padding:30px 32px;box-shadow:0 30px 80px rgba(0,0,0,.5);
+}
+.card .top-tag{display:inline-flex;align-items:center;gap:8px;font:700 9.5px var(--mono);letter-spacing:.2em;color:var(--amber);border:1px solid rgba(255,178,36,.45);padding:5px 11px;border-radius:2px}
+.card h2{font-stretch:118%;font-weight:800;font-size:24px;margin-top:16px;line-height:1.15}
+.card .rules{margin-top:18px;border-top:1px solid var(--line)}
+.card .rule{display:flex;gap:13px;padding:12px 2px;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.6;color:var(--dim)}
+.card .rule b{color:var(--ink)}
+.card .rule .rn{font:700 11px var(--mono);color:var(--amber);flex-shrink:0}
+.card .fine{font:400 10.5px/1.7 var(--mono);color:var(--faint);margin-top:14px}
+.card .btn{width:100%;margin-top:20px}
+
+/* scan de câmera */
+.camzone{width:min(430px,94vw)}
+.cam{aspect-ratio:1;background:#080907;border:1px solid var(--line2);position:relative;overflow:hidden}
+.cam .cnr2{position:absolute;width:30px;height:30px;border:3px solid var(--amber)}
+.cam .cnr2.tl{top:12px;left:12px;border-right:0;border-bottom:0;border-radius:4px 0 0 0}
+.cam .cnr2.tr{top:12px;right:12px;border-left:0;border-bottom:0;border-radius:0 4px 0 0}
+.cam .cnr2.bl{bottom:12px;left:12px;border-right:0;border-top:0;border-radius:0 0 0 4px}
+.cam .cnr2.br{bottom:12px;right:12px;border-left:0;border-top:0;border-radius:0 0 4px 0}
+.sweep{position:absolute;left:7%;right:7%;height:2px;background:var(--amber);animation:sweep 1.15s ease-in-out infinite alternate;top:12%}
+@keyframes sweep{to{top:86%}}
+.cam-mini{position:absolute;inset:14%;opacity:.9}
+.cam-mini svg{width:100%;height:100%}
+.camres{border:1px solid var(--line2);border-top:0;padding:16px 18px;background:var(--panel)}
+.camres .cl{font:600 9.5px var(--mono);color:var(--faint);letter-spacing:.18em}
+.camres .cu{font:500 12.5px/1.6 var(--mono);color:var(--ink);word-break:break-all;margin-top:6px}
+.camres .cv{margin-top:12px;display:flex;align-items:center;gap:9px;font:600 10px var(--mono);letter-spacing:.08em}
+.camres .cnote{font:400 10.5px/1.6 var(--mono);color:var(--faint);margin-top:10px}
+
+/* relatório */
+.rep{width:min(780px,94vw);max-height:88vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line2);border-radius:4px}
+.rep-h{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px}
+.rep-h h2{font-stretch:118%;font-weight:800;font-size:20px}
+.rep-h .dt{margin-left:auto;font:500 10px var(--mono);color:var(--faint);letter-spacing:.08em;text-align:right}
+.rep-b{padding:22px 26px}
+.rk{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+.rk>div{background:var(--panel2);padding:14px 16px}
+.rk .l{font:600 9px var(--mono);color:var(--faint);letter-spacing:.16em}
+.rk .v{font:700 24px var(--mono);margin-top:6px}
+.rk .v small{font-size:11px;color:var(--faint);font-weight:500}
+.rsec{margin-top:24px}
+.rsec h3{font:700 10.5px var(--mono);letter-spacing:.2em;color:var(--amber);margin-bottom:12px}
+table.rt{width:100%;border-collapse:collapse;font:500 11px var(--mono)}
+table.rt th{text-align:left;color:var(--faint);font-weight:600;letter-spacing:.1em;font-size:9px;padding:7px 10px;border-bottom:1px solid var(--line2)}
+table.rt td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--dim)}
+table.rt td b{color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line2);padding:7px 12px;border-radius:2px;font:500 10.5px var(--mono);color:var(--dim)}
+.chip b{color:var(--amber);font-weight:700}
+.reco{list-style:none}
+.reco li{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px;line-height:1.6;color:var(--dim)}
+.reco li .rn{font:700 10.5px var(--mono);color:var(--amber);flex-shrink:0}
+.reco li b{color:var(--ink)}
+.rep-b .btn{margin-top:6px}
+.rep-b .rep-actions{display:flex;gap:10px;margin-top:24px}
+.rep-b .rep-actions .btn{flex:1}
+
+@media (max-width:1080px){
+  body{overflow:auto}
+  .frame{height:auto;min-height:100dvh}
+  .deck{display:flex;flex-direction:column}
+  .col{border-right:0;border-bottom:1px solid var(--line)}
+  .col-stage{order:-1}
+  .log{max-height:240px}
+  .stage{padding:20px 16px 28px}
+  .duo{grid-template-columns:1fr}
+  .duo>.phase:first-child{border-right:1px solid var(--line)}
+  .mailgrid{grid-template-columns:1fr}
+  .maillist{display:flex;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .mailrow{min-width:220px;border-bottom:0;border-right:1px solid var(--line)}
+  .mailwrap,.browser{height:auto}
+  .ppage{min-height:480px}
+  .browser{min-height:560px}
+  .laudo{width:100%;top:0;border-left:0;border-top:1px solid var(--amber)}
+  .mailwrap{height:auto;min-height:520px}
+  .mailread{max-height:420px}
+  .cc-grid{grid-template-columns:1fr 1fr}
+  .cc-cell:nth-child(3n){border-right:1px solid var(--line)}
+  .cc-cell:nth-child(2n){border-right:0}
+  .mode{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <!-- ======== HEADER ======== -->
+  <header class="top">
+    <div class="brand">
+      <div class="mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/><rect x="14" y="18" width="2" height="2" opacity=".6"/><rect x="18" y="14" width="2" height="2" opacity=".6"/></svg>
+      </div>
+      <div class="brand-t">
+        <strong>OPERAÇÃO ISCA</strong>
+        <span>SIM-CAMPANHA Nº042 · PHISHING &amp; QUISHING</span>
+      </div>
+    </div>
+    <div class="mode" id="modeChip">
+      <i class="dot"></i><span id="modeText">PERSPECTIVA: OPERADOR</span>
+    </div>
+    <div class="top-right">
+      <div class="clock sub" id="tplus">STANDBY</div>
+      <div class="clock" id="clock">--:--:--</div>
+      <button class="btn" id="btnReport" data-ic="file"><span>RELATÓRIO</span></button>
+    </div>
+  </header>
+
+  <main class="deck">
+    <!-- ======== 01 LOG ======== -->
+    <aside class="col">
+      <div class="col-head"><span class="idx">01</span> FLUXO DE EVENTOS <span class="live" id="liveTag">AGUARDANDO</span></div>
+      <div class="log" id="log"></div>
+    </aside>
+
+    <!-- ======== 02 PALCO ======== -->
+    <section class="col">
+      <div class="col-head"><span class="idx">02</span> PALCO DE OPERAÇÃO <span class="ctx" id="stageCtx">CONFIGURAÇÃO</span></div>
+      <div class="stage" id="stage" data-view="setup">
+
+        <!-- ---------- SETUP ---------- -->
+        <div id="view-setup">
+          <div class="kicker">CONSOLE DO OPERADOR</div>
+          <h1 class="h-big">Monte a isca. Meça a queda.</h1>
+          <p class="h-sub">Uma simulação fechada de engenharia social: escolha o pretexto, arme a infraestrutura falsa, gere o QR do quishing e dispare contra seis perfis fictícios — ou entre na isca você mesmo e descubra o que escaparia ao seu olhar.</p>
+
+          <section class="phase">
+            <header><span class="pnum">FASE 1</span><h3>ENGENHARIA DO PRETEXTO</h3><span class="ph-note">o e-mail que abre a porta</span></header>
+            <div id="pretextRows"></div>
+            <div class="preview-line" id="pretextPreview"></div>
+          </section>
+
+          <div class="duo">
+            <section class="phase">
+              <header><span class="pnum">FASE 2</span><h3>INFRAESTRUTURA DA ISCA</h3></header>
+              <div class="phase-body">
+                <label class="fld">DOMÍNIO IMITADOR (o oficial é <b style="color:var(--ink)">corp.com</b>)</label>
+                <input class="txt" id="domainInput" value="corp-secure.net" spellcheck="false" autocomplete="off">
+                <div class="sim-wrap">
+                  <label class="fld">PODER DE ENGANHO VISUAL</label>
+                  <div class="sim-track"><i id="simFill"></i></div>
+                  <div class="sim-val mono"><span id="simPct">0</span>%<small id="simVerdict"></small></div>
+                </div>
+                <div class="urlout"><em>URL COMPLETA DA ISCA</em><span id="urlOut"></span></div>
+              </div>
+            </section>
+
+            <section class="phase">
+              <header><span class="pnum">FASE 3</span><h3>VETOR QUISHING</h3></header>
+              <div class="phase-body">
+                <div class="qrow">
+                  <div class="qr-wrap">
+                    <span class="cnr tl"></span><span class="cnr tr"></span><span class="cnr bl"></span><span class="cnr br"></span>
+                    <div id="qrBox"></div>
+                  </div>
+                  <div class="qinfo">
+                    <p>O QR oculta a URL — <b>a vítima não consegue ler o destino antes de abrir</b>. É por isso que ataques "quishing" em adesivos de estacionamento e murais crescem ano a ano.</p>
+                    <div style="display:flex;flex-direction:column;gap:9px">
+                      <button class="btn" id="btnScan" data-ic="scan"><span>SIMULAR ESCANEAMENTO</span></button>
+                      <button class="btn" id="btnQrDown" data-ic="down"><span>BAIXAR QR (SVG)</span></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="launch">
+            <button class="btn primary big" id="btnLaunch" data-ic="pointer"><span>INICIAR SIMULAÇÃO</span></button>
+            <button class="btn big jsVictim" data-ic="mail"><span>ENTRAR NA ISCA COMO COBAIA</span></button>
+          </div>
+        </div>
+
+        <!-- ---------- RUNNING ---------- -->
+        <div id="view-running">
+          <div class="kicker">OPERAÇÃO EM CURSO</div>
+          <h1 class="h-big">Monitorando a frota de alvos</h1>
+          <p class="h-sub">Acompanhe o painel de eventos à esquerda. Cada decisão dos alvos é calculada a partir de ceticismo, pressa e da força do seu pretexto.</p>
+
+          <div class="camp-card" style="margin-top:22px">
+            <div class="cc-grid" id="campGrid"></div>
+          </div>
+
+          <div class="tlist" id="targetList"></div>
+
+          <div class="done-note" id="doneNote" hidden data-ic="check">
+            <span>OPERAÇÃO ENCERRADA — COMPILE O RELATÓRIO NO TOPO DA PÁGINA</span>
+          </div>
+
+          <div class="launch">
+            <button class="btn big jsVictim" data-ic="mail"><span>ENTRAR NA ISCA COMO COBAIA</span></button>
+            <button class="btn danger big jsReset" data-ic="reload"><span>REINICIAR RODADA</span></button>
+          </div>
+        </div>
+
+        <!-- ---------- MAIL (VÍTIMA) ---------- -->
+        <div id="view-mail">
+          <div class="kicker" style="color:var(--red)">PERSPECTIVA: ALVO</div>
+          <h1 class="h-big" style="font-size:22px">Caixa de entrada da cobaia</h1>
+          <p class="h-sub">Passe o mouse sobre os botões do e-mail para ver o destino real no rodapé do cliente. Depois, clique na isca.</p>
+          <div class="mailwrap" style="margin-top:18px">
+            <div class="appchrome"><span>CORPMAIL 9.1 — CAIXA DE ENTRADA</span><span class="sandbox">SANDBOX LOCAL</span></div>
+            <div class="mailgrid">
+              <div class="maillist">
+                <div class="mailrow" data-mail="legit">
+                  <div class="mr-f"><span class="unread-dot"></span>Comitê de Segurança<span class="mr-t">09:12</span></div>
+                  <div class="mr-s">Convite: palestra de segurança da informação</div>
+                  <div class="mr-p">5ª feira, 15h, auditório central — inscreva-se…</div>
+                </div>
+                <div class="mailrow sel" data-mail="phish">
+                  <div class="mr-f"><span class="unread-dot"></span><span id="mrFrom">…</span><span class="mr-t">agora</span></div>
+                  <div class="mr-s" id="mrSubj">…</div>
+                  <div class="mr-p" id="mrPrev">…</div>
+                </div>
+              </div>
+              <div class="mailread" id="mailRead"></div>
+            </div>
+            <div class="mailstatus" id="mailStatus">passe o mouse sobre os links para inspecionar o destino…</div>
+          </div>
+        </div>
+
+        <!-- ---------- PHISH (VÍTIMA) ---------- -->
+        <div id="view-phish">
+          <div class="kicker" style="color:var(--red)">PERSPECTIVA: ALVO</div>
+          <h1 class="h-big" style="font-size:22px">A página da isca</h1>
+          <p class="h-sub">Tudo aqui parece legítimo — é para parecer. Submeta qualquer e-mail e senha fictícios para ver a captura e o laudo dos indicadores.</p>
+          <div class="browser" style="margin-top:18px">
+            <div class="bchrome">
+              <button class="bbtn" id="btnBackMail" title="voltar ao e-mail" data-ic="back"></button>
+              <button class="bbtn" title="recarregar" data-ic="reload"></button>
+              <div class="urlbar">
+                <span class="lock" data-ic="lock" data-s="13"></span>
+                <span class="u" id="phishUrl">…</span>
+              </div>
+              <span class="btag">SANDBOX</span>
+            </div>
+            <div class="ppage" id="phishPage">
+              <div class="p-top">
+                <span class="pl">CORP·ID</span>
+                <span class="pn">Webmail Corporativo</span>
+                <span class="ps">Suporte</span>
+              </div>
+              <div class="p-body">
+                <div class="p-card" id="pCard">
+                  <div class="plogo"><i></i>CORP·ID</div>
+                  <h2>Acesso ao Webmail</h2>
+                  <div class="psub">Use suas credenciais corporativas para continuar</div>
+                  <form id="phishForm" autocomplete="off">
+                    <label for="pfEmail">E-MAIL CORPORATIVO</label>
+                    <input id="pfEmail" type="text" placeholder="nome.sobrenome@corp.com">
+                    <label for="pfPass">SENHA</label>
+                    <input id="pfPass" type="password" placeholder="••••••••••••">
+                    <button class="p-btn" type="submit">Entrar</button>
+                  </form>
+                  <a class="p-help" href="#" onclick="return false">Esqueci minha senha</a>
+                </div>
+              </div>
+              <div class="p-foot">© 2024 <b>CorpWeb Services</b> — suporte@corp-secure.net · Termos de uso · Privacidade</div>
+            </div>
+            <div class="mklayer" id="mkLayer"></div>
+            <aside class="laudo" id="laudo">
+              <div class="laudo-h">
+                <div class="lt">INCIDENTE REGISTRADO</div>
+                <h3>5 indicadores que você deixou passar</h3>
+              </div>
+              <div class="laudo-list" id="laudoList"></div>
+              <div class="laudo-b">
+                <button class="btn primary" id="btnAware" data-ic="shield"><span>VOLTAR AO CONSOLE CIENTE</span></button>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======== 03 TELEMETRIA ======== -->
+    <aside class="col">
+      <div class="col-head"><span class="idx">03</span> TELEMETRIA <span class="ctx mono" id="evCount">000</span></div>
+      <div class="side-body">
+        <div class="dialwrap">
+          <svg class="dial" viewBox="0 0 140 84">
+            <path class="dtrack" d="M14 74 A56 56 0 0 1 126 74"/>
+            <path class="dfill" id="dialArc" d="M14 74 A56 56 0 0 1 126 74"/>
+          </svg>
+          <div class="dialmid"><span id="dialNum">0</span><span class="pct">%</span></div>
+        </div>
+        <div class="diallab">TAXA DE COMPROMETIMENTO</div>
+        <div class="funnel">
+          <div class="frow"><div class="fr1"><span class="fl">ENTREGUES</span><span class="fv" id="fv-del">0</span></div><div class="fr2"><div class="fbar"><i id="fb-del"></i></div><span class="fp" id="fp-del">—</span></div></div>
+          <div class="frow"><div class="fr1"><span class="fl">ABERTOS</span><span class="fv" id="fv-open">0</span></div><div class="fr2"><div class="fbar"><i id="fb-open"></i></div><span class="fp" id="fp-open">—</span></div></div>
+          <div class="frow"><div class="fr1"><span class="fl">CLIQUES</span><span class="fv" id="fv-click">0</span></div><div class="fr2"><div class="fbar"><i id="fb-click"></i></div><span class="fp" id="fp-click">—</span></div></div>
+          <div class="frow"><div class="fr1"><span class="fl">SUBMISSÕES</span><span class="fv" id="fv-sub">0</span></div><div class="fr2"><div class="fbar"><i id="fb-sub" style="background:var(--red)"></i></div><span class="fp" id="fp-sub">—</span></div></div>
+        </div>
+        <div class="creds">
+          <div class="creds-h">CREDENCIAIS CAPTURADAS <span class="tag fic">FICTÍCIAS</span></div>
+          <div class="creds-list" id="credsList"><div class="empty">Aguardando o primeiro impacto. Nenhum dado real é coletado — todos os registros desta lista são inventados para fins de treinamento.</div></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="foot">
+    <span><b>EXERCÍCIO CONTROLADO.</b> Uso contra terceiros sem autorização é crime — art. 154-A CP · Lei 12.737/2012.</span>
+    <span>100% LOCAL — NENHUM DADO SAI DESTE NAVEGADOR</span>
+  </footer>
+</div>
+
+<!-- ======== BRIEFING ======== -->
+<div class="ovl show" id="brief">
+  <div class="card">
+    <span class="top-tag" data-ic="shield">EXERCÍCIO CONTROLADO DE CONSCIENTIZAÇÃO</span>
+    <h2>Antes de abrir o console</h2>
+    <div class="rules">
+      <div class="rule"><span class="rn">01</span><span><b>Tudo roda localmente.</b> Nenhuma rede é acessada, nada é enviado, nenhuma credencial real é coletada. Feche a aba e nada existe.</span></div>
+      <div class="rule"><span class="rn">02</span><span><b>Os alvos são perfis fictícios</b> com traços de comportamento simulados; as senhas exibidas são inventadas para fins didáticos.</span></div>
+      <div class="rule"><span class="rn">03</span><span><b>O objetivo é reconhecimento:</b> ao montar o ataque, você aprende a identificar domínios imitadores, urgência artificial e QR codes maliciosos.</span></div>
+      <div class="rule"><span class="rn">04</span><span>Para testar pessoas reais, use plataformas dedicadas com <b>autorização institucional formal</b> — nunca as técnicas aqui demonstradas.</span></div>
+    </div>
+    <div class="fine">Referências de defesa: MFA resistente a phishing (FIDO2/passkeys), DMARC restritivo, treinamento recorrente e canal de denúncia em um clique.</div>
+    <button class="btn primary big" id="btnBrief" data-ic="check"><span>ENTENDI — ABRIR O CONSOLE</span></button>
+  </div>
+</div>
+
+<!-- ======== SCAN ======== -->
+<div class="ovl" id="scanlay">
+  <div class="camzone">
+    <div class="cam">
+      <span class="cnr2 tl"></span><span class="cnr2 tr"></span><span class="cnr2 bl"></span><span class="cnr2 br"></span>
+      <div class="cam-mini" id="camMini"></div>
+      <div class="sweep" id="sweep"></div>
+    </div>
+    <div class="camres">
+      <div class="cl">LEITURA DA CÂMERA — DECODIFICAÇÃO</div>
+      <div class="cu" id="camUrl">decodificando…</div>
+      <div class="cv" id="camVerdict"></div>
+      <div class="cnote" id="camNote"></div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn" style="flex:1" id="btnScanClose" data-ic="x"><span>FECHAR</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== RELATÓRIO ======== -->
+<div class="ovl" id="reportlay">
+  <div class="rep">
+    <div class="rep-h">
+      <h2>RELATÓRIO DE SIMULAÇÃO</h2>
+      <div class="dt" id="repDate">—</div>
+    </div>
+    <div class="rep-b" id="repBody"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ================================================================
+   OPERAÇÃO ISCA — simulador local de phishing/quishing (treinamento)
+   Nenhum dado sai do navegador. Todas as credenciais são fictícias.
+================================================================ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const now=()=>new Date().toLocaleTimeString('pt-BR',{hour12:false});
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const clamp=x=>Math.min(1,Math.max(0,x));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TIMERS=[];
+const wait=(ms,fn)=>{const t=setTimeout(fn,ms);TIMERS.push(t);return t};
+const genTok=()=>[...crypto.getRandomValues(new Uint8Array(6))].map(b=>b.toString(16).padStart(2,'0')).join('');
+
+/* ---------- ícones (paths inline, estilo traço 2px) ---------- */
+const I={
+ alert:'<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+ eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+ eyeoff:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/>',
+ copy:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+ down:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
+ x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>',
+ mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/>',
+ key:'<circle cx="8" cy="16" r="5"/><path d="m11.5 12.5 4-4"/><path d="m21 2-2 2"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>',
+ back:'<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
+ reload:'<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
+ file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+ scan:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+ pointer:'<path d="M4 4l7.2 16.3 2.4-7.1 7.1-2.4z"/>',
+ lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+ qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M7 7h.01M17 17h.01"/>'
+};
+const ic=(n,s=15)=>'<svg class="ic" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">'+I[n]+'</svg>';
+ $$('[data-ic]').forEach(e=>e.insertAdjacentHTML('afterbegin',ic(e.dataset.ic, e.dataset.s||15)));
+
+/* ---------- dados ---------- */
+const REF='corp.com';
+const PRETEXTS={
+ ti:{tag:'TI · CREDENCIAL',label:'Expiração de senha',urg:.9,cred:.75,
+  from:'Central de Segurança Corp &lt;no-reply@corp-secure.net&gt;',
+  subj:'[AÇÃO URGENTE] Sua senha corporativa expira em 24 horas',
+  cta:'Redefinir senha agora',
+  p1:'Identificamos que sua senha de acesso atinge o prazo de expiração nas próximas <b>24 horas</b>. Para evitar a suspensão automatica do seu acesso aos sistemas corporativos, redefina a senha imediatamente pelo portal seguro abaixo.',
+  p2:'Falha na renovação resultará em bloqueio permanente da conta e abertura de incidente de conformidade.',
+  sig:'Central de Segurança — Departmento de TI<br>Mensagem automática. Não responda.'},
+ rh:{tag:'RH · BENEFÍCIO',label:'Bônus extraordinário',urg:.55,cred:.6,
+  from:'RH Benefícios &lt;rh.beneficios@corp-portal.net&gt;',
+  subj:'Você foi pré-selecionado para o bônus extraordinário do trimestre',
+  cta:'Confirmar dados e receber',
+  p1:'Parabéns! Você está entre os colaboradores pré-selecionados do <b>bônus extraordinário</b> do trimestre. Para liberar o crédito, confirme seus dados e credenciais de acesso no formulario do portal.',
+  p2:'O prazo de confirmação encerra-se em 48 horas. Após esse período, o benefício é redistribuído a outro colaborador.',
+  sig:'Coordenação de Benefícios — RH<br>Atenciosamente,'},
+ lock:{tag:'TI · BLOQUEIO',label:'Conta bloqueada',urg:1,cred:.7,
+  from:'Corp ID Alertas &lt;alertas@corp-verify.net&gt;',
+  subj:'Acesso bloqueado: atividade suspeita detectada na sua conta',
+  cta:'Restaurar acesso agora',
+  p1:'Detectamos um acesso de localização desconhecida à sua conta corporativa. Por segurança, o acesso foi <b>bloqueado preventivamente</b>.',
+  p2:'Restaure o acesso em até <b>6 horas</b>, sob risco de bloqueio permanente e perda de mensagens não sincronizadas.',
+  sig:'Corp ID — Proteção de Contas<br>Não compartilhe este código com ninguém.'}
+};
+const TARGETS=[
+ {id:1,name:'Ana Duarte',   dept:'Financeiro',mail:'a.duarte@corp.com',sk:.35,haste:.80,pass:'Corp@2024', status:'pending',via:null},
+ {id:2,name:'Bruno Lima',   dept:'Vendas',    mail:'b.lima@corp.com',  sk:.12,haste:.95,pass:'bruno123',  status:'pending',via:null},
+ {id:3,name:'Carla Nunes',  dept:'RH',        mail:'c.nunes@corp.com', sk:.55,haste:.40,pass:'nunes2024', status:'pending',via:null},
+ {id:4,name:'Diego Ramos',  dept:'TI',        mail:'d.ramos@corp.com', sk:.92,haste:.20,pass:'D!ego#92Rm',status:'pending',via:null},
+ {id:5,name:'Elisa Prado',  dept:'Marketing', mail:'e.prado@corp.com', sk:.45,haste:.60,pass:'senha123',  status:'pending',via:null},
+ {id:6,name:'Felipe Costa', dept:'Jurídico',  mail:'f.costa@corp.com', sk:.75,haste:.30,pass:'Fcosta@2024',status:'pending',via:null}
+];
+const STLAB={pending:['—',''],sent:['ENTREGUE','sent'],open:['ABRIU','open'],click:['CLICOU','click'],sub:['COMPROMETIDA','sub'],safe:['RESISTIU','safe'],ignore:['IGNOROU','']};
+
+const S={
+ phase:'idle', view:'setup', pretext:'ti', domain:'corp-secure.net', token:genTok(),
+ stats:{del:0,open:0,click:0,sub:0}, creds:[], firstCap:null, startAt:null,
+ entered:false, userClick:false, userCap:false, mailSel:'phish', hoverLogged:false
+};
+const baitURL=()=>'https://'+S.domain+'/sso/login?session='+S.token;
+
+/* ---------- log ---------- */
+const logEl=$('#log'); let logCount=0; const liveKey={};
+function log(kind,tag,msg){
+ logCount++; $('#evCount').textContent=String(logCount).padStart(3,'0');
+ const d=document.createElement('div'); d.className='le';
+ d.innerHTML='<span class="t">'+now()+'</span><span class="k k-'+kind+'">'+tag+'</span><span class="m">'+msg+'</span>';
+ logEl.appendChild(d);
+ while(logEl.children.length>260)logEl.firstChild.remove();
+ logEl.scrollTop=logEl.scrollHeight;
+}
+function keylog(field,val){
+ let e=liveKey[field];
+ if(!e){
+  e=document.createElement('div'); e.className='le';
+  e.innerHTML='<span class="t">'+now()+'</span><span class="k k-keys">KEYLOG</span><span class="m"></span>';
+  logEl.appendChild(e); liveKey[field]=e;
+ }
+ e.querySelector('.m').innerHTML='campo <b>'+field+'</b> ← “'+esc(val)+'”<span class="caret"></span>';
+ logEl.scrollTop=logEl.scrollHeight;
+}
+function closeKeylog(){
+ Object.values(liveKey).forEach(e=>{e.querySelector('.m').innerHTML+='<span class="oktag">ENVIADO</span>'});
+ for(const k in liveKey)delete liveKey[k];
+}
+
+/* ---------- utilidades visuais ---------- */
+function toast(type,msg){
+ const d=document.createElement('div'); d.className='toast '+type; d.innerHTML=msg;
+ $('#toasts').appendChild(d);
+ setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(14px)';setTimeout(()=>d.remove(),320)},4200);
+}
+function scramble(el,txt){
+ const g='!<>-_/[]{}=+*^?#█████';
+ let i=0; clearInterval(el._scr);
+ el._scr=setInterval(()=>{
+  el.textContent=txt.split('').map((c,j)=>j<i?c:g[Math.floor(Math.random()*g.length)]).join('');
+  i+=Math.max(1,txt.length/12);
+  if(i>=txt.length){el.textContent=txt;clearInterval(el._scr)}
+ },30);
+}
+function setMode(victim){
+ scramble($('#modeText'), victim?'PERSPECTIVA: ALVO':'PERSPECTIVA: OPERADOR');
+ $('#modeChip').classList.toggle('victim',victim);
+}
+function setView(v){
+ $('#stage').dataset.view=v; S.view=v;
+ $('#stageCtx').textContent={setup:'CONFIGURAÇÃO',running:'OPERAÇÃO EM CURSO',mail:'ALVO — CORREIO',phish:'ALVO — ISCA'}[v];
+}
+function setLive(st){
+ const el=$('#liveTag');
+ el.className='live '+st;
+ el.textContent={off:'AGUARDANDO',on:'AO VIVO',done:'ENCERRADA'}[st];
+}
+
+/* ---------- relógios ---------- */
+setInterval(()=>{$('#clock').textContent=now()},500);
+setInterval(()=>{
+ if(!S.startAt)return;
+ const s=Math.floor((Date.now()-S.startAt)/1000);
+ $('#tplus').textContent='T+'+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+},1000);
+
+/* ---------- similaridade de domínio ---------- */
+function lev(a,b){
+ const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+ for(let j=1;j<=n;j++)d[0][j]=j;
+ for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+  d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));
+ return d[m][n];
+}
+function simScore(raw){
+ let d=raw.toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0].trim();
+ if(!d)return 0;
+ let s=1-lev(d,REF)/Math.max(d.length,REF.length);
+ if(d.includes('corp'))s+=.14;
+ if(/\.(net|io|xyz|top|online|site|info|suporte)$/.test(d))s+=.08;
+ if(d.includes('-'))s+=.07;
+ return Math.max(5,Math.min(99,Math.round(s*100)));
+}
+let debT;
+function onDomain(){
+ clearTimeout(debT);
+ debT=setTimeout(()=>{
+  let v=$('#domainInput').value.trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0];
+  if(v){S.domain=v}
+  const p=simScore(S.domain);
+  $('#simPct').textContent=p;
+  const f=$('#simFill'); f.style.width=p+'%';
+  f.style.background = p<45?'var(--green)': p<75?'var(--amber)':'var(--red)';
+  $('#simVerdict').textContent = p<45?'fracamente parecido — desperta desconfiança': p<75?'verossímil':'altamente enganoso a olho nu';
+  renderQR();
+ },250);
+}
+ $('#domainInput').addEventListener('input',onDomain);
+
+/* ---------- QR code ---------- */
+function renderQR(){
+ const url=baitURL();
+ let qr;
+ try{ qr=qrcode(0,'M'); qr.addData(url); qr.make(); }catch(e){ return; }
+ const n=qr.getModuleCount(), pad=2, size=n+pad*2;
+ const inFin=(r,c)=>(r<7&&c<7)||(r<7&&c>=n-7)||(r>=n-7&&c<7);
+ let mods='';
+ for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+  if(inFin(r,c))continue;
+  if(qr.isDark(r,c)) mods+='<rect class="d" x="'+(c+pad)+'" y="'+(r+pad)+'" width="1" height="1" rx=".24" style="animation-delay:'+r*13+'ms"/>';
+ }
+ const fin=(x,y)=>'<g transform="translate('+(x+pad)+','+(y+pad)+')"><rect class="d" width="7" height="7" rx="1.7"/><rect class="l" x="1" y="1" width="5" height="5" rx="1.1"/><rect class="d" x="2" y="2" width="3" height="3" rx=".8"/></g>';
+ $('#qrBox').innerHTML=
+  '<svg id="qrSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+size+' '+size+'" width="480" height="480">'+
+  '<style>.d{fill:#14150e;animation:qi .3s both}.l{fill:#ece9da}@keyframes qi{from{opacity:0}}</style>'+
+  fin(0,0)+fin(n-7,0)+fin(0,n-7)+mods+'</svg>';
+ $('#urlOut').textContent=url;
+ $('#camMini').innerHTML=$('#qrBox').innerHTML;
+}
+ $('#btnQrDown').addEventListener('click',()=>{
+ const svg=$('#qrSvg'); if(!svg)return;
+ const src=new XMLSerializer().serializeToString(svg);
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([src],{type:'image/svg+xml'}));
+ a.download='qrcode-isca-'+S.domain.replace(/[^a-z0-9.-]/g,'')+'.svg';
+ a.click(); URL.revokeObjectURL(a.href);
+ toast('ok',ic('qr',13)+' QR da isca exportado — aponta para '+S.domain);
+ log('info','SYS','QR da isca exportado como SVG (destino: '+S.domain+')');
+});
+
+/* ---------- simular escaneamento ---------- */
+ $('#btnScan').addEventListener('click',()=>{
+ $('#scanlay').classList.add('show');
+ $('#sweep').style.display='block';
+ $('#camUrl').textContent='decodificando…';
+ $('#camVerdict').innerHTML=''; $('#camNote').textContent='';
+ wait(1500,()=>{
+  $('#sweep').style.display='none';
+  const url=baitURL(), host=new URL(url).host, spoof=host!==REF;
+  $('#camUrl').textContent=url;
+  $('#camVerdict').innerHTML= spoof
+   ? '<span class="tag red">DOMÍNIO ≠ OFICIAL ('+REF+')</span>'
+   : '<span class="tag fic">DOMÍNIO OFICIAL</span>';
+  $('#camNote').textContent = spoof
+   ? 'É isto que uma vítima atenta veria ao inspecionar o QR. A maioria das pessoas apenas aponta a câmera e toca na notificação — o quishing existe porque esse passo é raro.'
+   : 'Um QR só é seguro quando o destino é verificado.';
+  log('warn','SCAN','QR decodificado em simulação — destino oculto: '+url);
+ });
+});
+ $('#btnScanClose').addEventListener('click',()=>$('#scanlay').classList.remove('show'));
+
+/* ---------- pretexto ---------- */
+function buildPretexts(){
+ $('#pretextRows').innerHTML=Object.entries(PRETEXTS).map(([id,p])=>{
+  const cells=(v)=>'<span class="cells">'+Array.from({length:5},(_,i)=>'<i class="'+(i<Math.round(v*5)?'on':'')+'"></i>').join('')+'</span>';
+  return '<div class="prow'+(id===S.pretext?' sel':'')+'" data-p="'+id+'">'+
+   '<span class="radio"></span>'+
+   '<div><h4>'+p.label+'</h4><div class="subj">'+p.tag+' · “'+p.subj+'”</div></div>'+
+   '<div class="gauge"><div class="glab">URGÊNCIA</div>'+cells(p.urg)+'<div class="glab" style="margin-top:7px">PLAUSIBILIDADE</div>'+cells(p.cred)+'</div></div>';
+ }).join('');
+ $$('#pretextRows .prow').forEach(r=>r.addEventListener('click',()=>{
+  S.pretext=r.dataset.p;
+  $$('#pretextRows .prow').forEach(x=>x.classList.toggle('sel',x===r));
+  previewPretext();
+ }));
+ previewPretext();
+}
+function previewPretext(){
+ const p=PRETEXTS[S.pretext];
+ $('#pretextPreview').innerHTML='DE: <b>'+p.from+'</b><br>ASSUNTO: <b>'+p.subj+'</b>';
+}
+ $('#btnLaunch').addEventListener('click',launch);
+
+/* ---------- disparo da campanha ---------- */
+function decide(t){
+ const p=PRETEXTS[S.pretext];
+ return {
+  open:  Math.random()<clamp(.45+p.urg*.35+t.haste*.2-t.sk*.35+rnd(-.08,.08)),
+  click: Math.random()<clamp(.35+p.cred*.3-t.sk*.45+t.haste*.18+rnd(-.06,.06)),
+  sub:   Math.random()<clamp(.55+p.urg*.25-t.sk*.55+rnd(-.06,.06))
+ };
+}
+function launch(){
+ if(S.phase==='running')return;
+ S.phase='running'; S.startAt=Date.now(); S.firstCap=null;
+ $('#btnLaunch').disabled=true;
+ $('#btnLaunch').querySelector('span').textContent='OPERAÇÃO EM CURSO…';
+ $('#doneNote').hidden=true;
+ setLive('on'); setView('running'); renderCamp(); renderTargets();
+ log('warn','SYS','Campanha disparada — pretexto “'+PRETEXTS[S.pretext].label+'” · isca '+S.domain+' · 6 alvos + cobaia opcional');
+ toast('warn',ic('mail',13)+' Campanha entregue a 6 alvos fictícios');
+
+ TARGETS.forEach((t,i)=>{
+  const d=decide(t), base=500+i*260;
+  wait(base,()=>{t.status='sent';updateTarget(t);bump('del');log('info','MAIL','entregue a '+t.name+' ('+t.dept+') · '+t.mail)});
+  if(d.open){
+   wait(base+rnd(900,2200),()=>{
+    t.status='open';updateTarget(t);bump('open');log('info','OPEN',t.name+' abriu o e-mail');
+    if(d.click){
+     wait(rnd(1000,2600),()=>{
+      const viaQR=t.haste>.6&&Math.random()<.5;
+      t.via=viaQR?'QR — mural':'link no e-mail';
+      t.status='click';updateTarget(t);bump('click');
+      if(viaQR)log('warn','QR',t.name+' escaneou o QR do adesivo no elevador — nem abriu o e-mail');
+      else log('warn','CLICK',t.name+' clicou em “'+PRETEXTS[S.pretext].cta+'”');
+      if(d.sub) wait(rnd(1400,3200),()=>{t.status='sub';updateTarget(t);t.el.classList.add('hit');capture(t.mail,t.pass,t.via,t.name+' · '+t.dept)});
+      else wait(rnd(1400,3200),()=>{t.status='safe';updateTarget(t);log('ok','SAFE',t.name+' desconfiou na tela de login e não submeteu (ceticismo '+Math.round(t.sk*100)+'%)')});
+     });
+    } else wait(rnd(800,2000),()=>{t.status='safe';updateTarget(t);log('ok','SAFE',t.name+' leu, desconfiou do remetente e não clicou')});
+   });
+  } else wait(base+rnd(2200,4200),()=>{t.status='ignore';updateTarget(t);log('info','SKIP',t.name+' não interagiu com a mensagem')});
+ });
+
+ wait(500+TARGETS.length*260+6000,()=>{
+  if(S.phase!=='running')return;
+  S.phase='done'; setLive('done'); $('#doneNote').hidden=false;
+  log('ok','SYS','Operação encerrada. Compile o relatório para o debriefing da equipe.');
+  toast('ok',ic('check',13)+' Operação concluída — relatório disponível no topo');
+ });
+}
+
+/* ---------- views running ---------- */
+function renderCamp(){
+ const p=PRETEXTS[S.pretext];
+ $('#campGrid').innerHTML=[
+  ['PRETEXTO',p.label],['REMETENTE',p.from.replace(/&lt;.*&gt;/,'').trim()+' ('+p.from.match(/@([a-z.-]+)/)[1]+')'],
+  ['DOMÍNIO DA ISCA',S.domain],['URL DA ISCA',baitURL().replace('https://','')],
+  ['PODER DE ENGANHO',simScore(S.domain)+'%'],['TOKEN DE SESSÃO',S.token]
+ ].map((c,i)=>'<div class="cc-cell"><div class="l">'+c[0]+'</div><div class="v'+(i>1?' hot':'')+'">'+esc(c[1])+'</div></div>').join('');
+}
+function renderTargets(){
+ $('#targetList').innerHTML=TARGETS.map(t=>
+  '<div class="trow" data-id="'+t.id+'"><span class="ti">0'+t.id+'</span><span class="tn">'+t.name+'</span>'+
+  '<span class="td">'+t.dept+' · '+t.mail+' · ceticismo '+Math.round(t.sk*100)+'%</span>'+
+  '<span class="st" data-st></span></div>').join('');
+ TARGETS.forEach(t=>t.el=$('.trow[data-id="'+t.id+'"]'));
+ TARGETS.forEach(updateTarget);
+}
+function updateTarget(t){
+ if(!t.el)return;
+ const l=STLAB[t.status];
+ const st=t.el.querySelector('[data-st]');
+ st.textContent=l[0]; st.className='st '+l[1];
+}
+
+/* ---------- métricas ---------- */
+function bump(k){ S.stats[k]++; renderFunnel(); updateDial(); }
+function renderFunnel(){
+ const del=Math.max(S.stats.del,1);
+ [['del',''],['open',''],['click',''],['sub','']].forEach(([k])=>{
+  $('#fv-'+k).textContent=S.stats[k];
+  $('#fb-'+k).style.width=(S.stats[k]/del*100)+'%';
+  $('#fp-'+k).textContent=S.stats.del?Math.round(S.stats[k]/del*100)+'%':'—';
+ });
+}
+function updateDial(){
+ const p=S.stats.del?S.stats.sub/S.stats.del:0;
+ const arc=$('#dialArc');
+ arc.style.strokeDashoffset=176*(1-p);
+ arc.style.stroke = p<=0?'var(--green)': p<.25?'var(--green)': p<.5?'var(--amber)':'var(--red)';
+ const num=$('#dialNum'), from=parseFloat(num.textContent)||0, to=Math.round(p*100), t0=performance.now();
+ (function anim(t){
+  const k=Math.min(1,(t-t0)/700), e=1-Math.pow(1-k,3);
+  num.textContent=Math.round(from+(to-from)*e);
+  if(k<1)requestAnimationFrame(anim);
+ })(t0);
+}
+
+/* ---------- capturas ---------- */
+function capture(mail,pass,via,who){
+ S.stats.sub++; renderFunnel(); updateDial();
+ if(S.startAt&&!S.firstCap)S.firstCap=Date.now()-S.startAt;
+ S.creds.push({mail,pass,via,who,at:now()});
+ log('bad','HIT','CREDENCIAIS CAPTURADAS — '+mail+' · senha “'+pass+'” · vetor: '+via);
+ toast('bad',ic('key',13)+' Captura registrada: '+mail);
+ renderCreds();
+}
+function renderCreds(){
+ const el=$('#credsList');
+ if(!S.creds.length){
+  el.innerHTML='<div class="empty">Aguardando o primeiro impacto. Nenhum dado real é coletado — todos os registros desta lista são inventados para fins de treinamento.</div>';
+  return;
+ }
+ el.innerHTML=S.creds.map((c,i)=>
+  '<div class="cred"><div class="cr1"><span>'+esc(c.mail)+'</span><span class="ct">'+c.at+'</span></div>'+
+  '<div class="cr2"><span class="pv blur" data-pv="'+i+'">'+esc(c.pass)+'</span>'+
+  '<button class="eye" data-eye="'+i+'">'+ic('eye',14)+'</button></div>'+
+  '<div class="cr3">'+esc(c.via)+' · '+esc(c.who)+'</div></div>').join('');
+ $$('#credsList .eye').forEach(b=>b.addEventListener('click',()=>{
+  const pv=$('[data-pv="'+b.dataset.eye+'"]'), hid=pv.classList.toggle('blur');
+  b.innerHTML=ic(hid?'eye':'eyeoff',14);
+ }));
+}
+
+/* ---------- modo vítima: correio ---------- */
+function enterVictim(){
+ S.entered=true; setMode(true); setView('mail'); buildMail();
+ if(S.phase!=='idle'){ bump('del'); }
+ log('warn','VICTIM','O operador entrou na isca como cobaia — caixa de correio aberta'+(S.phase!=='idle'?' (contabilizado no funil)':' (modo avulso)'));
+}
+function buildMail(){
+ const p=PRETEXTS[S.pretext];
+ $('#mrFrom').textContent=p.from.replace(/&lt;.*&gt;/,'').replace(/&amp;/g,'&').trim();
+ $('#mrSubj').textContent=p.subj;
+ $('#mrPrev').textContent=p.p1.replace(/<[^>]+>/g,'').slice(0,52)+'…';
+ renderMail();
+}
+function renderMail(){
+ const p=PRETEXTS[S.pretext], read=$('#mailRead');
+ if(S.mailSel==='legit'){
+  read.innerHTML='<div class="mh"><div class="mh-s">Convite: palestra “Engenharia Social na prática”</div>'+
+  '<div class="mh-f">De: Comitê de Segurança &lt;seguranca@'+REF+'&gt; · Para: você · 09:12</div></div>'+
+  '<div class="mbody"><p>Prezadas equipes,</p><p>Na próxima <b>5ª feira, às 15h</b>, o auditório central recebe a palestra “Engenharia Social na prática”, com análise de casos reais de phishing e quishing.</p>'+
+  '<p>Inscrições pelo portal interno de aprendizagem.</p><a class="cta" href="#" data-legitlink style="background:#0f172a">Inscrever-se</a>'+
+  '<p class="sig">Comitê de Segurança — '+REF+'<br>Este é um canal oficial: o domínio do remetente é o corporativo.</p></div>';
+ } else {
+  read.innerHTML='<div class="mh"><div class="mh-s">'+p.subj+'</div>'+
+  '<div class="mh-f">De: '+p.from+' · Para: você · agora</div></div>'+
+  '<div class="extbanner">'+ic('alert',13)+' REMETENTE EXTERNO — confira o domínio antes de interagir</div>'+
+  '<div class="mbody"><p>Prezado(a) Colaborador(a),</p><p>'+p.p1+'</p><p>'+p.p2+'</p>'+
+  '<a class="cta" href="#" data-phishlink data-href="'+baitURL()+'">'+p.cta+'</a>'+
+  '<p class="sig">'+p.sig+'</p></div>';
+ }
+}
+ $$('.mailrow').forEach(r=>r.addEventListener('click',()=>{
+ S.mailSel=r.dataset.mail;
+ $$('.mailrow').forEach(x=>x.classList.toggle('sel',x===r));
+ renderMail();
+}));
+ $('#mailRead').addEventListener('click',e=>{
+ const ph=e.target.closest('[data-phishlink]');
+ if(ph){
+  e.preventDefault();
+  if(!S.userClick){S.userClick=true;bump('click');log('warn','CLICK','ALVO[VOCÊ] clicou na isca — o texto do botão não revelava o destino real')}
+  openPhish(); return;
+ }
+ if(e.target.closest('[data-legitlink]')){
+  e.preventDefault();
+  toast('ok',ic('check',13)+' Destino legítimo (corp.com) — na sandbox, nada acontece');
+ }
+});
+ $('#mailRead').addEventListener('mouseover',e=>{
+ const a=e.target.closest('[data-phishlink]');
+ const st=$('#mailStatus');
+ if(a){
+  st.textContent='→ destino real: '+a.dataset.href; st.classList.add('warn');
+  if(!S.hoverLogged){S.hoverLogged=true;log('info','VICTIM','ALVO[VOCÊ] inspecionou o destino real do link no rodapé do cliente — poucos fazem isso')}
+ }
+});
+ $('#mailRead').addEventListener('mouseout',()=>{
+ const st=$('#mailStatus'); st.textContent='passe o mouse sobre os links para inspecionar o destino…'; st.classList.remove('warn');
+});
+
+/* ---------- modo vítima: página falsa ---------- */
+function openPhish(){
+ setView('phish');
+ $('#phishUrl').textContent=baitURL().replace('https://','');
+ $('#phishPage').classList.remove('dim');
+ $('#laudo').classList.remove('show');
+ $('#mkLayer').innerHTML='';
+}
+ $('#btnBackMail').addEventListener('click',()=>setView('mail'));
+
+ $('#pfEmail').addEventListener('input',e=>keylog('E-MAIL',e.target.value));
+ $('#pfPass').addEventListener('input',e=>keylog('SENHA',e.target.value));
+ $('#phishForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const em=$('#pfEmail').value.trim(), pw=$('#pfPass').value;
+ if(!em||!pw){
+  $('#pCard').classList.add('shake'); setTimeout(()=>$('#pCard').classList.remove('shake'),450);
+  toast('warn',ic('alert',13)+' Preencha os dois campos para ver a captura acontecer');
+  return;
+ }
+ closeKeylog();
+ if(!S.userCap){
+  S.userCap=true;
+  capture(em||'cobaia@corp.com',pw,'link no e-mail (cobaia humana)','VOCÊ — operador/cobaia');
+ }else{
+  log('bad','HIT','Nova submissão da cobaia — métricas da rodada já contabilizadas');
+  toast('warn',ic('key',13)+' Captura reexibida — métricas mantidas');
+ }
+ startAnalysis();
+});
+
+/* ---------- laudo ---------- */
+const FINDINGS=[
+ {x:'62%',y:'22px', h:'O endereço não é o oficial',
+  p:'<code>'+REF+'</code> é o domínio corporativo; a isca usa um imitador. Ataques apostam em hífens, sufixos e homoglifos. Leia sempre o <b>domínio raiz</b> — antes da logo, do layout e do cadeado.'},
+ {x:'74px',y:'22px', h:'O cadeado não garante nada',
+  p:'O ícone de segurança indica apenas que a conexão é <b>criptografada</b>. Certificados gratuitos existem aos milhões — páginas de phishing usam HTTPS todos os dias. Legitimidade se lê no domínio, não no cadeado.'},
+ {x:'80%',y:'54%', h:'Tudo que você digitou foi registrado',
+  p:'Enquanto você digitava, <b>cada caractere apareceu em texto plano no painel de eventos</b> à esquerda (entradas KEYLOG). Uma página falsa com um passo extra captura até códigos de MFA por SMS ou app.'},
+ {x:'50%',y:'calc(100% - 30px)', h:'O rodapé denuncia o golpe',
+  p:'O suporte aponta para <code>suporte@corp-secure.net</code> — o mesmo domínio suspeito. Instituições reais centralizam atendimento em domínios oficiais e <b>nunca pedem senha fora do portal de SSO</b>.'},
+ {x:null,y:null, h:'O e-mail já continha todas as pistas',
+  p:'Urgência artificial (“24 horas”), saudação genérica, erros sutis (“automatica”, “Departmento”), banner de remetente externo e um botão cujo destino real só aparecia ao passar o mouse. <b>Desconfiança começa na caixa de entrada.</b>'}
+];
+function startAnalysis(){
+ setLive(S.phase==='idle'?'off':'on');
+ $('#phishPage').classList.add('dim');
+ const layer=$('#mkLayer');
+ layer.innerHTML=FINDINGS.slice(0,4).map((f,i)=>
+  '<div class="mk" data-i="'+i+'" style="left:'+f.x+';top:'+f.y+'">'+(i+1)+'</div>').join('');
+ $('#laudoList').innerHTML=FINDINGS.map((f,i)=>
+  '<div class="finding" data-mk="'+i+'" style="animation-delay:'+(i*.15)+'s">'+
+  '<div class="fh"><span class="fn">'+(i+1)+'</span><h4>'+f.h+'</h4></div><p>'+f.p+'</p></div>').join('');
+ wait(200,()=>{
+  $$('#mkLayer .mk').forEach((m,i)=>wait(i*140,()=>m.classList.add('show')));
+ });
+ $$('#laudoList .finding').forEach(fd=>{
+  fd.addEventListener('mouseenter',()=>{const m=$('#mkLayer .mk[data-i="'+fd.dataset.mk+'"]');if(m)m.classList.add('hot')});
+  fd.addEventListener('mouseleave',()=>{const m=$('#mkLayer .mk[data-i="'+fd.dataset.mk+'"]');if(m)m.classList.remove('hot')});
+ });
+ $('#laudo').classList.add('show');
+ log('bad','LAUDO','Debriefing aberto: 5 indicadores de comprometimento destacados');
+}
+ $('#btnAware').addEventListener('click',()=>{
+ $('#laudo').classList.remove('show');
+ $('#phishPage').classList.remove('dim');
+ $('#mkLayer').innerHTML='';
+ setMode(false);
+ setView(S.phase==='idle'?'setup':'running');
+ log('ok','SYS','Cobaia humana retornou ao console com debriefing completo');
+ toast('ok',ic('shield',13)+' Debriefing registrado — agora você sabe o que procurar');
+});
+
+/* ---------- relatório ---------- */
+function fmtDur(ms){const s=Math.round(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function openReport(){
+ const st=S.stats, del=st.del, rate=del?Math.round(st.sub/del*100):0;
+ $('#repDate').innerHTML='OP. ISCA Nº042<br>'+new Date().toLocaleString('pt-BR')+' · AMBIENTE LOCAL';
+ const pats=[
+  {k:'contém ano (20xx)',t:s=>/(19|20)\d{2}/.test(s)},
+  {k:'menos de 8 caracteres',t:s=>s.length<8},
+  {k:'sem símbolos/especiais',t:s=>!(/[^a-zA-Z0-9]/.test(s))},
+  {k:'usa “senha”, “123” ou o domínio',t:s=>/senha|123|corp/i.test(s)}
+ ].map(x=>({...x,n:S.creds.filter(c=>x.t(c.pass)).length})).filter(x=>x.n);
+ const recos=[
+  '<b>MFA resistente a phishing</b> (passkeys / FIDO2): anula a maior parte do impacto de uma credencial roubada.',
+  '<b>Política de verificação de domínio:</b> publique a lista oficial de domínios e treine a leitura do domínio raiz na barra de endereço.',
+  '<b>DMARC/SPF/DKIM restritivos</b> no domínio corporativo para dificultar a falsificação do remetente.',
+  '<b>Simulações recorrentes</b> com métricas por departamento — sem caráter punitivo, com foco em aprendizado.',
+  '<b>Canal de denúncia em um clique:</b> recompense quem reporta; uma denúncia rápida interrompe a campanha no primeiro minuto.'
+ ];
+ let html='<div class="rk">'+
+  '<div><div class="l">TAXA DE COMPROMETIMENTO</div><div class="v" style="color:'+(rate>=50?'var(--red)':rate>=25?'var(--amber)':'var(--green)')+'">'+rate+'%</div></div>'+
+  '<div><div class="l">TEMPO ATÉ A 1ª CAPTURA</div><div class="v">'+(S.firstCap?fmtDur(S.firstCap):'<small>sem capturas</small>')+'</div></div>'+
+  '<div><div class="l">CREDENCIAIS CAPTURADAS</div><div class="v">'+st.sub+' <small>fictícias</small></div></div></div>';
+ html+='<div class="rsec"><h3>FUNIL DO ATAQUE</h3><div class="rk" style="grid-template-columns:repeat(4,1fr)">'+
+  [['ENTREGUES',del],['ABERTOS',st.open],['CLIQUES',st.click],['SUBMISSÕES',st.sub]].map(f=>
+  '<div><div class="l">'+f[0]+'</div><div class="v">'+f[1]+'<small>'+(del?' · '+Math.round(f[1]/del*100)+'%':'')+'</small></div></div>').join('')+'</div></div>';
+ html+='<div class="rsec"><h3>DETALHAMENTO POR ALVO</h3><table class="rt"><tr><th>ALVO</th><th>SETOR</th><th>VETOR</th><th>STATUS</th><th>SENHA (FICTÍCIA)</th></tr>'+
+  TARGETS.map(t=>{const l=STLAB[t.status];return '<tr><td><b>'+t.name+'</b></td><td>'+t.dept+'</td><td>'+(t.via||'—')+'</td><td style="color:'+(t.status==='sub'?'var(--red)':t.status==='safe'?'var(--green)':'var(--dim)')+'">'+l[0]+'</td><td>'+(t.status==='sub'?t.pass:'—')+'</td></tr>'}).join('')+
+  (S.entered?'<tr><td><b>VOCÊ (cobaia)</b></td><td>Operação</td><td>link no e-mail</td><td style="color:var(--red)">'+(S.userCap?'COMPROMETIDA':'RESISTIU')+'</td><td>'+(S.userCap?'registrada no console':'—')+'</td></tr>':'')+
+  '</table></div>';
+ if(pats.length) html+='<div class="rsec"><h3>PADRÕES FRACOS NAS SENHAS CAPTURADAS</h3><div class="chips">'+
+  pats.map(x=>'<span class="chip">'+x.k+' <b>×'+x.n+'</b></span>').join('')+'</div></div>';
+ html+='<div class="rsec"><h3>RECOMENDAÇÕES DE DEFESA</h3><ul class="reco">'+
+  recos.map((r,i)=>'<li><span class="rn">0'+(i+1)+'</span><span>'+r+'</span></li>').join('')+'</ul></div>';
+ html+='<div class="rep-actions"><button class="btn primary" id="btnCopyRep" data-ic="copy"><span>COPIAR RELATÓRIO</span></button>'+
+  '<button class="btn" id="btnCloseRep" data-ic="x"><span>FECHAR</span></button></div>'+
+  '<div class="fine" style="margin-top:14px">Documento gerado localmente para treinamento de conscientização. Nenhuma credencial real foi coletada em nenhum momento.</div>';
+ $('#repBody').innerHTML=html;
+ $('#reportlay').classList.add('show');
+ $('#btnCloseRep').addEventListener('click',()=>$('#reportlay').classList.remove('show'));
+ $('#btnCopyRep').addEventListener('click',()=>{
+  const txt=[
+   'OPERAÇÃO ISCA — RELATÓRIO DE SIMULAÇÃO (TREINAMENTO)',
+   'Data: '+new Date().toLocaleString('pt-BR'),
+   'Funil: entregues '+del+' · abertos '+st.open+' · cliques '+st.click+' · submissões '+st.sub,
+   'Taxa de comprometimento: '+rate+'%'+(S.firstCap?' · 1ª captura em '+fmtDur(S.firstCap):''),
+   '',
+   'Detalhamento:',
+   ...TARGETS.map(t=>' - '+t.name+' ('+t.dept+'): '+STLAB[t.status][0]+(t.via?' — vetor '+t.via:'')+(t.status==='sub'?' — senha fictícia "'+t.pass+'"':'')),
+   S.entered?' - VOCÊ (cobaia): '+(S.userCap?'COMPROMETIDA':'RESISTIU'):'',
+   '',
+   'Recomendações: '+recos.map(r=>r.replace(/<[^>]+>/g,'')).join(' | '),
+   'Gerado localmente — nenhum dado real foi coletado.'
+  ].filter(Boolean).join('\n');
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('ok',ic('copy',13)+' Relatório copiado')};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>toast('ok',ic('copy',13)+' Relatório copiado')).catch(fb);
+  else fb();
+ });
+}
+ $('#btnReport').addEventListener('click',openReport);
+
+/* ---------- reset ---------- */
+function resetAll(){
+ TIMERS.forEach(clearTimeout); TIMERS.length=0;
+ S.phase='idle'; S.stats={del:0,open:0,click:0,sub:0}; S.creds=[];
+ S.firstCap=null; S.startAt=null; S.userClick=false; S.userCap=false; S.hoverLogged=false;
+ for(const k in liveKey)delete liveKey[k];
+ TARGETS.forEach(t=>{t.status='pending';t.via=null});
+ logEl.innerHTML=''; logCount=0; $('#evCount').textContent='000';
+ setLive('off'); $('#tplus').textContent='STANDBY';
+ $('#btnLaunch').disabled=false;
+ $('#btnLaunch').querySelector('span').textContent='INICIAR SIMULAÇÃO';
+ $('#doneNote').hidden=true;
+ $('#pfEmail').value=''; $('#pfPass').value='';
+ renderFunnel(); updateDial(); renderCreds(); setMode(false); setView('setup');
+ log('info','SYS','Console reiniciado — nova rodada disponível.');
+}
+ $$('.jsReset').forEach(b=>b.addEventListener('click',resetAll));
+ $$('.jsVictim').forEach(b=>b.addEventListener('click',enterVictim));
+
+/* ---------- init ---------- */
+ $('#btnBrief').addEventListener('click',()=>{
+ $('#brief').classList.remove('show');
+ toast('ok',ic('shield',13)+' Console aberto — exercício controlado iniciado');
+ log('info','SYS','Console de simulação iniciado. Configure a isca nas fases 1–3.');
+ log('info','SYS','Dica: entre na isca como cobaia e observe o painel de eventos enquanto digita.');
+});
+buildPretexts();
+renderQR();
+onDomain();
+renderFunnel();
+renderCreds();
+updateDial();
+setLive('off');
+console.log('%cOPERAÇÃO ISCA — exercício controlado. Nenhum dado sai do navegador; uso contra terceiros é crime.','color:#ffb224;font-weight:bold');
+</script>
+</body>
+</html>
