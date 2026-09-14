@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATAQUEST — A Missão do Cientista de Dados</title>
+<style>
+:root{
+  --bg:#070b16; --panel:#0e1628; --panel2:#141f3a; --line:#24335c;
+  --txt:#e8eefc; --mut:#8fa3c8; --cyan:#22d3ee; --mag:#e879f9;
+  --lime:#a3e635; --red:#f87171; --gold:#fbbf24;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);
+  background:radial-gradient(1100px 700px at 85% -10%,#152449 0%,var(--bg) 55%);
+  min-height:100vh}
+/* ---------- HUD ---------- */
+#hud{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  padding:12px 18px;background:rgba(7,11,22,.9);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.logo{font-weight:800;letter-spacing:.5px;font-size:18px;
+  background:linear-gradient(90deg,var(--cyan),var(--mag));-webkit-background-clip:text;background-clip:text;color:transparent}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--mut)}
+.chip b{color:var(--txt)}
+#hud .spacer{flex:1}
+button{font-family:inherit;cursor:pointer}
+.mini{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:6px 10px;font-size:12px}
+.mini:hover{color:var(--txt);border-color:var(--cyan)}
+/* ---------- Telas ---------- */
+main{max-width:900px;margin:0 auto;padding:26px 18px 60px}
+.screen{display:none}.screen.active{display:block;animation:fadein .35s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h1.title{font-size:clamp(28px,5vw,44px);font-weight:900;line-height:1.1;
+  background:linear-gradient(90deg,var(--cyan),var(--mag),var(--gold));
+  -webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:8px}
+.subtitle{color:var(--mut);margin-bottom:22px}
+.story{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--cyan);
+  border-radius:12px;padding:16px 18px;color:#cdd9f5;margin-bottom:20px;line-height:1.55}
+.howto{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:22px}
+.howto h3{font-size:14px;color:var(--cyan);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.howto li{margin:6px 0 6px 18px;color:var(--mut);font-size:14px}
+.field{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.field input{flex:1;min-width:220px;background:var(--panel2);border:1px solid var(--line);
+  color:var(--txt);border-radius:12px;padding:13px 15px;font-size:15px;outline:none}
+.field input:focus{border-color:var(--cyan)}
+.btn{border:none;border-radius:12px;padding:13px 22px;font-size:15px;font-weight:700;transition:.2s}
+.btn-primary{background:linear-gradient(90deg,#0ea5b7,#7c3aed);color:#fff}
+.btn-primary:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--mut)}
+.btn-ghost:hover{color:var(--txt);border-color:var(--cyan)}
+/* ---------- Mapa ---------- */
+#map{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:16px}
+.lvl{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;
+  display:flex;flex-direction:column;gap:8px;transition:.2s;position:relative}
+.lvl.open{cursor:pointer;border-color:#31467c}
+.lvl.open:hover{transform:translateY(-3px);border-color:var(--cyan);box-shadow:0 8px 30px rgba(34,211,238,.12)}
+.lvl.locked{opacity:.45}
+.lvl.done{border-color:#2e7d5b}
+.lvl .n{font-size:13px;color:var(--mut)}
+.lvl .nm{font-weight:800;font-size:17px}
+.lvl .wk{font-size:12.5px;color:var(--cyan)}
+.lvl .st{font-size:13px;color:var(--gold);margin-top:auto}
+.lvl.boss{grid-column:1/-1;background:linear-gradient(135deg,#1a1330,#0e1628);border-color:#5b3fa8;text-align:center;padding:26px}
+.lvl.boss .nm{font-size:22px}
+.badges-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.bdg{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--gold)}
+.bdg.off{opacity:.3;filter:grayscale(1);color:var(--mut)}
+/* ---------- Nível ---------- */
+.level-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:18px}
+.level-head .ic{font-size:34px}
+.level-head .tt{flex:1}
+.level-head .nm{font-weight:800;font-size:20px}
+.level-head .wk{font-size:12.5px;color:var(--cyan)}
+.level-head .step{font-size:12px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.stage-title{color:var(--mag);font-weight:700;margin-bottom:14px;font-size:15px}
+.qnum{font-size:12.5px;color:var(--mut);margin-bottom:6px}
+.qtext{font-size:19px;font-weight:700;margin-bottom:16px;line-height:1.4}
+.ops{display:grid;gap:10px}
+.opt{text-align:left;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+  border-radius:12px;padding:13px 16px;font-size:15px;transition:.15s}
+.opt:hover:not(:disabled){border-color:var(--cyan);transform:translateX(3px)}
+.opt.ok{background:rgba(163,230,53,.15);border-color:var(--lime);color:var(--lime);font-weight:700}
+.opt.bad{background:rgba(248,113,113,.12);border-color:var(--red);color:var(--red);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.sortcard{background:linear-gradient(135deg,#182449,#101a33);border:1px dashed #3d5490;
+  border-radius:14px;padding:30px 20px;text-align:center;font-size:20px;font-weight:800;margin-bottom:18px}
+.catgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.catbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:12px;
+  padding:16px 12px;font-size:14.5px;font-weight:700;transition:.15s}
+.catbtn:hover:not(:disabled){border-color:var(--mag)}
+.catbtn.ok{background:rgba(163,230,53,.15);border-color:var(--lime);color:var(--lime)}
+.catbtn.bad{background:rgba(248,113,113,.12);border-color:var(--red);color:var(--red)}
+.pool,.seq{display:flex;flex-wrap:wrap;gap:10px;min-height:56px;border:1px dashed #3d5490;
+  border-radius:14px;padding:12px;margin-bottom:14px;align-items:center}
+.seq{border-color:var(--cyan)}
+.pool-label,.seq-label{font-size:12px;color:var(--mut);width:100%}
+.stepchip{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+  border-radius:999px;padding:9px 16px;font-size:14px;font-weight:600}
+.stepchip.dim{opacity:.85}
+.stepchip:hover{border-color:var(--cyan)}
+.ordrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.fb{min-height:28px;margin-top:16px;font-weight:700;font-size:15px}
+.fb.ok{color:var(--lime)}.fb.bad{color:var(--red)}
+.nx{margin-top:14px}
+.hint{font-size:12.5px;color:var(--mut);margin-top:18px}
+/* ---------- Conclusão ---------- */
+.done-card{background:var(--panel);border:1px solid var(--gold);border-radius:18px;
+  padding:40px 24px;text-align:center;animation:fadein .4s}
+.done-emoji{font-size:56px;margin-bottom:10px}
+.done-card h2{font-size:26px;margin-bottom:8px}
+.done-pts{color:var(--lime);font-weight:800;font-size:18px;margin-bottom:14px}
+.badge-award{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  display:inline-block;padding:12px 18px;margin-bottom:22px;color:var(--gold)}
+/* ---------- Final ---------- */
+.final-box{background:var(--panel);border:1px solid var(--gold);border-radius:20px;padding:44px 24px;text-align:center}
+.final-rank{font-size:clamp(26px,5vw,40px);font-weight:900;color:var(--gold);margin:10px 0}
+.final-score{font-size:20px;color:var(--cyan);font-weight:800;margin-bottom:18px}
+#confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:99}
+#confetti span{position:absolute;top:-40px;animation:fall 2.8s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.15}}
+@media(max-width:560px){
+  .ops{grid-template-columns:1fr}
+  .hudwrap{width:100%}
+}
+</style>
+</head>
+<body>
+
+<header id="hud">
+  <span class="logo">⬡ DATAQUEST</span>
+  <span class="chip">👤 <b id="hud-team">—</b></span>
+  <span class="chip">🏅 <b id="hud-rank">Estagiário(a)</b></span>
+  <span class="chip">⭐ <b id="hud-score">0</b> pts</span>
+  <span class="chip">🎖️ <b id="hud-badges">0</b>/6 insígnias</span>
+  <span class="spacer"></span>
+  <button class="mini" onclick="backToMap()">🗺️ Mapa</button>
+  <button class="mini" onclick="restartAll()">🔄 Zerar</button>
+</header>
+
+<main>
+  <!-- INTRO -->
+  <section id="scr-intro" class="screen active">
+    <h1 class="title">DATAQUEST</h1>
+    <p class="subtitle">A Missão do Cientista de Dados · Big Data — Semanas 1 a 6</p>
+    <div class="story">
+      A empresa <b>InovaCorp</b> está afundada em dados desorganizados e decisões erradas.
+      Você foi contratado(a) como <b>Cientista de Dados Júnior</b>. Atravesse os <b>6 setores</b> da empresa,
+      colete as <b>6 insígnias</b> e enfrente o desafio final: <b>O Caso InovaCorp 👑</b>.
+    </div>
+    <div class="howto">
+      <h3>Como jogar</h3>
+      <ul>
+        <li>Responda para ganhar pontos. Acertos valem pontos; erros mostram a resposta certa.</li>
+        <li>Complete um setor para desbloquear o próximo e conquistar sua insígnia.</li>
+        <li>Cargos: 🎓 Estagiário(a) → 🥉 Analista → 🥈 Cientista de Dados → 🏆 Data Leader.</li>
+        <li>Seu progresso fica salvo neste navegador.</li>
+      </ul>
+    </div>
+    <div class="field">
+      <input id="team" maxlength="24" placeholder="Nome da equipe (ex.: Turma 1 — Os Data Miners)">
+      <button class="btn btn-primary" id="btn-start">▶ Iniciar missão</button>
+      <button class="btn btn-ghost" id="btn-continue" style="display:none">↩ Continuar jogo salvo</button>
+    </div>
+  </section>
+
+  <!-- MAPA -->
+  <section id="scr-map" class="screen">
+    <h1 class="title" style="font-size:26px">🗺️ Mapa da InovaCorp</h1>
+    <p class="subtitle">Complete os setores em ordem para desbloquear o desafio final.</p>
+    <div id="map"></div>
+    <div id="map-extra" style="margin-top:18px"></div>
+  </section>
+
+  <!-- NÍVEL -->
+  <section id="scr-level" class="screen">
+    <div class="level-head">
+      <div class="ic" id="lv-icon">🎯</div>
+      <div class="tt">
+        <div class="nm" id="lv-name">—</div>
+        <div class="wk" id="lv-week">—</div>
+      </div>
+      <span class="step" id="lv-step">Etapa 1/1</span>
+    </div>
+    <div id="stage"></div>
+    <div class="fb" id="fb"></div>
+    <p class="hint" id="lv-hint">💡 Os pontos desta missão são somados quando você conclui todas as etapas.</p>
+  </section>
+
+  <!-- FINAL -->
+  <section id="scr-final" class="screen">
+    <div class="final-box">
+      <div style="font-size:56px">👑</div>
+      <h2>Caso InovaCorp resolvido!</h2>
+      <div class="final-rank" id="fin-rank">—</div>
+      <div class="final-score" id="fin-score">—</div>
+      <div class="badges-row" id="fin-badges" style="justify-content:center"></div>
+      <p id="fin-msg" style="color:var(--mut);margin:18px auto 24px;max-width:520px"></p>
+      <button class="btn btn-primary" onclick="restartAll()">🔁 Jogar de novo</button>
+      <button class="btn btn-ghost" onclick="backToMap()">🗺️ Voltar ao mapa</button>
+    </div>
+  </section>
+</main>
+
+<div id="confetti"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+/* ================= CONTEÚDO DO JOGO (edite aqui!) ================= */
+const DATA={
+ levels:[
+  {n:1,icon:'🎤',name:'A Entrevista',week:'Semana 1 · Conceitos Gerais',badge:'Mestre dos 5 Vs',
+   stages:[{type:'quiz',pts:2,title:'Quiz rápido do RH — prove que conhece os conceitos:',items:[
+     {q:'O que caracteriza Big Data?',ops:['Ter apenas muitos arquivos salvos no computador','Grandes volumes que excedem ferramentas tradicionais, com velocidade e variedade','Somente dados numéricos em planilhas','Dados guardados em papel'],a:1},
+     {q:'Quais são os 5 Vs do Big Data?',ops:['Venda, Valor, Viagem, Visão, Vaga','Volume, Velocidade, Variedade, Veracidade, Valor','Visual, Virtual, Volátil, Valido, Vário','Nenhuma das anteriores'],a:1},
+     {q:'Qual é a principal função de um Cientista de Dados?',ops:['Consertar os computadores da empresa','Extrair conhecimento dos dados e apoiar decisões','Criar sites institucionais','Digitar documentos'],a:1},
+     {q:'A Ciência de Dados combina:',ops:['Estatística, programação e conhecimento do negócio','Apenas matemática avançada','Somente design gráfico','Apenas hardware'],a:0}]}]},
+  {n:2,icon:'📦',name:'O Armazém do Caos',week:'Semana 2 · Estrutura e Natureza dos Dados',badge:'Organizador(a) de Dados',
+   stages:[{type:'sort',pts:1,title:'Classifique cada item do depósito de dados:',cats:[
+     {id:'est',label:'🗄️ Estruturado'},{id:'semi',label:'📑 Semiestruturado'},{id:'nao',label:'🌀 Não estruturado'}],
+    items:[
+     {c:'Planilha de vendas em Excel',a:'est'},
+     {c:'Tabela SQL de clientes',a:'est'},
+     {c:'Arquivo CSV de exportação',a:'est'},
+     {c:'Cadastro de CPF em formulário',a:'est'},
+     {c:'Nota fiscal em XML',a:'semi'},
+     {c:'E-mail com anexo',a:'semi'},
+     {c:'Arquivo JSON de sensor',a:'semi'},
+     {c:'Log de servidor',a:'semi'},
+     {c:'Post em rede social (texto + imagem)',a:'nao'},
+     {c:'Áudio de ligação de atendimento',a:'nao'},
+     {c:'Foto de câmera de segurança',a:'nao'},
+     {c:'Vídeo do YouTube',a:'nao'}]}]},
+  {n:3,icon:'🧭',name:'A Sala de Reunião',week:'Semana 3 · Projeto de Big Data',badge:'Estrategista de Projetos',
+   stages:[
+    {type:'quiz',pts:2,title:'Diagnóstico do Analista — qual tipo de análise cada pergunta exige?',items:[
+     {q:'“O que aconteceu com as vendas do último trimestre?”',ops:['Descritiva','Diagnóstica','Preditiva','Prescritiva'],a:0},
+     {q:'“Por que as vendas caíram em março?”',ops:['Descritiva','Diagnóstica','Preditiva','Prescritiva'],a:1},
+     {q:'“Quanto vamos vender no próximo semestre?”',ops:['Descritiva','Diagnóstica','Preditiva','Prescritiva'],a:2},
+     {q:'“O que devemos fazer para aumentar as vendas?”',ops:['Descritiva','Diagnóstica','Preditiva','Prescritiva'],a:3}]},
+    {type:'quiz',pts:1,title:'Quem faz o quê? Associe a persona à responsabilidade:',items:[
+     {q:'Constrói pipelines e a infraestrutura de dados',ops:['Engenheiro de Dados','Cientista de Dados','Analista de BI','Data Steward (Governança)'],a:0},
+     {q:'Aplica estatística e Machine Learning aos dados',ops:['Engenheiro de Dados','Cientista de Dados','Analista de BI','Data Steward (Governança)'],a:1},
+     {q:'Cria relatórios e dashboards para apoiar decisões',ops:['Engenheiro de Dados','Cientista de Dados','Analista de BI','Data Steward (Governança)'],a:2},
+     {q:'Garante a qualidade, a segurança e as regras dos dados',ops:['Engenheiro de Dados','Cientista de Dados','Analista de BI','Data Steward (Governança)'],a:3}]}]},
+  {n:4,icon:'🧪',name:'O Laboratório de IA',week:'Semana 4 · Técnicas de Big Data',badge:'Domador(a) de Algoritmos',
+   stages:[{type:'sort',pts:2,title:'Classifique cada problema: que tipo de Machine Learning é?',cats:[
+     {id:'sup',label:'🎯 Supervisionada'},{id:'naoSup',label:'🧩 Não supervisionada'},{id:'naoMl',label:'🚫 Não é ML'}],
+    items:[
+     {c:'Prever se um cliente vai cancelar o plano (churn)',a:'sup'},
+     {c:'Prever o preço de um imóvel',a:'sup'},
+     {c:'Filtrar spams usando e-mails já rotulados',a:'sup'},
+     {c:'Agrupar clientes por comportamento de compra',a:'naoSup'},
+     {c:'Detectar anomalias em transações sem rótulos',a:'naoSup'},
+     {c:'Somar as vendas do mês no Excel',a:'naoMl'}]}]},
+  {n:5,icon:'🏗️',name:'A Torre de Controle',week:'Semana 5 · Arquitetura e Frameworks',badge:'Arquiteto(a) de Dados',
+   stages:[
+    {type:'order',pts:6,title:'Monte o pipeline de Big Data clicando nas etapas na ordem correta:',
+     steps:['Coleta','Ingestão','Armazenamento','Processamento','Análise','Visualização']},
+    {type:'quiz',pts:1,title:'Casamento de frameworks — complete a frase:',items:[
+     {q:'Hadoop HDFS serve para…',ops:['Armazenamento distribuído de arquivos','Processamento em memória','Streaming em tempo real','Visualização de dados'],a:0},
+     {q:'Apache Spark serve para…',ops:['Armazenamento distribuído de arquivos','Processamento rápido em memória','Streaming em tempo real','Visualização de dados'],a:1},
+     {q:'Apache Kafka serve para…',ops:['Armazenamento distribuído de arquivos','Processamento em lote','Ingestão de dados em tempo real (streaming)','Visualização de dados'],a:2},
+     {q:'MongoDB e Cassandra são…',ops:['Bancos relacionais SQL','Bancos NoSQL não relacionais','Ferramentas de BI','Linguagens de marcação'],a:1},
+     {q:'Um cluster de servidores é…',ops:['Um tipo de gráfico','Infraestrutura de hardware com processamento distribuído','Um framework de visualização','Um formato de arquivo'],a:1}]}]},
+  {n:6,icon:'📊',name:'A Apresentação ao CEO',week:'Semana 6 · Visualização de Big Data',badge:'Contador(a) de Histórias com Dados',
+   stages:[{type:'quiz',pts:2,title:'Escolha a visualização certa para cada história de dados:',items:[
+     {q:'Evolução das vendas mês a mês',ops:['Gráfico de linhas','Gráfico de pizza','Nuvem de palavras','Mapa de calor 3D'],a:0},
+     {q:'Comparação de vendas entre 5 filiais',ops:['Pizza com 20 fatias','Gráfico de barras/colunas','Tabela com 500 linhas','Nuvem de palavras'],a:1},
+     {q:'Participação de cada produto no total (5 produtos)',ops:['Gráfico de pizza/rosca','Histograma','Dispersão','Velocímetro'],a:0},
+     {q:'Correlação entre investimento em ads e receita',ops:['Pizza 3D','Gráfico de dispersão','Radar','Rosca'],a:1},
+     {q:'Monitoramento de KPIs em tempo real da empresa',ops:['Relatório em PDF','Dashboard interativo','Print de planilha','E-mail semanal'],a:1}]}]}
+ ],
+ boss:{icon:'👑',name:'O Caso InovaCorp',week:'Desafio Final · Apresente sua solução',badge:'Data Leader da InovaCorp',
+  stages:[{type:'quiz',pts:2,title:'CASO: 500 mil interações/dia (e-mails, posts, sensores e planilhas) e vendas caíram 20%. Decida como Cientista de Dados:',items:[
+   {q:'O conjunto de dados da InovaCorp é majoritariamente…',ops:['Somente estruturado','Variado: estruturado, semiestruturado e não estruturado','Somente não estruturado','Somente numérico'],a:1},
+   {q:'Descobrir “por que as vendas caíram 20%” exige análise…',ops:['Descritiva','Diagnóstica','Preditiva','Prescritiva'],a:1},
+   {q:'Para prever clientes com risco de cancelamento, a técnica adequada é…',ops:['Aprendizagem supervisionada (classificação)','Clustering não supervisionado','Somar no Excel','Reduzir o volume de dados'],a:0},
+   {q:'Para ingerir as interações em tempo real, a melhor ferramenta é…',ops:['Hadoop HDFS','Apache Kafka','PowerPoint','CSV'],a:1},
+   {q:'Para mostrar ao CEO a evolução das vendas ao longo do tempo, use…',ops:['Tabela com 10 mil linhas','Gráfico de linhas em dashboard','Pizza com 30 fatias','Nuvem de palavras'],a:1}]}]}
+};
+const stagePts=s=>s.type==='order'?s.pts:s.pts*s.items.length;
+const MAX=[...DATA.levels.map(L=>L.stages.reduce((t,s)=>t+stagePts(s),0)),...DATA.boss.stages.map(stagePts)].reduce((a,b)=>a+b,0);
+
+/* ================= ESTADO ================= */
+let S={team:'Equipe',score:0,done:{},badges:{},bossDone:false};
+let cur=null;
+function save(){try{localStorage.setItem('dataquest',JSON.stringify(S));}catch(e){}}
+function load(){try{return JSON.parse(localStorage.getItem('dataquest'));}catch(e){return null;}}
+
+function rankInfo(){const s=S.score;
+ if(s>=60)return{t:'🏆 Data Leader'};
+ if(s>=40)return{t:'🥈 Cientista de Dados'};
+ if(s>=20)return{t:'🥉 Analista de Dados'};
+ return{t:'🎓 Estagiário(a)'};}
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));$('#'+id).classList.add('active');window.scrollTo(0,0);}
+function renderHUD(){
+ $('#hud-team').textContent=S.team;
+ $('#hud-score').textContent=S.score+' / '+MAX;
+ $('#hud-rank').textContent=rankInfo().t;
+ $('#hud-badges').textContent=Object.keys(S.badges).length;
+}
+function feedback(ok,msg){const f=$('#fb');f.className='fb'+(ok===true?' ok':ok===false?' bad':'');f.textContent=msg;}
+function beep(ok){try{const AC=beep.AC=beep.AC||new (window.AudioContext||window.webkitAudioContext)();
+ const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);
+ g.gain.value=.05;o.type=ok?'sine':'sawtooth';o.frequency.value=ok?680:170;o.start();o.stop(AC.currentTime+(ok?.12:.22));}catch(e){}}
+function confetti(){const c=$('#confetti');c.innerHTML='';const em=['🎉','✨','💡','📊','🏅','🚀','⭐'];
+ for(let i=0;i<30;i++){const s=document.createElement('span');s.textContent=em[i%em.length];
+  s.style.left=Math.random()*100+'%';s.style.animationDelay=(Math.random()*.6)+'s';
+  s.style.fontSize=(14+Math.random()*20)+'px';c.appendChild(s);}
+ setTimeout(()=>c.innerHTML='',3400);}
+
+/* ================= MAPA ================= */
+function renderMap(){
+ const g=$('#map');g.innerHTML='';
+ DATA.levels.forEach((L,i)=>{
+  const unlocked=i===0||!!S.done[DATA.levels[i-1].n];
+  const done=!!S.done[L.n];
+  const d=document.createElement('div');
+  d.className='lvl '+(done?'done':unlocked?'open':'locked');
+  d.innerHTML=`<span class="n">NÍVEL ${L.n}</span>
+   <span class="nm">${L.icon} ${L.name}</span>
+   <span class="wk">${L.week}</span>
+   <span class="st">${done?'✅ Concluído · 🏅 '+L.badge:unlocked?'▶ Jogar agora':'🔒 Bloqueado'}</span>`;
+  if(unlocked&&!done)d.onclick=()=>startLevel(i,false);
+  g.appendChild(d);
+ });
+ const all6=DATA.levels.every(L=>S.done[L.n]);
+ const b=document.createElement('div');
+ b.className='lvl boss '+(S.bossDone?'done':all6?'open':'locked');
+ b.innerHTML=`<span class="n">DESAFIO FINAL</span>
+  <span class="nm">👑 O Caso InovaCorp</span>
+  <span class="wk">Aplique tudo: dados · análise · ML · arquitetura · visualização</span>
+  <span class="st">${S.bossDone?'✅ Missão cumprida!':all6?'▶ Enfrentar o desafio (+10 pts)':'🔒 Complete os 6 níveis'}</span>`;
+ if(all6&&!S.bossDone)b.onclick=()=>startLevel(0,true);
+ g.appendChild(b);
+ $('#map-extra').innerHTML=S.bossDone?'<button class="btn btn-primary" onclick="renderFinal()">🏆 Ver resultado final</button>':'';
+ renderHUD();
+}
+function backToMap(){renderMap();showScreen('scr-map');}
+function restartAll(){if(!confirm('Zerar todo o progresso e recomeçar?'))return;
+ S={team:'Equipe',score:0,done:{},badges:{},bossDone:false};save();renderHUD();
+ $('#team').value='';showScreen('scr-intro');}
+
+/* ================= EXECUÇÃO DE NÍVEL ================= */
+function startLevel(i,boss){cur={boss,idx:i,stage:0,earned:0};showScreen('scr-level');renderStage();}
+function getL(){return cur.boss?DATA.boss:DATA.levels[cur.idx];}
+function renderStage(){
+ const L=getL(),st=L.stages[cur.stage];
+ $('#lv-icon').textContent=L.icon;$('#lv-name').textContent=L.name;$('#lv-week').textContent=L.week;
+ $('#lv-step').textContent='Etapa '+(cur.stage+1)+'/'+L.stages.length;
+ feedback(null,'');
+ if(st.type==='quiz')renderQuiz(st);
+ else if(st.type==='sort')renderSort(st);
+ else renderOrder(st);
+}
+function stageDone(){
+ const L=getL(),earned=cur.earned;
+ if(cur.boss){S.bossDone=true;S.score+=earned;save();renderFinal();return;}
+ const first=!S.done[L.n];
+ S.done[L.n]=true;
+ if(first){S.badges[L.n]=L.badge;S.score+=earned;}
+ save();
+ const st=$('#stage');
+ st.innerHTML=`<div class="done-card">
+   <div class="done-emoji">${L.icon}</div>
+   <h2>Nível ${L.n} concluído!</h2>
+   <p class="done-pts">+${earned} pontos nesta missão</p>
+   <div class="badge-award">🏅 Insígnia conquistada: <b>${L.badge}</b></div><br>
+   <button class="btn btn-primary" onclick="backToMap()">Voltar ao mapa 🗺️</button>
+ </div>`;
+ confetti();renderHUD();
+}
+
+/* ---------- Etapa: QUIZ ---------- */
+function renderQuiz(st){
+ const box=$('#stage');box.innerHTML='';
+ const t=document.createElement('div');t.className='stage-title';t.textContent=st.title;box.appendChild(t);
+ let i=0,pts=0;const tot=st.items.length;
+ const num=document.createElement('div');num.className='qnum';box.appendChild(num);
+ const qt=document.createElement('div');qt.className='qtext';box.appendChild(qt);
+ const ops=document.createElement('div');ops.className='ops';box.appendChild(ops);
+ const nx=document.createElement('button');nx.className='btn btn-primary nx';nx.style.display='none';box.appendChild(nx);
+ function draw(){
+  const it=st.items[i];
+  num.textContent='Pergunta '+(i+1)+' de '+tot+' · vale '+st.pts+' pt(s)';
+  qt.textContent=it.q;ops.innerHTML='';nx.style.display='none';feedback(null,'');
+  it.ops.forEach((op,idx)=>{
+   const b=document.createElement('button');b.className='opt';b.textContent=op;
+   b.onclick=()=>{[...ops.children].forEach(x=>x.disabled=true);
+    if(idx===it.a){b.classList.add('ok');pts+=st.pts;feedback(true,'✅ Correto! +'+st.pts+' ponto(s)');beep(true);}
+    else{b.classList.add('bad');ops.children[it.a].classList.add('ok');feedback(false,'❌ Resposta correta: '+it.ops[it.a]);beep(false);}
+    nx.style.display='inline-block';nx.textContent=(i+1<tot)?'Próxima ▶':'Ver resultado 🏁';};
+   ops.appendChild(b);});
+ }
+ nx.onclick=()=>{i++;if(i<tot)draw();else{cur.earned+=pts;stageDone();}};
+ draw();
+}
+
+/* ---------- Etapa: CLASSIFICAR CARTAS ---------- */
+function renderSort(st){
+ const box=$('#stage');box.innerHTML='';
+ const t=document.createElement('div');t.className='stage-title';t.textContent=st.title;box.appendChild(t);
+ let i=0,pts=0;const tot=st.items.length;
+ const num=document.createElement('div');num.className='qnum';box.appendChild(num);
+ const card=document.createElement('div');card.className='sortcard';box.appendChild(card);
+ const grid=document.createElement('div');grid.className='catgrid';box.appendChild(grid);
+ function draw(){
+  const it=st.items[i];
+  num.textContent='Item '+(i+1)+' de '+tot+' · '+st.pts+' pt(s) por acerto';
+  card.textContent=it.c;grid.innerHTML='';
+  st.cats.forEach(c=>{
+   const b=document.createElement('button');b.className='catbtn';b.textContent=c.label;
+   b.onclick=()=>{[...grid.children].forEach(x=>x.disabled=true);
+    const ok=c.id===it.a,corr=st.cats.find(x=>x.id===it.a).label.replace(/^\S+\s/,'');
+    if(ok){b.classList.add('ok');pts+=st.pts;feedback(true,'✅ Isso! “'+it.c+'” é '+corr.toLowerCase()+'.');beep(true);}
+    else{b.classList.add('bad');grid.children[[...st.cats].findIndex(x=>x.id===it.a)].classList.add('ok');
+     feedback(false,'❌ “'+it.c+'” é '+corr.toLowerCase()+'.');beep(false);}
+    setTimeout(()=>{i++;if(i<tot)draw();else{cur.earned+=pts;stageDone();}},1200);};
+   grid.appendChild(b);});
+ }
+ draw();
+}
+
+/* ---------- Etapa: ORDENAR PIPELINE ---------- */
+function renderOrder(st){
+ const box=$('#stage');box.innerHTML='';
+ const t=document.createElement('div');t.className='stage-title';t.textContent=st.title;box.appendChild(t);
+ let picked=[];
+ const pool=document.createElement('div');pool.className='pool';pool.innerHTML='<span class="pool-label">🧩 Etapas disponíveis (clique para adicionar):</span>';
+ const seq=document.createElement('div');seq.className='seq';seq.innerHTML='<span class="seq-label">🔗 Sua sequência (clique num item para removê-lo):</span>';
+ const row=document.createElement('div');row.className='ordrow';
+ const undo=document.createElement('button');undo.className='btn btn-ghost';undo.textContent='↩ Desfazer último';
+ const okb=document.createElement('button');okb.className='btn btn-primary';okb.textContent='✅ Confirmar sequência';okb.disabled=true;
+ row.appendChild(undo);row.appendChild(okb);box.appendChild(pool);box.appendChild(seq);box.appendChild(row);
+ const res=document.createElement('div');res.id='ord-res';box.appendChild(res);
+ function render(){
+  [...seq.querySelectorAll('.stepchip')].forEach(x=>x.remove());
+  picked.forEach((p,ix)=>{const b=document.createElement('button');b.className='stepchip';
+   b.textContent=(ix+1)+'. '+p+'  ✕';
+   b.onclick=()=>{picked.splice(ix,1);render();};seq.appendChild(b);});
+  [...pool.querySelectorAll('.stepchip')].forEach(x=>x.remove());
+  st.steps.filter(p=>!picked.includes(p)).forEach(p=>{
+   const b=document.createElement('button');b.className='stepchip dim';b.textContent=p;
+   b.onclick=()=>{picked.push(p);render();};pool.appendChild(b);});
+  undo.disabled=!picked.length;okb.disabled=picked.length!==st.steps.length;
+ }
+ undo.onclick=()=>{picked.pop();render();};
+ okb.onclick=()=>{
+  const perfect=picked.every((p,i)=>p===st.steps[i]);
+  let pts=perfect?st.pts:picked.reduce((t,p,i)=>t+(p===st.steps[i]?1:0),0);
+  cur.earned+=pts;beep(perfect);
+  res.innerHTML='<div class="'+(perfect?'fb ok':'fb bad')+'">'+
+   (perfect?'🎉 Perfeito! Pipeline completo: +'+st.pts+' pontos':'Ordem parcialmente correta: +'+pts+' ponto(s). Ordem certa: '+st.steps.join(' → '))+
+   '</div><button class="btn btn-primary nx" id="ord-next">Continuar ▶</button>';
+  okb.disabled=true;undo.disabled=true;
+  $('#ord-next').onclick=()=>stageDone();
+ };
+ render();
+}
+
+/* ================= FINAL ================= */
+function renderFinal(){
+ const r=rankInfo();
+ $('#fin-rank').textContent=r.t;
+ $('#fin-score').textContent=S.score+' / '+MAX+' pontos';
+ $('#fin-badges').innerHTML=DATA.levels.map(L=>'<span class="bdg'+(S.badges[L.n]?'':' off')+'">🏅 '+L.badge+'</span>').join('')+
+  '<span class="bdg'+(S.bossDone?'':' off')+'">👑 Caso InovaCorp</span>';
+ $('#fin-msg').textContent=S.score>=60?'Incrível! Você lidera dados com estratégia. A InovaCorp está salva!'
+  :S.score>=40?'Muito bom! Você já pensa como cientista de dados. Revise os pontos perdidos e voltará ainda mais forte.'
+  :S.score>=20?'Bom começo! Revise as semanas 3 a 5 e tente novamente para subir de cargo.'
+  :'Todo cientista começa aprendendo. Revista as Semanas 1 e 2 e jogue de novo!';
+ confetti();renderHUD();showScreen('scr-final');
+}
+
+/* ================= INÍCIO ================= */
+ $('#btn-start').onclick=()=>{
+ S={team:($('#team').value||'Equipe Anônima').slice(0,24),score:0,done:{},badges:{},bossDone:false};
+ save();renderMap();showScreen('scr-map');};
+(function init(){
+ const saved=load();
+ if(saved&&saved.team){S=saved;renderHUD();
+  const bc=$('#btn-continue');bc.style.display='inline-block';
+  bc.onclick=()=>{renderMap();showScreen('scr-map');};}
+ renderHUD();
+})();
+</script>
+</body>
+</html>
