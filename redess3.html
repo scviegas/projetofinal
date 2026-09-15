@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SockeChat - Jogo de Resumo (Laboratorio TCP)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#04123f,#0b3fd4 55%,#0066ff);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:20px 14px;color:#16213e}
+#app{width:100%;max-width:800px}
+.card{background:#fff;border-radius:22px;padding:26px;box-shadow:0 24px 70px rgba(0,0,0,.4);margin-bottom:14px}
+.center{text-align:center}
+.tag{display:inline-block;background:#e8f0ff;color:#0b3fd4;font-weight:700;font-size:.78rem;padding:5px 14px;border-radius:999px;margin-bottom:12px}
+h1{font-size:2rem;color:#0b3fd4;margin-bottom:4px}
+h2{font-size:1.05rem;color:#3a4a6b;font-weight:600;margin-bottom:12px}
+h3{font-size:1.2rem;margin-bottom:14px;color:#16213e;line-height:1.4}
+.txt{font-size:.97rem;line-height:1.55;color:#33415e;margin-bottom:12px;text-align:left}
+.muted{color:#66748f;font-size:.93rem;margin-bottom:12px}
+.study{background:#eef6ff;border:2px solid #9cc4ff;border-radius:16px;padding:15px 17px;font-size:.94rem;line-height:1.55;text-align:left;margin-bottom:16px}
+.study b{color:#0b3fd4}
+.phases{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0}
+.chip{background:#f0f4ff;border:1px solid #d6e2ff;color:#0b3fd4;padding:6px 11px;border-radius:999px;font-size:.8rem;font-weight:600}
+input,textarea{width:100%;padding:13px 16px;border:2px solid #d6e2ff;border-radius:12px;font-size:1rem;margin:6px 0 14px;outline:none;font-family:inherit;color:#16213e}
+input{text-align:center;max-width:360px}
+input:focus,textarea:focus{border-color:#0b3fd4}
+textarea{min-height:74px;resize:vertical;font-size:.94rem;line-height:1.5;margin-bottom:6px}
+button{cursor:pointer;font-family:inherit}
+.btn{background:#0b3fd4;color:#fff;border:none;padding:13px 30px;border-radius:12px;font-size:1rem;font-weight:700;transition:.2s}
+.btn:hover{background:#0033b3;transform:translateY(-1px)}
+.btn.mini{padding:9px 18px;font-size:.9rem}
+.topbar{display:flex;justify-content:space-between;align-items:center;color:#fff;font-weight:700;padding:2px 6px 8px;flex-wrap:wrap;gap:6px}
+.subbar{color:#cfe0ff;font-size:.88rem;padding:0 6px 10px;font-weight:600}
+.pbar{height:9px;background:rgba(255,255,255,.25);border-radius:999px;margin:0 6px 12px}
+.pbar>div{height:100%;background:#ffd23f;border-radius:999px;transition:.3s}
+.opt{display:block;width:100%;text-align:left;background:#f7f9ff;border:2px solid #e3eaff;border-radius:14px;padding:13px 16px;font-size:.97rem;margin-bottom:10px;color:#16213e;font-weight:600;transition:.15s;line-height:1.4}
+.opt:hover:not(:disabled){border-color:#0b3fd4;background:#eef3ff}
+.opt.correct{background:#e6f9ec;border-color:#22b45e;color:#0f7a38}
+.opt.wrong{background:#fdeaea;border-color:#e05252;color:#b32020;animation:shake .35s}
+.opt.done{opacity:.55;pointer-events:none;background:#eef9f1;border-color:#22b45e}
+.opt.picked{background:#fff8e1;border-color:#eab308}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.exp{background:#f0f6ff;border-left:5px solid #0b3fd4;border-radius:0 12px 12px 0;padding:14px 16px;font-size:.93rem;margin:6px 0 14px;line-height:1.5;text-align:left}
+.exp.warn{background:#fff8e8;border-left-color:#eab308}
+.hint{background:#f4f0ff;border-left:5px solid #7c5cff;border-radius:0 12px 12px 0;padding:12px 15px;font-size:.9rem;margin:4px 0 10px;line-height:1.5;text-align:left;color:#3d2f7a}
+.big{font-size:3rem;margin:6px 0}
+ul.res{list-style:none;text-align:left;margin:12px 0}
+ul.res li{background:#f7f9ff;border-radius:12px;padding:11px 14px;margin-bottom:8px;font-size:.9rem;line-height:1.45}
+.ck{display:block;text-align:left;background:#f7f9ff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:.9rem;cursor:pointer;line-height:1.4}
+.ck input{width:auto;margin:0 8px 0 0;transform:scale(1.2)}
+.note{background:#f0fdf4;border:1px solid #86dfa8;border-radius:14px;padding:12px 15px;font-size:.88rem;margin-top:8px;text-align:left;line-height:1.5}
+.mission{background:#fff7e6;border:1px dashed #eab308;border-radius:14px;padding:13px 15px;font-size:.88rem;margin-top:8px;text-align:left;line-height:1.5}
+.sealbox{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.seal{background:#f0f4ff;border:1px solid #d6e2ff;border-radius:12px;padding:8px 12px;font-size:.8rem;font-weight:700;color:#0b3fd4}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.match{grid-template-columns:1fr}}
+h4.sec{color:#0b3fd4;margin:14px 0 8px;font-size:1rem;text-align:left}
+.rbox{border:2px solid #e3eaff;border-radius:16px;padding:14px;margin-bottom:14px;text-align:left}
+.rbox h3{font-size:1rem;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div id="app"><div class="card center"><h1>SockeChat</h1><p class="muted">Carregando...</p></div></div>
+<script>
+window.onerror=function(msg,src,line){document.getElementById("app").innerHTML='<div class="card center"><h3>Erro ao carregar o jogo</h3><p class="muted">'+msg+' (linha '+line+')</p></div>';};
+</script>
+<script>
+/* ================================================================
+   SOCKETCHAT - jogo de RESUMO: ensina conceitos, nao entrega respostas
+   Fases 1-5: cartao de estudo + desafios de compreensao
+   Fase 6: pistas de raciocinio + caderno (aluno escreve as conclusoes)
+   ================================================================ */
+const PHASES=[
+{name:"Estacao dos Conceitos",tag:"Resumo: sockets e TCP",
+card:"Um <b>SOCKET</b> e o ponto de comunicacao de um programa na rede, identificado pelo par <b>IP + porta</b>. O <b>TCP</b> e confiavel: confirma a entrega e mantem a ordem das mensagens, como uma ligacao telefonica entre duas pessoas. No modelo <b>cliente-servidor</b>, um programa oferece o servico (servidor) e os outros o consomem (clientes).",
+items:[
+ {t:"d",q:"O que e um socket?",opts:["O ponto de comunicacao entre dois programas, identificado por IP e porta","Um cabo de rede que liga fisicamente dois computadores","Um arquivo de log onde as mensagens ficam salvas"],a:0,
+  why:["Exato: socket = endereco logico (IP da maquina + porta do programa).","O cabo e fisico; o socket e logico: funciona igual por Wi-Fi, sem cabo nenhum.","Log e registro; o socket e o canal ativo de conversa entre os programas."],
+  exp:"Guarde a ideia-chave: o IP acha a maquina, a porta acha o programa. Juntos, formam o endereco da conversa."},
+ {t:"d",q:"Por que o TCP e uma boa escolha para o chat universitario do laboratorio?",opts:["Porque garante entrega confiavel e mantem a ordem das mensagens","Porque e sempre o protocolo mais rapido em qualquer situacao","Porque funciona sem que exista um servidor"],a:0,
+  why:["Isso mesmo: confiabilidade e ordem sao exatamente o que uma conversa precisa.","A promessa do TCP nao e velocidade pura, e confiabilidade; velocidade depende de varios fatores.","TCP liga dois pontos: no modelo do laboratorio sempre ha um servidor escutando."],
+  exp:"O enunciado pede transmissao confiavel de mensagens serializadas entre multiplos clientes: o TCP entrega justamente essa garantia."},
+ {t:"d",q:"Um colega disse: basta saber o IP da maquina para conectar. O que falta nessa frase?",opts:["Falta a porta, que identifica o programa dentro da maquina","Nada: o IP e suficiente","Falta o nome do usuario logado na maquina"],a:0,
+  why:["Perfeito: pense no predio. IP e o endereco do predio; a porta e o numero do apartamento onde mora o programa.","So o IP acha a maquina, nao o programa: a mesma maquina pode ter varios servicos em portas diferentes.","Usuario e autenticacao sao outra camada; a conexao TCP usa o par IP e porta."],
+  exp:"Analogia para o relatorio: IP = endereco do predio, porta = numero do apartamento do servico."},
+ {t:"d",q:"Verdadeiro ou falso: no TCP, as mensagens chegam na ordem em que foram enviadas.",opts:["Verdadeiro","Falso"],a:0,
+  why:["Verdadeiro: o protocolo numera e reorganiza os dados, entregando tudo em sequencia.","Ao contrario: ordem garantida e uma das principais promessas do TCP."],
+  exp:"Confianca na ordem permite conversas coerentes: e por isso que o chat nao embaralha as falas."}]},
+
+{name:"Fluxo da Conversa",tag:"Resumo: ciclo de vida da conexao",
+card:"O <b>SERVIDOR</b> segue o ciclo: criar socket, vincular ao IP e porta, escutar, aceitar conexoes, trocar mensagens e encerrar. O <b>CLIENTE</b> cria o socket, conecta ao IP:porta do servidor, troca mensagens e encerra. No <b>accept</b>, o servidor inicia a conversa com aquele cliente; com concorrencia, ele segue livre para aceitar os proximos.",
+items:[
+ {t:"o",q:"Monte o ciclo de vida do SERVIDOR TCP (clique na ordem correta):",
+  steps:["Criar o socket","Vincular ao IP e a porta (bind)","Entrar em escuta (listen)","Aceitar a conexao (accept)","Trocar mensagens","Encerrar a conexao"],
+  exp:"Essa sequencia conceitual (criar, vincular, escutar, aceitar, trocar, encerrar) e o roteiro mental do Passo 2: vale desenha-la no seu diagrama de sequencia."},
+ {t:"d",q:"O que acontece no momento do accept?",opts:["O servidor inicia a conversa com aquele cliente; com concorrencia, segue livre para aceitar outros","A porta e fechada para sempre","O cliente passa a ser o novo servidor"],a:0,
+  why:["Exato: aceitar um cliente nao trava a porta quando ha concorrencia.","A porta permanece aberta enquanto o servidor vive: novas conexoes sao bem-vindas.","Os papeis nao se trocam: quem escuta continua sendo o servidor."],
+  exp:"Esse conceito explica por que o Passo 2 pede concorrencia: aceitar um cliente nao pode impedir o accept do proximo."},
+ {t:"d",q:"Qual sequencia descreve o CLIENTE?",opts:["Criar socket, conectar ao IP:porta do servidor, trocar mensagens, encerrar","Vincular porta, escutar, aceitar, enviar","Encerrar, aguardar, conectar, digitar"],a:0,
+  why:["Isso: o cliente e mais simples porque nao gerencia a porta, apenas conecta.","Esse e o fluxo do servidor, nao do cliente.","Encerrar vem no fim, e o cliente inicia a conexao em vez de esperar."],
+  exp:"Compare os dois lados no relatorio: servidor gerencia a porta; cliente apenas aponta para o endereco do servidor."},
+ {t:"d",q:"Verdadeiro ou falso: conexao, envio, recebimento e desconexao formam o fluxo completo pedido no Passo 1.",opts:["Verdadeiro","Falso"],a:0,
+  why:["Correto: sao as quatro etapas do fluxo que o enunciado pede para definir.","Sao justamente essas quatro etapas: releia o Passo 1 do enunciado."],
+  exp:"No PDF, desenhe essas 4 etapas no diagrama de sequencia, com setas de ida e volta entre cliente e servidor."}]},
+
+{name:"Quem Faz o Que?",tag:"Resumo: papeis e responsabilidades",
+card:"Divida as tarefas: o <b>SERVIDOR</b> gerencia porta, lista de clientes e roteamento (broadcast e privado). O <b>CLIENTE</b> conecta, envia pelo console e exibe o que chega. Tarefas de protocolo, como <b>serializar</b> e <b>validar hash</b>, aparecem nos <b>DOIS lados</b>: cada ponta embala e confere as mensagens que trafegam.",
+items:[
+ {t:"m",q:"Classifique cada tarefa: quem faz o quê?",
+  rights:["SERVIDOR","CLIENTE","AMBOS"],
+  lefts:[
+   {x:"Escutar em uma porta definida",r:0,why:"So o servidor oferta o servico e fica parado na porta."},
+   {x:"Manter a lista de clientes conectados",r:0,why:"O registro central dos clientes ativos vive no servidor."},
+   {x:"Encaminhar mensagem privada ao destinatario certo",r:0,why:"O servidor consulta o registro e roteia para o cliente correto."},
+   {x:"Conectar usando IP e porta",r:1,why:"Quem inicia a conexao e sempre o cliente."},
+   {x:"Digitar mensagens no console",r:1,why:"A entrada do usuario acontece na interface do cliente."},
+   {x:"Exibir na tela as mensagens recebidas",r:1,why:"Mostrar o que chegou e tarefa da aplicacao cliente."},
+   {x:"Serializar a mensagem antes de enviar",r:2,why:"Tanto cliente quanto servidor embalam dados quando precisam transmitir."},
+   {x:"Calcular o hash do conteudo que envia",r:2,why:"Todo emissor gera a impressao digital do que envia."},
+   {x:"Validar o hash do conteudo que recebe",r:2,why:"Todo receptor confere a integridade do que chega."},
+   {x:"Tratar excecoes de rede",r:2,why:"Quedas e erros podem ocorrer dos dois lados: ninguem esta imune."}],
+  exp:"Essa tabela responde ao criterio de rubrica sobre separacao de papeis (roles): copie a logica (com suas palavras) para o relatorio."}]},
+
+{name:"Clinica de Cenarios",tag:"Resumo: diagnosticar antes de codificar",
+card:"Um bom engenheiro diagnostica sintomas. Os cenarios abaixo sao classicos deste laboratorio: cada um revela um requisito do enunciado. Pense no <b>porque</b> de cada sintoma: essa analise vira a parte critica do seu PDF.",
+items:[
+ {t:"d",q:"CENARIO: o primeiro cliente conversa bem, mas o segundo nunca conecta e o servidor para de responder. Sintoma de quê?",opts:["Falta de concorrencia: o servidor esta bloqueado atendendo um cliente so","A porta escolhida e muito pequena","O chat nao aceita mais de um usuario por regra"],a:0,
+  why:["Exato: retrato de um servidor sequencial. O Passo 2 exige threads ou async exatamente para evitar isso.","Tamanho de porta nao trava atendimento: o problema e o modelo de atendimento.","Nao existe essa regra em TCP: varios clientes convivem bem quando ha concorrencia."],
+  exp:"Dica de evidencia: teste sem concorrencia, capture a tela, corrija e capture o resultado depois. Antes e depois valem ouro no relatorio."},
+ {t:"d",q:"CENARIO: uma mensagem chega com caracteres diferentes do que foi enviado. Qual requisito do enunciado ataca isso?",opts:["Integridade: hash calculado no envio e validado na chegada","Velocidade: enviar duas vezes mais rapido","Estetica: mudar a fonte do console"],a:0,
+  why:["Isso mesmo: divergencia entre o hash enviado e o recalculado denuncia alteracao no caminho.","Velocidade nao conserta dado corrompido.","Fonte nao muda o conteudo dos bytes que trafegam."],
+  exp:"O Passo 4 pede MD5 ou SHA-256 sobre o conteudo serializado: entenda o fluxo enviar-com-hash / receber-e-conferir."},
+ {t:"d",q:"CENARIO: durante um broadcast, um cliente cai. O que um sistema bem projetado faz?",opts:["Isola a falha: remove o cliente problematico e segue servindo os demais","Derruba o servidor inteiro","Reinicia todos os clientes saudaveis"],a:0,
+  why:["Exato: conter a falha em quem caiu e um pilar de tolerancia a falhas, item do Passo 4.","Um cliente fora do ar nao justifica parar o servico de todos.","Punir quem esta bem degrada a disponibilidade sem motivo."],
+  exp:"O Passo 4 lista queda de conexao, cliente indisponivel e erro de transmissao: cada cenario merece um tratamento proprio."},
+ {t:"d",q:"CENARIO: todos recebem as mensagens, mas ninguem sabe quem falou. Que parte do design ficou faltando?",opts:["A identificacao do emissor dentro da mensagem serializada","Uma tela maior no console","Mais memoria no servidor"],a:0,
+  why:["Perfeito: o protocolo deve carregar quem envia, requisito explicito do Passo 3.","Tamanho de tela nao cria identidade.","Memoria nao resolve ausencia de informacao no protocolo."],
+  exp:"Contrato de mensagem que o enunciado sugere: emissor, (destino, se privado) e conteudo. Os campos exatos voce projeta."},
+ {t:"d",q:"CENARIO: uma mensagem privada chegou para todo mundo. Qual descuido explica isso?",opts:["O protocolo nao indicava o destinatario, e o servidor tratou tudo como broadcast","O texto era muito curto","O hash estava correto demais"],a:0,
+  why:["Exato: sem campo de destino, o melhor esforco do servidor e replicar para todos.","Comprimento do texto nao define roteamento.","Hash confirma integridade, nao destino."],
+  exp:"Privado = destino no protocolo + registro de clientes no servidor. Broadcast = mesmo mecanismo, replicando para a lista inteira."}]},
+
+{name:"Caixa de Ferramentas",tag:"Resumo: vocabulario do projeto",
+card:"Conecte cada ferramenta ao seu conceito. Sao os termos que voce vai citar no <b>README</b> e explicar no <b>PDF</b>: dominar o vocabulario e metade da documentacao.",
+items:[
+ {t:"m",q:"Ligue cada termo a sua definicao:",
+  rights:["Transformar estruturas de dados em bytes para trafegar na rede","Formato de texto legivel, facil de depurar","Formato binario compacto, leve para muitos dados","Impressao digital do conteudo para conferir integridade","Atender varios clientes ao mesmo tempo","Fluxo orientado a eventos, sem bloquear a execucao","Replicar uma mensagem para todos os conectados","Containers isolados e reproduziveis para simular a rede"],
+  lefts:[
+   {x:"Serializacao",r:0,why:"Embalar os dados para a viagem pela rede."},
+   {x:"JSON",r:1,why:"Legivel por humanos: otimo para aprender e depurar."},
+   {x:"MessagePack",r:2,why:"Mais compacto que JSON: bom para volume alto."},
+   {x:"Hash SHA-256",r:3,why:"Duas pontas comparam a mesma digital: se bater, o dado chegou integro."},
+   {x:"Concorrencia",r:4,why:"O requisito que impede o servidor de travar no primeiro cliente."},
+   {x:"Async IO",r:5,why:"Uma das duas estrategias citadas no Passo 2, junto com threads."},
+   {x:"Broadcast",r:6,why:"Mensagem para a lista inteira de clientes ativos."},
+   {x:"Docker",r:7,why:"Passo 5 opcional: isolamento e reprodutibilidade do deployment."}],
+  exp:"Vocabulario dominado: agora objetivo, estrutura e testes do README ficam claros de escrever."}]},
+
+{name:"Cantinho da Reflexao",tag:"As 5 perguntas do laboratorio (respostas suas, com suas palavras)",
+card:"Aqui o jogo <b>NAO responde por voce</b>. Cada pergunta vem com pistas de raciocinio em forma de novas perguntas. Escreva suas ideias no caderno: elas viram o rascunho das <b>conclusoes do PDF</b> e valem estrelas de reflexao.",
+reflect:[
+ {q:"1. Quais diferencas fundamentais existem entre comunicacao sincrona e assincrona?",
+  hints:"Quando voce liga para alguem, fica na linha esperando a resposta? E quando envia uma carta? | No seu sistema, o que o programa faz enquanto aguarda dados: fica parado ou segue vivo?"},
+ {q:"2. Por que o modelo Publish-Subscribe e mais escalavel que o cliente-servidor?",
+  hints:"Num canal de avisos, o emissor precisa conhecer cada leitor pelo nome? | Se um novo consumidor assinar o canal, o emissor precisa mudar alguma coisa no seu lado?"},
+ {q:"3. Em quais cenarios reais voce usaria sockets TCP em vez de um sistema baseado em eventos?",
+  hints:"Numa conversa privada de voz, quem sao os participantes: conhecidos ou desconhecidos e variaveis? | Distribuir o mesmo aviso para milhares de consumidores que entram e saem a todo momento combina com qual modelo?"},
+ {q:"4. Como o desacoplamento impacta a manutenibilidade de sistemas de rede?",
+  hints:"Se duas equipes combinam apenas o formato da mensagem, uma pode trocar o codigo interno sem quebrar a outra? | O que acontece com o custo de manutencao quando cada mudanca em um lado obriga a mexer no outro?"},
+ {q:"5. Quais vantagens o Docker oferece para simular infraestruturas reais de rede?",
+  hints:"Para testar 5 clientes ao mesmo tempo, voce precisa de 5 computadores fisicos? | Se a imagem funciona na sua maquina, o que ajuda a garantir que funcionara em outra?"}]}
+];
+
+/* ==================== ESTADO ==================== */
+let player="",score=0,PH=0,IT=0,answered=false,phaseFirst=0,seals=[],notes=["","","","",""];
+let orderArr=[],orderPos=0,orderErr=false,selL=null,leftDone=0,matchGain=0,matchPerfect=true;
+const app=document.getElementById("app");
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function maxScore(){let m=0;PHASES.forEach(p=>{if(p.items)p.items.forEach(it=>{m+=it.t==="m"?it.lefts.length*5:10;});});if(PHASES[5].reflect)m+=25;return m;}
+function hud(sub,prog){
+ let steps="";PHASES.forEach((p,i)=>{steps+='<span class="chip">'+(i<PH?"OK: ":"")+p.name+"</span>";});
+ return '<div class="topbar"><div>'+player+' - <span id="sc">'+score+'</span> pts</div><div>'+sub+'</div></div><div class="subbar">'+prog+'</div><div class="pbar"><div style="width:'+Math.round(PH/PHASES.length*100)+'%"></div></div>';
+}
+function updScore(){const e=document.getElementById("sc");if(e)e.textContent=score;}
+
+/* ==================== TELAS ==================== */
+function startScreen(){
+ app.innerHTML='<div class="card center">'+
+ '<span class="tag">LABORATORIO - SOCKETS TCP E EVENTOS</span>'+
+ '<h1>SockeChat</h1>'+
+ '<h2>Jogo de resumo: entenda os conceitos antes de implementar</h2>'+
+ '<p class="txt" style="text-align:center">Cada fase abre com um <b>Cartao de Estudo</b> (resumo do conteudo) e desafios de <b>compreensao</b>. Aqui voce nao encontra codigo pronto nem respostas do desafio: o objetivo e voce chegar ao laboratorio sabendo <b>por que</b> cada decisao existe.</p>'+
+ '<div class="phases"><span class="chip">1. Conceitos</span><span class="chip">2. Fluxo</span><span class="chip">3. Papeis</span><span class="chip">4. Cenarios</span><span class="chip">5. Vocabulario</span><span class="chip">6. Reflexao (seu caderno)</span></div>'+
+ '<input id="pname" maxlength="20" placeholder="Seu nome..." onkeydown="if(event.key===\'Enter\')startGame()">'+
+ '<button class="btn" onclick="startGame()">Comecar</button>'+
+ '<div class="note" style="margin-top:16px">Compromisso academico: use este resumo para estudar. Implementacao, testes e conclusoes devem ser seus, conforme as politicas da Jala University.</div></div>';
+}
+function startGame(){
+ const v=document.getElementById("pname").value.trim();player=v||"Estudante";
+ score=0;PH=0;IT=0;phaseFirst=0;seals=[];notes=["","","","",""];
+ phaseIntro();
+}
+function phaseIntro(){
+ const p=PHASES[PH];
+ app.innerHTML=hud("Fase "+(PH+1)+" de "+PHASES.length,p.tag)+
+ '<div class="card center"><span class="tag">FASE '+(PH+1)+' - '+p.name+'</span>'+
+ '<div class="study"><b>Cartao de Estudo:</b><br>'+p.card+'</div>'+
+ '<button class="btn" onclick="renderItem()">Estudei, vamos aos desafios</button></div>';
+}
+function renderItem(){
+ answered=false;phaseFirst=0;
+ const p=PHASES[PH];
+ if(p.reflect){renderReflect();return;}
+ const it=p.items[IT];
+ const prog="Desafio "+(IT+1)+" de "+p.items.length+" - "+p.name;
+ let body="";
+ if(it.t==="d"){
+  const shuffled=shuffle(it.opts.map((o,i)=>({o:o,i:i})));
+  body='<h3>'+it.q+'</h3>'+shuffled.map((x,k)=>'<button class="opt" id="o'+k+'" data-i="'+x.i+'" onclick="clickOpt('+k+')">'+x.o+'</button>').join("");
+ }else if(it.t==="o"){
+  orderArr=shuffle(it.steps.map((s,i)=>({s:s,i:i})));
+  if(orderArr.every((x,k)=>x.i===k))orderArr=shuffle(orderArr);
+  orderPos=0;orderErr=false;
+  body='<h3>'+it.q+'</h3><p class="muted" id="oprog">Passos confirmados: 0/'+it.steps.length+'</p>'+
+  orderArr.map((x,k)=>'<button class="opt" id="s'+k+'" onclick="clickStep('+k+')">'+x.s+'</button>').join("");
+ }else{
+  const rights=shuffle(it.rights.map((r,i)=>({t:r,i:i})));
+  selL=null;leftDone=0;matchGain=0;matchPerfect=true;
+  body='<h3>'+it.q+'</h3><p class="muted">Clique em um item da esquerda e depois no alvo da direita.</p>'+
+  '<div class="match"><div>'+it.lefts.map((l,i)=>'<button class="opt" id="L'+i+'" onclick="pickL('+i+')">'+l.x+'</button>').join("")+'</div>'+
+  '<div>'+rights.map((r,k)=>'<button class="opt" id="R'+k+'" data-i="'+r.i+'" onclick="pickR('+k+')">'+r.t+'</button>').join("")+'</div></div>';
+ }
+ app.innerHTML=hud("Fase "+(PH+1)+" de "+PHASES.length,prog)+'<div class="card">'+body+'<div id="fb"></div></div>';
+}
+function cur(){return PHASES[PH].items[IT];}
+function clickOpt(k){
+ if(answered)return;
+ const it=cur(),btn=document.getElementById("o"+k),i=parseInt(btn.getAttribute("data-i"));
+ if(i===it.a){
+  answered=true;
+  const gain=phaseFirst===0?10:5;score+=gain;updScore();
+  btn.classList.add("correct");
+  document.querySelectorAll(".opt").forEach(b=>b.disabled=true);
+  document.getElementById("fb").innerHTML='<div class="exp"><b>Isso! +'+gain+' pts.</b><br>'+it.exp+'</div><button class="btn" onclick="nextItem()">Continuar</button>';
+ }else{
+  phaseFirst=1;
+  btn.classList.add("wrong");btn.disabled=true;
+  document.getElementById("fb").innerHTML='<div class="exp warn"><b>Ainda nao. Pense:</b><br>'+it.why[i]+'</div>';
+ }
+}
+function clickStep(k){
+ if(answered)return;
+ const it=cur();
+ if(orderArr[k].i===orderPos){
+  const btn=document.getElementById("s"+k);
+  btn.classList.add("done");btn.textContent=(orderPos+1)+". "+orderArr[k].s;
+  orderPos++;
+  document.getElementById("oprog").textContent="Passos confirmados: "+orderPos+"/"+it.steps.length;
+  if(orderPos===it.steps.length){
+   answered=true;
+   const gain=orderErr?5:10;if(!orderErr)phaseFirst=0;else phaseFirst=1;
+   score+=gain;updScore();
+   document.getElementById("fb").innerHTML='<div class="exp"><b>Sequencia completa! +'+gain+' pts.</b><br>'+it.exp+'</div><button class="btn" onclick="nextItem()">Continuar</button>';
+  }
+ }else{
+  orderErr=true;
+  const btn=document.getElementById("s"+k);
+  btn.classList.add("wrong");setTimeout(function(){btn.classList.remove("wrong");},450);
+ }
+}
+function pickL(i){
+ if(document.getElementById("L"+i).classList.contains("done"))return;
+ selL=i;
+ cur().lefts.forEach((_,k)=>document.getElementById("L"+k).classList.toggle("picked",k===i));
+}
+function pickR(k){
+ if(selL===null)return;
+ const it=cur(),r=parseInt(document.getElementById("R"+k).getAttribute("data-i"));
+ if(it.lefts[selL].r===r){
+  leftDone++;
+  const lb=document.getElementById("L"+selL);
+  lb.classList.add("done");lb.classList.remove("picked");
+  matchGain+=matchPerfect?5:2;score+=matchPerfect?5:2;updScore();
+  document.getElementById("fb").innerHTML='<div class="exp"><b>'+it.lefts[selL].x+' = '+it.rights[r]+'</b><br>'+it.lefts[selL].why+'</div>';
+  if(leftDone===it.lefts.length){
+   answered=true;
+   document.getElementById("fb").innerHTML+='<button class="btn" onclick="nextItem()">Continuar</button>';
+  }
+ }else{
+  matchPerfect=false;
+  const rb=document.getElementById("R"+k);
+  rb.classList.add("wrong");setTimeout(function(){rb.classList.remove("wrong");},450);
+  document.getElementById("fb").innerHTML='<div class="exp warn">Ainda nao: releia o Cartao de Estudo e tente associar o item ao alvo certo.</div>';
+ }
+ selL=null;cur().lefts.forEach((_,kk)=>document.getElementById("L"+kk).classList.remove("picked"));
+}
+function renderReflect(){
+ const p=PHASES[PH];
+ let body='<h3>Caderno de Reflexao</h3><p class="muted">Escreva com suas palavras (minimo 20 caracteres por nota). Ninguem corrije aqui: sao suas anotacoes de estudo.</p>';
+ p.reflect.forEach((r,i)=>{
+  body+='<div class="rbox"><h3>'+r.q+'</h3>'+
+  '<div class="hint"><b>Pistas de raciocinio (nao sao respostas!):</b><br>'+r.hints.split(" | ").join("<br>")+'</div>'+
+  '<textarea id="n'+i+'" placeholder="Escreva aqui sua ideia...">'+notes[i]+'</textarea></div>';
+ });
+ body+='<button class="btn" onclick="saveReflect()">Guardar minhas notas e concluir a fase</button>';
+ app.innerHTML=hud("Fase "+(PH+1)+" de "+PHASES.length,"Cantinho da Reflexao")+'<div class="card">'+body+'</div>';
+}
+function saveReflect(){
+ const p=PHASES[PH];let ok=0;
+ p.reflect.forEach((r,i)=>{const v=document.getElementById("n"+i).value.trim();notes[i]=v;if(v.length>=20)ok++;});
+ if(ok<p.reflect.length){
+  document.getElementById("fb")&&0;
+  app.innerHTML=hud("Fase "+(PH+1)+" de "+PHASES.length,"Cantinho da Reflexao")+'<div class="card center"><h3>Faltam notas!</h3><p class="muted">Voce preencheu '+ok+' de '+p.reflect.length+' notas com pelo menos 20 caracteres. Volte e complete o caderno: suas conclusoes do PDF nascem aqui.</p><button class="btn" onclick="renderReflect()">Voltar ao caderno</button></div>';
+  return;
+ }
+ phaseFirst=0;
+ phaseResult();
+}
+function nextItem(){
+ const p=PHASES[PH];IT++;
+ if(IT<p.items.length){renderItem();}else{phaseResult();}
+}
+function phaseResult(){
+ const p=PHASES[PH];
+ const total=p.reflect?1:p.items.length;
+ const pct=p.reflect?100:Math.round((phaseFirst===0?100:0));
+ let seal,phrase;
+ if(pct>=80){seal="SELO DE OURO";phrase="Compreensao solida desta fase!";}
+ else if(pct>=50){seal="SELO DE PRATA";phrase="Boa base: releia os feedbacks que recebeu no caminho.";}
+ else{seal="SELO DE BRONZE";phrase="Volte depois e refaca a fase: os feedbacks sao o resumo da teoria.";}
+ if(p.reflect){seal="SELO DE ESCRITOR";phrase="Notas guardadas! Elas sao o rascunho das suas conclusoes no PDF.";}
+ seals.push({n:p.name,s:seal});
+ app.innerHTML=hud("Fase "+(PH+1)+" concluida",p.name)+
+ '<div class="card center"><div class="big">'+seal+'</div><h1 style="font-size:1.4rem">'+p.name+'</h1>'+
+ '<p style="font-weight:700">'+phrase+'</p>'+
+ '<button class="btn" style="margin-top:14px" onclick="nextPhase()">'+(PH+1<PHASES.length?"Proxima fase":"Ver resumo final")+'</button></div>';
+}
+function nextPhase(){
+ PH++;IT=0;
+ if(PH<PHASES.length){phaseIntro();}else{finalScreen();}
+}
+function finalScreen(){
+ const max=maxScore(),pct=Math.round(score/max*100);
+ let title;
+ if(pct>=90)title="MASTER DOS SOCKETS";
+ else if(pct>=70)title="EXPLORADOR DE REDES AVANCADO";
+ else if(pct>=50)title="APRENDIZ DE REDES";
+ else title="NOVATO NO TERMINAL (rejogue para fixar!)";
+ let sl="";seals.forEach(x=>{sl+='<div class="seal">'+x.n+': '+x.s+'</div>';});
+ let notesHtml="";
+ PHASES[5].reflect.forEach((r,i)=>{notesHtml+='<div class="rbox"><h3>'+r.q+'</h3><textarea readonly style="min-height:60px">'+notes[i].replace(/</g,"&lt;")+'</textarea></div>';});
+ app.innerHTML=hud("Resumo final","Jornada concluida")+
+ '<div class="card"><div class="center"><div class="big">'+pct+'%</div><h1 style="font-size:1.5rem">'+title+'</h1><p class="muted">'+player+' - '+score+' de '+max+' pontos</p></div>'+
+ '<div class="sealbox">'+sl+'</div>'+
+ '<h4 class="sec">MAPA DE RESUMO - o que voce revisou</h4>'+
+ '<ul class="res">'+
+ '<li><b>Socket = IP + porta:</b> o endereco da conversa; TCP garante entrega confiavel e ordenada.</li>'+
+ '<li><b>Ciclo do servidor:</b> criar socket, bind, listen, accept, trocar mensagens, encerrar. Ciclo do cliente: criar, conectar, trocar, encerrar.</li>'+
+ '<li><b>Papeis:</b> servidor (porta, registro de clientes, roteamento broadcast/privado) - cliente (conecta, digita, exibe) - ambos (serializam, hasheam, tratam erros).</li>'+
+ '<li><b>Concorrencia:</b> thread por cliente ou async IO, para o accept de um nao travar o proximo.</li>'+
+ '<li><b>Integridade:</b> hash (MD5/SHA-256) no envio, conferencia na chegada; excecoes isolam quedas sem derrubar o servico.</li>'+
+ '<li><b>Docker (opcional):</b> containers isolados para simular varios nos da rede.</li>'+
+ '</ul>'+
+ '<h4 class="sec">SEU CADERNO DE REFLEXAO (copie para rascunhar as conclusoes do PDF)</h4>'+notesHtml+
+ '<h4 class="sec">LEMBRETES DE ENTREGA (rubrica de 29 pts)</h4>'+
+ '<label class="ck"><input type="checkbox"> PDF individual: passo a passo, capturas, diagrama de sequencia, explicacoes e conclusoes proprias</label>'+
+ '<label class="ck"><input type="checkbox"> GitLab institucional: codigo do servidor, Dockerfile/docker-compose (se usar) e README completo</label>'+
+ '<label class="ck"><input type="checkbox"> URL do repositorio dentro do PDF</label>'+
+ '<label class="ck"><input type="checkbox"> Conclusoes comparando os dois modelos, escritas por voce (comecem pelo seu caderno acima)</label>'+
+ '<div class="mission">Estrategia de estudo: refaca as fases em que ganhou Selo de Prata ou Bronze. Os feedbacks errados que voce leu sao exatamente as duvidas que a rubrica cobra na analise critica.</div>'+
+ '<div class="center" style="margin-top:14px"><button class="btn" onclick="startScreen()">Estudar de novo</button></div></div>';
+}
+startScreen();
+</script>
+</body>
+</html>
