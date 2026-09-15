@@ -752,7 +752,7 @@ function rHub(){
  const g=$('#hubCards');g.innerHTML='';
  T.ui.mods.forEach(m=>{
   const d=el('div','mod');
-  d.innerHTML='<span class="ic">'+m.ic+'</span><span class="nm">'+T.nav[m.k]+'</span>'+
+  d.innerHTML='<span class="ic">'+m.ic+'</span><span class="nm">'+T.ui.nav[m.k]+'</span>'+
    '<span class="d">'+m.d+'</span><span class="xp">'+m.xp+' · '+(done[m.k]?T.ui.done:'⏳')+'</span>';
   const b=el('button','btn btn-p');b.textContent=done[m.k]?T.ui.review:T.ui.play;
   b.onclick=()=>showScreen(m.k);d.appendChild(b);g.appendChild(d);});
