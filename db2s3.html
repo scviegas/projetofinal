@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BancoQuest - NoSQL e NewSQL (Semana 3)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#04123f,#0b3fd4 55%,#0066ff);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:20px 14px;color:#16213e}
+#app{width:100%;max-width:780px}
+.card{background:#fff;border-radius:22px;padding:26px;box-shadow:0 24px 70px rgba(0,0,0,.4);margin-bottom:14px}
+.center{text-align:center}
+.tag{display:inline-block;background:#e8f0ff;color:#0b3fd4;font-weight:700;font-size:.8rem;padding:5px 14px;border-radius:999px;margin-bottom:14px}
+h1{font-size:2.2rem;color:#0b3fd4;margin-bottom:4px}
+h2{font-size:1.1rem;color:#3a4a6b;font-weight:600;margin-bottom:14px}
+h3{font-size:1.25rem;margin-bottom:16px;color:#16213e;line-height:1.4}
+.muted{color:#66748f;font-size:.95rem;margin-bottom:16px}
+.phases{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:18px 0}
+.chip{background:#f0f4ff;border:1px solid #d6e2ff;color:#0b3fd4;padding:6px 12px;border-radius:999px;font-size:.85rem;font-weight:600}
+input{width:100%;max-width:360px;padding:13px 16px;border:2px solid #d6e2ff;border-radius:12px;font-size:1rem;margin:6px 0 14px;outline:none;text-align:center}
+input:focus{border-color:#0b3fd4}
+button{cursor:pointer;font-family:inherit}
+.btn{background:#0b3fd4;color:#fff;border:none;padding:13px 30px;border-radius:12px;font-size:1rem;font-weight:700;transition:.2s}
+.btn:hover{background:#0033b3;transform:translateY(-1px)}
+.topbar{display:flex;justify-content:space-between;align-items:center;color:#fff;font-weight:700;padding:2px 6px 10px;flex-wrap:wrap;gap:6px}
+.subbar{color:#cfe0ff;font-size:.9rem;padding:0 6px 10px;font-weight:600}
+.opt{display:block;width:100%;text-align:left;background:#f7f9ff;border:2px solid #e3eaff;border-radius:14px;padding:13px 16px;font-size:1rem;margin-bottom:10px;color:#16213e;font-weight:600;transition:.15s}
+.opt:hover:not(:disabled){border-color:#0b3fd4;background:#eef3ff}
+.opt.correct{background:#e6f9ec;border-color:#22b45e;color:#0f7a38}
+.opt.wrong{background:#fdeaea;border-color:#e05252;color:#b32020;animation:shake .35s}
+.opt.done{opacity:.45;pointer-events:none}
+.opt.picked{background:#fff8e1;border-color:#eab308}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.exp{background:#f0f6ff;border-left:5px solid #0b3fd4;border-radius:0 12px 12px 0;padding:14px 16px;font-size:.95rem;margin:6px 0 14px;line-height:1.5}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.capbtns{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px}
+.capbtns .opt{text-align:center;margin-bottom:0}
+.capbtns small{display:block;font-weight:500;color:#66748f;margin-top:4px;font-size:.72rem}
+.db{font-size:2.4rem;color:#0b3fd4;margin:10px 0 18px}
+.big{font-size:3.6rem;margin:8px 0}
+ul.res{list-style:none;text-align:left;margin:14px 0}
+ul.res li{background:#f7f9ff;border-radius:12px;padding:11px 14px;margin-bottom:8px;font-size:.93rem;line-height:1.45}
+.mission{background:#fff7e6;border:1px dashed #eab308;border-radius:14px;padding:13px 15px;font-size:.9rem;margin-top:6px;text-align:left;line-height:1.5}
+@media(max-width:560px){.capbtns{grid-template-columns:1fr}.match{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app"><div class="card center"><h1>BancoQuest</h1><p class="muted">Carregando...</p></div></div>
+<script>
+window.onerror=function(msg,src,line){document.getElementById("app").innerHTML='<div class="card center"><h3>Erro ao carregar o jogo</h3><p class="muted">'+msg+' (linha '+line+')</p></div>';};
+</script>
+<script>
+/* ==================== DADOS DO JOGO ==================== */
+const QUIZ=[
+ {q:"O que significa a sigla NoSQL?",opts:["Not only SQL","No Structured Query Language","New Standard Query Language","Network Object SQL"],a:0,exp:"NoSQL significa Not only SQL: bancos que vao alem do modelo relacional tradicional."},
+ {q:"Qual destes e um exemplo de banco NewSQL?",opts:["MySQL","Cassandra","CockroachDB","MongoDB"],a:2,exp:"Exemplos de NewSQL: Cloud Spanner, VoltDB e CockroachDB."},
+ {q:"No comparativo da aula, o que o NoSQL tem e o RDBMS tradicional NAO tem?",opts:["Transacoes ACID","Suporte a SQL","Padronizacao","Escalabilidade horizontal"],a:3,exp:"RDBMS tem ACID, SQL e padronizacao, mas nao tem escala horizontal nem alta disponibilidade. O NoSQL tem escala horizontal e alta disponibilidade."},
+ {q:"Pelo teorema CAP, quantas propriedades um sistema distribuido pode garantir ao mesmo tempo?",opts:["As tres","Duas","Uma","Nenhuma"],a:1,exp:"Teorema de Brewer: so e possivel garantir 2 das 3 propriedades (Consistencia, Disponibilidade, Tolerancia a particao)."},
+ {q:"Qual tipo de NoSQL usa nos e relacionamentos para representar os dados?",opts:["Key-Value","Document","Graph","Wide-column"],a:2,exp:"Bancos de grafos (exemplo: Neo4j) usam nos e relacionamentos, ideais para redes sociais e recomendacoes."},
+ {q:"No acronimo BASE, o S significa...",opts:["Standard State","Soft State","Strong State","Sync State"],a:1,exp:"BASE = Basically Available + Soft State + Eventually Consistent."}
+];
+const TF=[
+ {s:"Bancos NoSQL exigem um esquema fixo e predefinido.",a:false,exp:"Falso! Esquema flexivel e uma das principais caracteristicas do NoSQL."},
+ {s:"NewSQL combina escala horizontal com transacoes ACID e suporte a SQL.",a:true,exp:"Verdadeiro! NewSQL busca o melhor dos dois mundos, ficando atras apenas em padronizacao."},
+ {s:"Redis e Amazon DynamoDB sao bancos do tipo chave-valor.",a:true,exp:"Verdadeiro! Ambos armazenam pares chave-valor, muito usados em cache e sessoes."},
+ {s:"BASE garante consistencia em todos os nos o tempo todo.",a:false,exp:"Falso! BASE aceita consistencia eventual: os nos convergem para um estado consistente com o tempo."},
+ {s:"O teorema CAP tambem e conhecido como teorema de Brewer.",a:true,exp:"Verdadeiro! O teorema CAP foi formulado por Eric Brewer."},
+ {s:"Scale-up significa adicionar mais maquinas ao sistema.",a:false,exp:"Falso! Scale-up e escala vertical (mais RAM, CPU e HD na mesma maquina). Adicionar nos e scale-out, ou seja, escala horizontal."}
+];
+const MATCH_LEFT=["Document","Graph","Key-Value","Wide-column","NewSQL","RDBMS"];
+const MATCH_RIGHT=[["MongoDB",0],["Neo4j",1],["Redis",2],["Apache HBase",3],["CockroachDB",4],["Oracle",5]];
+const CAP=[
+ {db:"Oracle",a:"CA",exp:"RDBMS tradicionais ficam em CA: Consistencia + Disponibilidade."},
+ {db:"Cassandra",a:"AP",exp:"Cassandra e AP: Disponibilidade + Tolerancia a particao (consistencia eventual)."},
+ {db:"MongoDB",a:"CP",exp:"MongoDB aparece no grupo CP do diagrama da aula: Consistencia + Tolerancia a particao."},
+ {db:"CouchDB",a:"AP",exp:"CouchDB e AP: continua disponivel mesmo com particoes de rede."},
+ {db:"Redis",a:"CP",exp:"Redis aparece no grupo CP no diagrama do teorema CAP."},
+ {db:"SQL Server",a:"CA",exp:"SQL Server e um RDBMS tradicional, portanto CA: Consistencia + Disponibilidade."}
+];
+
+/* ==================== ESTADO ==================== */
+let player="",score=0,qi=0,ti=0,ci=0,selL=null,matched=0;
+let rightOrder=shuffle(MATCH_RIGHT);
+const app=document.getElementById("app");
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+/* ==================== TELAS ==================== */
+function startScreen(){
+ app.innerHTML=`<div class="card center">
+  <span class="tag">JALA UNIVERSITY - SEMANA #3</span>
+  <h1>BancoQuest</h1>
+  <h2>Bancos de Dados NoSQL e NewSQL - Game de Resumo</h2>
+  <p class="muted">4 fases - 24 desafios - 240 pontos possiveis</p>
+  <div class="phases"><span class="chip">Fase 1: Quiz</span><span class="chip">Fase 2: V ou F</span><span class="chip">Fase 3: Liga os Pares</span><span class="chip">Fase 4: Teorema CAP</span></div>
+  <input id="pname" maxlength="20" placeholder="Digite seu nome, futuro DBA..." onkeydown="if(event.key==='Enter')startGame()">
+  <br><button class="btn" onclick="startGame()">Comecar missao</button>
+ </div>`;
+}
+function startGame(){
+ const v=document.getElementById("pname").value.trim();player=v||"Anonimo";
+ score=0;qi=0;ti=0;ci=0;matched=0;selL=null;rightOrder=shuffle(MATCH_RIGHT);
+ quizScreen();
+}
+function hud(p,s){return `<div class="topbar"><div>${player} - <span id="sc">${score}</span> pts</div><div>${p}</div></div><div class="subbar">${s}</div>`;}
+function updScore(){const e=document.getElementById("sc");if(e)e.textContent=score;}
+
+/* ---- FASE 1: QUIZ ---- */
+function quizScreen(){
+ const it=QUIZ[qi];
+ app.innerHTML=hud("Fase 1/4 - Quiz",`Pergunta ${qi+1} de ${QUIZ.length}`)+`<div class="card"><h3>${it.q}</h3>
+ ${it.opts.map((o,i)=>`<button class="opt" id="q${i}" onclick="answerQuiz(${i})">${o}</button>`).join("")}<div id="fb"></div></div>`;
+}
+function answerQuiz(i){
+ const it=QUIZ[qi];
+ for(let k=0;k<it.opts.length;k++)document.getElementById("q"+k).disabled=true;
+ if(i===it.a){score+=10;document.getElementById("q"+i).classList.add("correct");}
+ else{document.getElementById("q"+i).classList.add("wrong");document.getElementById("q"+it.a).classList.add("correct");}
+ updScore();
+ document.getElementById("fb").innerHTML=`<div class="exp">${i===it.a?"Certo! +10 pontos":"Resposta correta: "+it.opts[it.a]}<br>${it.exp}</div><button class="btn" onclick="nextQuiz()">Continuar</button>`;
+}
+function nextQuiz(){qi++;qi<QUIZ.length?quizScreen():tfScreen();}
+
+/* ---- FASE 2: VERDADEIRO OU FALSO ---- */
+function tfScreen(){
+ const it=TF[ti];
+ app.innerHTML=hud("Fase 2/4 - Verdadeiro ou Falso",`Afirmacao ${ti+1} de ${TF.length}`)+`<div class="card"><h3>${it.s}</h3>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+ <button class="opt" id="t0" onclick="answerTF(true)" style="text-align:center">Verdadeiro</button>
+ <button class="opt" id="t1" onclick="answerTF(false)" style="text-align:center">Falso</button></div><div id="fb"></div></div>`;
+}
+function answerTF(v){
+ const it=TF[ti];document.getElementById("t0").disabled=true;document.getElementById("t1").disabled=true;
+ const ok=(v===it.a);if(ok)score+=10;
+ document.getElementById(v?"t0":"t1").classList.add(ok?"correct":"wrong");
+ if(!ok)document.getElementById(it.a?"t0":"t1").classList.add("correct");
+ updScore();
+ document.getElementById("fb").innerHTML=`<div class="exp">${ok?"Certo! +10 pontos":"Que pena!"}<br>${it.exp}</div><button class="btn" onclick="nextTF()">Continuar</button>`;
+}
+function nextTF(){ti++;ti<TF.length?tfScreen():matchScreen();}
+
+/* ---- FASE 3: LIGA OS PARES ---- */
+function matchScreen(){
+ app.innerHTML=hud("Fase 3/4 - Liga os Pares",`Pares encontrados: ${matched}/6`)+`<div class="card">
+ <p class="muted">Clique em um item da <b>esquerda</b> e depois em seu par da <b>direita</b>.</p>
+ <div class="match"><div>${MATCH_LEFT.map((l,i)=>`<button class="opt" id="L${i}" onclick="pickL(${i})">${l}</button>`).join("")}</div>
+ <div>${rightOrder.map((r,k)=>`<button class="opt" id="R${k}" onclick="pickR(${k})">${r[0]}</button>`).join("")}</div></div><div id="fb"></div></div>`;
+}
+function pickL(i){
+ if(document.getElementById("L"+i).classList.contains("done"))return;
+ selL=i;MATCH_LEFT.forEach((_,k)=>document.getElementById("L"+k).classList.toggle("picked",k===i));
+}
+function pickR(k){
+ if(selL===null)return;
+ const r=rightOrder[k];
+ if(r[1]===selL){
+  score+=10;matched++;updScore();
+  const lb=document.getElementById("L"+selL),rb=document.getElementById("R"+k);
+  lb.classList.add("done");rb.classList.add("done");lb.classList.remove("picked");
+  document.querySelector(".subbar").textContent=`Pares encontrados: ${matched}/6`;
+  if(matched===6)document.getElementById("fb").innerHTML=`<div class="exp">Todos os pares!<br>Document = MongoDB - Graph = Neo4j - Key-Value = Redis - Wide-column = Apache HBase - NewSQL = CockroachDB - RDBMS = Oracle</div><button class="btn" onclick="capScreen()">Ir para a Fase 4</button>`;
+ }else{
+  const rb=document.getElementById("R"+k);rb.classList.add("wrong");setTimeout(()=>rb.classList.remove("wrong"),450);
+ }
+ selL=null;MATCH_LEFT.forEach((_,kk)=>document.getElementById("L"+kk).classList.remove("picked"));
+}
+
+/* ---- FASE 4: TEOREMA CAP ---- */
+function capScreen(){
+ const it=CAP[ci];
+ app.innerHTML=hud("Fase 4/4 - Teorema CAP",`Banco ${ci+1} de ${CAP.length}`)+`<div class="card center">
+ <p class="muted">Segundo o diagrama CAP da aula, que par de propriedades este banco prioriza?</p>
+ <div class="db">${it.db}</div>
+ <div class="capbtns">
+ <button class="opt" onclick="answerCap('CA',this)">CA<small>Consistencia + Disponibilidade</small></button>
+ <button class="opt" onclick="answerCap('CP',this)">CP<small>Consistencia + Tolerancia a particao</small></button>
+ <button class="opt" onclick="answerCap('AP',this)">AP<small>Disponibilidade + Tolerancia a particao</small></button></div><div id="fb"></div></div>`;
+}
+function answerCap(v,btn){
+ const it=CAP[ci];document.querySelectorAll(".capbtns .opt").forEach(b=>b.disabled=true);
+ const ok=(v===it.a);if(ok){score+=10;btn.classList.add("correct");}
+ else{btn.classList.add("wrong");document.querySelectorAll(".capbtns .opt").forEach(b=>{if(b.textContent.startsWith(it.a))b.classList.add("correct");});}
+ updScore();
+ document.getElementById("fb").innerHTML=`<div class="exp">${ok?"Certo! +10 pontos":"Era "+it.a+"."}<br>${it.exp}</div><button class="btn" onclick="nextCap()">Continuar</button>`;
+}
+function nextCap(){ci++;ci<CAP.length?capScreen():finalScreen();}
+
+/* ---- RESULTADO FINAL ---- */
+function finalScreen(){
+ const pct=Math.round(score/240*100);let medal,msg;
+ if(pct>=90){medal="Trofeu de Ouro";msg="Grao-Mestre dos Dados! Voce domina NoSQL, NewSQL, BASE e CAP!";}
+ else if(pct>=70){medal="Medalha de Ouro";msg="DBA Senior! Excelente dominio do conteudo da Semana 3.";}
+ else if(pct>=50){medal="Medalha de Prata";msg="Analista em evolucao! Revise os pontos que faltaram e tente de novo.";}
+ else{medal="Medalha de Bronze";msg="Estagiario de Dados: releia os slides da Semana 3 e jogue novamente!";}
+ app.innerHTML=hud("Resultado Final","Missao concluida!")+`<div class="card center">
+ <div class="big">${medal}</div><h1>${pct}%</h1>
+ <p class="muted">${player} - ${score} de 240 pontos</p>
+ <p style="font-weight:700;margin-bottom:16px">${msg}</p>
+ <h3 style="text-align:left">Resumo relampago</h3>
+ <ul class="res">
+ <li><b>Tres geracoes:</b> RDBMS (ACID + SQL), depois NoSQL (escala horizontal + disponibilidade) e NewSQL (ACID + SQL + escala horizontal).</li>
+ <li><b>4 tipos de NoSQL:</b> Documento (MongoDB, JSON/BSON), Grafo (Neo4j, Cypher), Chave-Valor (Redis, cache e sessoes) e Coluna larga (HBase, BigTable, big data).</li>
+ <li><b>Poderes do NoSQL:</b> modelos flexiveis, escala horizontal (scale-out), alta disponibilidade, tolerancia a falhas, desempenho e esquema flexivel.</li>
+ <li><b>BASE</b> = Basically Available + Soft State + Eventually Consistent, alternativa ao ACID que prioriza disponibilidade.</li>
+ <li><b>CAP (Brewer):</b> escolha 2 de 3. CA: SQL classico. CP: MongoDB, Redis, HBase. AP: Cassandra, CouchDB, Riak, DynamoDB.</li>
+ </ul>
+ <div class="mission"><b>Missao extra (atividades da Semana 3):</b> pesquise 3 bancos NoSQL e verifique quais principios CAP satisfazem - exponha sua opiniao sobre BASE - instale um banco NoSQL e justifique a escolha.</div>
+ <br><button class="btn" onclick="startScreen()">Jogar de novo</button></div>`;
+}
+startScreen();
+</script>
+</body>
+</html>
