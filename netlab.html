@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NETLAB QUEST - Guia Interativo do Laboratorio</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#04123f,#0b3fd4 55%,#0066ff);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:20px 14px;color:#16213e}
+#app{width:100%;max-width:800px}
+.card{background:#fff;border-radius:22px;padding:26px;box-shadow:0 24px 70px rgba(0,0,0,.4);margin-bottom:14px}
+.center{text-align:center}
+.tag{display:inline-block;background:#e8f0ff;color:#0b3fd4;font-weight:700;font-size:.78rem;padding:5px 14px;border-radius:999px;margin-bottom:12px}
+.rub{display:inline-block;background:#fff3e0;color:#a05a00;font-weight:700;font-size:.75rem;padding:4px 12px;border-radius:999px;margin-bottom:12px}
+h1{font-size:2.1rem;color:#0b3fd4;margin-bottom:4px}
+h2{font-size:1.05rem;color:#3a4a6b;font-weight:600;margin-bottom:12px}
+h3{font-size:1.2rem;margin-bottom:14px;color:#16213e;line-height:1.4}
+p.txt{font-size:.97rem;line-height:1.55;color:#33415e;margin-bottom:12px;text-align:left}
+.muted{color:#66748f;font-size:.93rem;margin-bottom:14px}
+.phases{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0}
+.chip{background:#f0f4ff;border:1px solid #d6e2ff;color:#0b3fd4;padding:6px 11px;border-radius:999px;font-size:.8rem;font-weight:600}
+input{width:100%;max-width:360px;padding:13px 16px;border:2px solid #d6e2ff;border-radius:12px;font-size:1rem;margin:6px 0 14px;outline:none;text-align:center}
+input:focus{border-color:#0b3fd4}
+button{cursor:pointer;font-family:inherit}
+.btn{background:#0b3fd4;color:#fff;border:none;padding:13px 30px;border-radius:12px;font-size:1rem;font-weight:700;transition:.2s}
+.btn:hover{background:#0033b3;transform:translateY(-1px)}
+.topbar{display:flex;justify-content:space-between;align-items:center;color:#fff;font-weight:700;padding:2px 6px 8px;flex-wrap:wrap;gap:6px}
+.subbar{color:#cfe0ff;font-size:.88rem;padding:0 6px 10px;font-weight:600}
+.pbar{height:9px;background:rgba(255,255,255,.25);border-radius:999px;margin:0 6px 12px}
+.pbar>div{height:100%;background:#ffd23f;border-radius:999px;transition:.3s}
+.opt{display:block;width:100%;text-align:left;background:#f7f9ff;border:2px solid #e3eaff;border-radius:14px;padding:13px 16px;font-size:.98rem;margin-bottom:10px;color:#16213e;font-weight:600;transition:.15s;line-height:1.4}
+.opt:hover:not(:disabled){border-color:#0b3fd4;background:#eef3ff}
+.opt.correct{background:#e6f9ec;border-color:#22b45e;color:#0f7a38}
+.opt.wrong{background:#fdeaea;border-color:#e05252;color:#b32020;animation:shake .35s}
+.opt.done{opacity:.55;pointer-events:none;background:#eef9f1;border-color:#22b45e}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.exp{background:#f0f6ff;border-left:5px solid #0b3fd4;border-radius:0 12px 12px 0;padding:14px 16px;font-size:.93rem;margin:6px 0 14px;line-height:1.5;text-align:left}
+.exp.warn{background:#fff8e8;border-left-color:#eab308}
+.big{font-size:3.2rem;margin:6px 0}
+ul.res{list-style:none;text-align:left;margin:12px 0}
+ul.res li{background:#f7f9ff;border-radius:12px;padding:11px 14px;margin-bottom:8px;font-size:.9rem;line-height:1.45}
+.ck{display:block;text-align:left;background:#f7f9ff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:.9rem;cursor:pointer;line-height:1.4}
+.ck input{width:auto;margin:0 8px 0 0;transform:scale(1.2)}
+.note{background:#f0fdf4;border:1px solid #86dfa8;border-radius:14px;padding:12px 15px;font-size:.88rem;margin-top:8px;text-align:left;line-height:1.5}
+.mission{background:#fff7e6;border:1px dashed #eab308;border-radius:14px;padding:13px 15px;font-size:.88rem;margin-top:8px;text-align:left;line-height:1.5}
+.sealbox{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.seal{background:#f0f4ff;border:1px solid #d6e2ff;border-radius:12px;padding:8px 12px;font-size:.8rem;font-weight:700;color:#0b3fd4}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:left}
+@media(max-width:640px){.two{grid-template-columns:1fr}}
+h4.sec{color:#0b3fd4;margin:14px 0 8px;font-size:1rem;text-align:left}
+</style>
+</head>
+<body>
+<div id="app"><div class="card center"><h1>NETLAB QUEST</h1><p class="muted">Carregando...</p></div></div>
+<script>
+window.onerror=function(msg,src,line){document.getElementById("app").innerHTML='<div class="card center"><h3>Erro ao carregar o jogo</h3><p class="muted">'+msg+' (linha '+line+')</p></div>';};
+</script>
+<script>
+/* ============================================================
+   NETLAB QUEST - Fases do laboratorio (decisoes, sem codigo)
+   ============================================================ */
+const PHASES=[
+{name:"Desenho da Arquitetura",tag:"Passo 1 do laboratorio",rub:"Rubrica: Compreensao do problema + Investigacao",
+intro:"Briefing: a plataforma universitaria precisa de comunicacao em tempo real entre varias aplicacoes, envio confiavel, distribuicao de eventos e integridade dos dados. Antes de qualquer linha de codigo, um arquiteto define papeis e fluxos. Esta sala treina essas decisoes.",
+items:[
+ {t:"d",q:"Na arquitetura cliente-servidor com sockets TCP, como funciona o papel de cada lado na hora de conectar?",
+  opts:["O servidor fica passivo, escutando em uma porta; os clientes iniciam a conexao ativamente","O cliente fica escutando e o servidor sai conectando em cada cliente","Servidor e clientes precisam se conectar no mesmo instante"],
+  ok:[0],
+  why:["Exato: o servidor abre a porta e espera; cada cliente conecta quando precisa, de forma independente.",
+       "Cuidado: inverter os papeis complica tudo. Em TCP, quem oferta o servico (o servidor) escuta; quem consome (o cliente) conecta.",
+       "Nao e preciso sincronizar instantes: o servidor permanece esperando conexoes, e cada cliente chega quando quiser."],
+  exp:"Servidor passivo (escuta) + cliente ativo (conecta) e o modelo classico. No relatorio, desenhe esses dois papeis no seu diagrama."},
+ {t:"o",q:"Ordene o ciclo de vida do SERVIDOR TCP (clique nos passos na ordem correta):",
+  steps:["Criar o socket","Vincular (bind) ao IP e a porta","Colocar em escuta (listen)","Aceitar (accept) a conexao do cliente","Trocar mensagens (receber e encaminhar)","Encerrar a conexao quando o cliente sair"],
+  exp:"Essa sequencia (socket, bind, listen, accept, troca, close) e o esqueleto conceitual de qualquer servidor TCP: anote-a para guiar sua implementacao e o diagrama de sequencia do relatorio."},
+ {t:"d",q:"Cliente e servidor podem rodar em maquinas diferentes?",
+  opts:["Sim: basta que a rede permita e o cliente conheca o IP e a porta do servidor","Nao: sockets TCP so funcionam na mesma maquina","Sim, mas somente se os dois usarem o mesmo sistema operacional"],
+  ok:[0],
+  why:["Correto: TCP abstrai a rede. O mesmo codigo roda em localhost para testes e entre maquinas no deployment.",
+       "Na verdade podem: o enderecamento por IP e porta existe exatamente para ligar maquinas distintas.",
+       "O sistema operacional nao precisa ser igual: o que importa e o protocolo TCP, que e padrao universal."],
+  exp:"Isso permite testar em localhost e depois distribuir em containers ou maquinas reais sem reescrever a logica."},
+ {t:"d",q:"O que DEVE ficar definido no design antes de codificar o chat universitario?",
+  opts:["Porta de escuta, formato das mensagens serializadas e como cada participante sera identificado","Apenas o nome da aplicacao e o tema visual","Nada: detalhes de protocolo podem ser decididos durante a depuracao"],
+  ok:[0],
+  why:["Exato: porta, formato de serializacao e identificacao formam o contrato entre os programas.",
+       "Visual nao e contrato: sem definir porta, formato e identificacao, cliente e servidor nao vao se entender.",
+       "Decidir protocolo na depuracao gera retrabalho e bugs dificeis: o design vem primeiro."],
+  exp:"Pense no protocolo como um contrato: o que a mensagem carrega (emissor, destino, conteudo) e por onde trafega (IP e porta)."}]},
+
+{name:"Servidor Concorrente",tag:"Passo 2 do laboratorio",rub:"Rubrica: Implementacao tecnica",
+intro:"O servidor e o coracao do sistema: escuta uma porta, aceita varios clientes AO MESMO TEMPO, recebe mensagens serializadas e encaminha para todos (broadcast) ou para um destino especifico (privado). Tome as decisoes com sabedoria.",
+items:[
+ {t:"d",q:"O servidor precisa atender varios clientes simultaneamente. Qual estrategia cumpre esse requisito?",
+  opts:["Uma thread por cliente","Atender um cliente por vez, em sequencia","Programacao assincrona (async IO)"],
+  ok:[0,2],
+  why:["Valido! Cada cliente ganha um fluxo de atendimento independente, sem bloquear os demais.",
+       "Armadilha: atendendo um por vez, o chat trava: enquanto o primeiro cliente estiver conectado, ninguem mais consegue conversar.",
+       "Valido! Async IO tambem atende varios clientes com um unico fluxo orientado a eventos."],
+  exp:"Threads e async IO sao as duas rotas citadas no enunciado do laboratorio. Escolha UMA, justifique no relatorio e garanta que o servidor principal nunca fique preso em um unico cliente."},
+ {t:"d",q:"Qual formato usar para as mensagens serializadas trocadas na rede?",
+  opts:["JSON","Texto livre, sem formato definido","MessagePack"],
+  ok:[0,2],
+  why:["Valido: JSON e legivel, universal e facil de depurar.",
+       "Armadilha: sem formato definido, cada lado interpreta os bytes de um jeito e a integracao quebra.",
+       "Valido: MessagePack e compacto e rapido, otimo para muitos dados."],
+  exp:"A regra de ouro: emissor e receptor usam o MESMO formato para codificar e decodificar. Documente a escolha no relatorio (JSON e o caminho mais comum para comecar)."},
+ {t:"d",q:"Para enviar broadcast a todos os clientes conectados, o servidor precisa de...",
+  opts:["Uma estrutura que registre os clientes ativos (por exemplo, uma lista ou dicionario de sockets)","Reenviar a mensagem para o proprio emissor ate funcionar","Criar um novo servidor para cada mensagem"],
+  ok:[0],
+  why:["Exato: com o registro de quem esta online, o servidor percorre e replica a mensagem para todos, e tambem roteia privadas.",
+       "Reenviar ao emissor nao alcanca os outros participantes: o broadcast exige conhecer a todos.",
+       "Multiplicar servidores fragmenta o chat: as mensagens ficariam presas em ilhas isoladas."],
+  exp:"Manter um registro dos sockets ativos e a base do broadcast e do roteamento privado. Lembre de remover quem cair (voce vera isso na sala de erros)."},
+ {t:"d",q:"A mensagem privada exige que o protocolo indique o destinatario, e o servidor usa seu registro de clientes para rotear.",
+  opts:["Verdadeiro","Falso"],
+  ok:[0],
+  why:["Correto: sem um campo de destino, o servidor nao sabe para quem encaminhar; com o registro, localiza o socket certo.",
+       "Se a mensagem nao disser para quem vai, o melhor que o servidor consegue e mandar para todos (broadcast)."],
+  exp:"Privado = destino na mensagem + registro de clientes no servidor. Broadcast = mesmo mecanismo, replicando para a lista inteira."},
+ {t:"d",q:"CENARIO DE TESTE: o primeiro cliente conversa normalmente, mas o segundo nunca conecta e o servidor para de responder. Qual o diagnostico mais provavel?",
+  opts:["O servidor ficou bloqueado atendendo um unico cliente: falta concorrencia","A porta escolhida esta com sorte ruim; e so trocar o numero","O segundo cliente precisa esperar o primeiro desconectar, por regra do chat"],
+  ok:[0],
+  why:["Exato: esse e o sintoma classico de um servidor bloqueante, sem thread por cliente ou sem async IO.",
+       "Trocar a porta nao muda o modelo de atendimento: o problema e logico, nao numerico.",
+       "Nao existe essa regra em TCP: se o servidor para de aceitar, o desenho e bloqueante."],
+  exp:"Guarde esse cenario: ele e uma otima evidencia para o relatorio (teste ANTES de corrigir, capture a tela, corrija com concorrencia e mostre o depois)."}]},
+
+{name:"Cliente em Acao",tag:"Passo 3 do laboratorio",rub:"Rubrica: Implementacao tecnica",
+intro:"Do lado do cliente, o usuario digita no console enquanto novas mensagens chegam da rede. E preciso exibir quem falou e o que foi dito. Descubra os cuidados desse equilibrio.",
+items:[
+ {t:"d",q:"O cliente precisa digitar mensagens E exibir o que chega da rede. Se o programa apenas ler o console e ficar esperando o usuario, o que acontece?",
+  opts:["As mensagens recebidas ficam acumuladas sem ser exibidas: as duas atividades precisam ocorrer em paralelo","Nada: o sistema operacional exibe as mensagens por conta propria","E impossivel enviar e receber no mesmo programa; e preciso dois programas separados"],
+  ok:[0],
+  why:["Exato: leitura de console e recebimento de rede sao atividades independentes que precisam andar juntas (concorrencia tambem no cliente).",
+       "O sistema operacional entrega os bytes ao socket, mas exibir na tela e trabalho do seu programa.",
+       "Um unico programa pode enviar e receber: sockets sao bidirecionais."],
+  exp:"O cliente tem o mesmo desafio de concorrencia do servidor: uma atividade cuida da entrada do usuario, outra da chegada de dados. Threads ou async resolvem nos dois lados."},
+ {t:"d",q:"Como o destinatario sabera QUEM enviou cada mensagem?",
+  opts:["Incluindo a identificacao do emissor dentro da mensagem serializada","O destinatario deduz pela ordem de chegada","Todos os clientes usam o mesmo apelido para simplificar"],
+  ok:[0],
+  why:["Exato: o protocolo carrega metadados (quem, para quem, o que) junto do conteudo.",
+       "Ordem de chegada nao identifica ninguem: varias mensagens de varias pessoas se intercalam na rede.",
+       "Identidade duplicada impede saber quem falou e inviabiliza mensagens privadas."],
+  exp:"Defina o contrato da mensagem: campos de emissor, destino (se privado) e conteudo. Isso responde ao requisito identificar o emissor do laboratorio."},
+ {t:"o",q:"Ordene a jornada de UMA mensagem no sistema (clique na ordem correta):",
+  steps:["O cliente A digita a mensagem no console","A mensagem e serializada (por exemplo, em JSON)","O cliente A envia os bytes pelo socket TCP","O servidor recebe e valida a integridade (hash)","O servidor encaminha aos destinatarios","O cliente B recebe, decodifica e exibe na tela"],
+  exp:"Esse pipeline (digitar, serializar, enviar, validar, rotear, exibir) e perfeito para virar o diagrama de sequencia exigido no relatorio."},
+ {t:"d",q:"Receber e exibir mensagens e papel do cliente; rotear mensagens entre clientes e papel do servidor.",
+  opts:["Verdadeiro","Falso"],
+  ok:[0],
+  why:["Correto: cada papel tem sua responsabilidade, e o servidor e o ponto central de distribuicao.",
+       "Se cada cliente tentasse rotear para os outros, precisaria conhecer todos diretamente: isso e o contrario do modelo cliente-servidor."],
+  exp:"Separar responsabilidades deixa o sistema previsivel: cliente fala e escuta; servidor organiza e distribui."}]},
+
+{name:"Guardiao da Integridade",tag:"Passo 4 do laboratorio",rub:"Rubrica: Implementacao tecnica",
+intro:"Mensagens podem chegar corrompidas e conexoes podem cair a qualquer momento. Sua missao: blindar o sistema com hash de integridade e tratamento de excecoes, sem derrubar o servico inteiro.",
+items:[
+ {t:"d",q:"Para validar integridade com hash (MD5 ou SHA-256), qual e o fluxo correto?",
+  opts:["O emissor calcula o hash do conteudo serializado e envia junto; o receptor recalcula e compara","So o receptor calcula o hash, pois ele confia em si mesmo","O hash e calculado antes de o usuario digitar a mensagem"],
+  ok:[0],
+  why:["Exato: duas versoes do hash (uma no envio, outra na chegada) permitem comparar e detectar alteracoes.",
+       "Se so um lado calcula, nao existe comparacao: validacao exige as duas pontas.",
+       "O hash protege o conteudo que trafega na rede, nao o momento da digitacao."],
+  exp:"Regra da integridade: hash calculado sobre o conteudo serializado, enviado junto da mensagem e recalculado no destino. Se bater, confia; se nao bater, e erro."},
+ {t:"d",q:"A mensagem chegou, mas o hash recalculado NAO confere. O que isso indica e o que fazer?",
+  opts:["Possivel corrupcao ou alteracao no caminho: tratar como erro, nao exibir como dado confiavel, registrar e aplicar a politica definida (descartar ou pedir reenvio)","Ignorar o hash e exibir normalmente; hash e so decoracao","Reiniciar o computador do usuario para limpar a rede"],
+  ok:[0],
+  why:["Exato: divergencia de hash e sinal de alerta; a politica de resposta precisa estar definida e registrada.",
+       "Ignorar a validacao anula o requisito de integridade do laboratorio (e a rubrica cobra isso).",
+       "Reiniciar maquina nao e tratamento de erro: e sintoma de que o tratamento nao existe."],
+  exp:"Defina no design o que acontece quando o hash falha: descartar, avisar ou solicitar reenvio. O importante e NUNCA tratar dado corrompido como confiavel."},
+ {t:"d",q:"Queda de conexao, cliente indisponivel e erro de transmissao devem ser cobertos por tratamento de excecoes, sem derrubar o servidor inteiro.",
+  opts:["Verdadeiro","Falso"],
+  ok:[0],
+  why:["Correto: o laboratorio lista exatamente esses tres cenarios de falha; cada conexao problematica deve ser isolada.",
+       "Sem tratamento de excecoes, um unico cliente caindo pode derrubar o servico para todos."],
+  exp:"Mapeie cada cenario no relatorio: o que dispara, como capturar e qual a recuperacao (remover cliente, avisar, continuar)."},
+ {t:"d",q:"Durante um broadcast, um cliente cai no meio do envio. O comportamento ideal do servidor e:",
+  opts:["Capturar o erro desse cliente, remove-lo do registro de ativos e continuar servindo os demais","Encerrar o servidor, pois a falha contaminou o sistema","Reiniciar todas as conexoes, inclusive as saudaveis"],
+  ok:[0],
+  why:["Exato: isolamento de falha, o erro fica contido na conexao problematica.",
+       "Um cliente fora do ar nao justifica derrubar o servico: isso e o contrario de tolerancia a falhas.",
+       "Punir os clientes saudaveis pela falha de um so degrada a disponibilidade sem necessidade."],
+  exp:"Tolerancia a falhas na pratica: try/catch (ou equivalente) por conexao, limpeza do registro e servico continua de pe. Evidencie esse teste com capturas de tela."}]},
+
+{name:"Docker (opcional)",tag:"Passo 5 do laboratorio - OPCIONAL",rub:"Rubrica: Implementacao tecnica (bonus de deployment)",
+intro:"Passo opcional, para quem quer experimentar deployment em ambientes isolados: rodar servidor e clientes como containers independentes. Nao e obrigatorio para concluir os objetivos principais.",
+items:[
+ {t:"d",q:"O Dockerfile descreve como construir a imagem de um servico: dependencias, codigo e comando inicial.",
+  opts:["Verdadeiro","Falso"],
+  ok:[0],
+  why:["Correto: imagem construida, container executado. E assim que o servico vira portatil.",
+       "O Dockerfile e justamente a receita de construcao da imagem."],
+  exp:"Um Dockerfile por servico (servidor e cliente) e o caminho natural deste laboratorio."},
+ {t:"d",q:"Para subir servidor e varios clientes como containers independentes com UM UNICO comando, qual ferramenta usar?",
+  opts:["docker-compose, orquestrando varios servicos descritos em um arquivo YAML","Copiar e colar o codigo em varios terminais, na esperanca","Instalar o sistema operacional novamente em cada teste"],
+  ok:[0],
+  why:["Exato: o compose define os servicos, a rede entre eles e sobe tudo junto.",
+       "Colar codigo em terminais nao e orquestracao: e retrabalho manual sem reprodutibilidade.",
+       "Reinstalar sistemas nao e teste: e desperdicio de tempo."],
+  exp:"docker-compose.yml e o arquivo que a rubrica de entrega menciona (quando aplicavel): descreva servidor e clientes la."},
+ {t:"d",q:"Containers na mesma rede se comunicam como maquinas distintas, permitindo ensaiar o sistema proximo de um ambiente real de rede.",
+  opts:["Verdadeiro","Falso"],
+  ok:[0],
+  why:["Correto: cada container e um no isolado; a rede entre eles simula o mundo real com pouco custo.",
+       "Justamente o contrario: a rede de containers e um dos maiores trunfos para simular infraestrutura."],
+  exp:"Vantagens a citar no relatorio: isolamento, reprodutibilidade e simulacao de varios nos na mesma maquina."}]},
+
+{name:"Camara de Reflexao",tag:"Perguntas de reflexao do laboratorio",rub:"Rubrica: Conclusoes (as respostas do PDF devem ser suas!)",
+intro:"Hora de pensar como arquiteto. As pistas desta sala preparam suas conclusoes: no relatorio, escreva com as suas palavras e apoie cada ideia nos seus proprios testes e capturas.",
+items:[
+ {t:"d",q:"Comunicacao SINCRONA x ASSINCRONA: qual frase descreve a diferenca fundamental?",
+  opts:["No sincrono, quem envia aguarda (bloqueia) a resposta para continuar; no assincrono, segue trabalhando e processa a resposta quando ela chegar","Sincrono e o que usa cabos; assincrono e o que usa Wi-Fi","Sao sinonimos: nao existe diferenca pratica entre eles"],
+  ok:[0],
+  why:["Exato: a diferenca e temporal, esperar ou nao esperar pela resposta.",
+       "A diferenca nao e fisica (meio de transmissao), e sobre o comportamento de quem espera.",
+       "A diferenca existe e muda o desenho de todo o sistema distribuido."],
+  exp:"Termos para o relatorio: bloqueante x nao bloqueante. Conecte com a sua escolha de threads ou async no cliente e no servidor."},
+ {t:"d",q:"Por que o modelo Publish-Subscribe tende a escalar melhor que o cliente-servidor ponto a ponto?",
+  opts:["Pelo desacoplamento: quem publica nao conhece quem consome; novos assinantes entram sem alterar os produtores, e a distribuicao fica a cargo do intermediario (broker)","Porque Pub-Sub dispensa rede","Porque Pub-Sub sempre comprime as mensagens e envia menos bytes"],
+  ok:[0],
+  why:["Exato: desacoplamento e o motor da escalabilidade do modelo baseado em eventos.",
+       "Pub-Sub tambem depende de rede; muda e o modelo de distribuiçao, nao o meio.",
+       "A vantagem-chave e arquitetural (desacoplamento), nao compressao de dados."],
+  exp:"Para as conclusoes: cliente-servidor acopla emissor e receptor; Pub-Sub os separa por um intermediario. Compare com base nos seus dois sistemas."},
+ {t:"d",q:"Em qual cenario SOCKETS TCP sao a escolha mais natural?",
+  opts:["Conexao confiavel, ordenada e ponto a ponto entre participantes conhecidos (por exemplo, chat em tempo real, transferencia de arquivo)","Distribuir o mesmo evento para centenas de consumidores dinamicos e desconhecidos","Arquivar relatorios em uma planilha"],
+  ok:[0],
+  why:["Exato: TCP garante entrega e ordem entre pontas conhecidas, exatamente o requisito do chat.",
+       "Esse e o cenario onde o Pub-Sub brilha: consumidores variaveis e desacoplados do produtor.",
+       "Arquivar dados e outro problema, sem relacao com transporte em rede."],
+  exp:"Regra pratica para o relatorio: poucos participantes conhecidos e conexao dedicada favorecem TCP; muitos consumidores variaveis favorecem eventos."},
+ {t:"d",q:"Como o DESACOPLAMENTO impacta a manutenibilidade de sistemas de rede?",
+  opts:["Componentes evoluem de forma independente, pois dependem de um contrato (protocolo) e nao do codigo uns dos outros: mudancas internas nao quebram os parceiros","Desacoplamento aumenta o acoplamento, por isso e evitado","Manutenibilidade nao tem relacao com a arquitetura escolhida"],
+  ok:[0],
+  why:["Exato: contrato estavel + independencia de implementacao = manutencao mais segura.",
+       "E o inverso: desacoplar reduz o impacto de cada mudanca no resto do sistema.",
+       "A arquitetura e um dos maiores fatores de custo de manutencao ao longo do tempo."],
+  exp:"Ilustre com exemplo do seu projeto: trocar a representacao interna de um lado sem quebrar o outro, desde que o formato da mensagem continue o mesmo."},
+ {t:"d",q:"Que vantagens o Docker traz para simular infraestrutura real de rede?",
+  opts:["Ambientes isolados e reprodutiveis: varios nos na mesma maquina, configuracao versionada e teste proximo do deployment real","Docker substitui o protocolo TCP, entao sockets deixam de existir","Docker deixa o programa mais rapido, por isso e obrigatorio"],
+  ok:[0],
+  why:["Exato: mesmas imagens em qualquer maquina, rede entre nos e ensaio fiel do deployment.",
+       "Docker isola ambientes; a comunicacao continua usando TCP, HTTP e demais protocolos.",
+       "Docker nao e acelerador de codigo nem obrigatorio neste laboratorio: e ferramenta de isolamento e reprodutibilidade."],
+  exp:"Se usar Docker, documente o processo no README: construcao, execucao e como subir os varios clientes."}]},
+
+{name:"Sala de Entrega",tag:"Pacote final: PDF + GitLab",rub:"Rubrica: Documentacao + Conclusoes",
+intro:"Ultima sala: organizar o pacote de entrega conforme a rubrica (29 pontos). Erros de entrega custam caro mesmo com codigo bom. Organize-se!",
+items:[
+ {t:"d",q:"Onde a URL do repositorio GitLab INSTITUCIONAL deve aparecer?",
+  opts:["Dentro do informe em PDF, junto da documentacao","Somente enviada por mensagem ao professor","Publicada em rede social para ganhar visibilidade"],
+  ok:[0],
+  why:["Exato: o PDF precisa apontar para o repositorio institucional (conta institucional, exclusive).",
+       "A rubrica exige a URL no informe: se nao esta no PDF, nao conta.",
+       "Rede social nao e canal de entrega e viola o fluxo oficial."],
+  exp:"Checklist GitLab: codigo do servidor, arquivos de configuracao (Dockerfile / docker-compose.yml se usados) e README.md completo."},
+ {t:"o",q:"Ordene o roteiro de producao do pacote de entrega (clique na ordem recomendada):",
+  steps:["Implementar servidor e clientes","Testar com varios clientes simultaneos e cenarios de falha","Capturar as evidencias em screenshots","Criar o diagrama de sequencia","Escrever o README.md no repositorio","Gerar o PDF final com a URL do repositorio"],
+  exp:"Evidencias nascem dos testes, diagramas da implementacao, README do projeto e PDF fecha o pacote. Nessa ordem, nada fica faltando."},
+ {t:"d",q:"O README.md deve cobrir objetivo, estrutura do projeto, instrucoes de execucao e testes realizados.",
+  opts:["Verdadeiro","Falso"],
+  ok:[0],
+  why:["Correto: e exatamente o que a rubrica de documentacao cobra no repositorio.",
+       "README vago e documentacao incompleta: perde pontos mesmo com codigo funcionando."],
+  exp:"O PDF deve descrever o passo a passo, com capturas, diagramas, explicacao dos resultados e conclusoes coerentes com os objetivos."}]}
+];
+
+/* ==================== ESTADO ==================== */
+let player="",score=0,PH=0,IT=0,firstTry=true,answered=false,phaseFirst=0;
+let seals=[],orderArr=[],orderPos=0,orderErr=false;
+const app=document.getElementById("app");
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function hud(sub,prog){
+ let steps="";PHASES.forEach((p,i)=>{steps+='<span class="chip">'+(i<PH?"[OK] ":"")+p.name+"</span>";});
+ return '<div class="topbar"><div>'+player+' - <span id="sc">'+score+'</span> pts</div><div>'+sub+'</div></div><div class="subbar">'+prog+'</div><div class="pbar"><div style="width:'+Math.round(PH/PHASES.length*100)+'%"></div></div>';
+}
+function updScore(){const e=document.getElementById("sc");if(e)e.textContent=score;}
+
+/* ==================== TELAS ==================== */
+function startScreen(){
+ app.innerHTML='<div class="card center">'+
+ '<span class="tag">LABORATORIO - COMUNICACAO CLIENTE-SERVIDOR E EVENTOS</span>'+
+ '<h1>NETLAB QUEST</h1>'+
+ '<h2>Guia interativo: transmissao de dados com sockets TCP e eventos</h2>'+
+ '<p class="txt center" style="text-align:center">Voce e o arquiteto contratado para construir a plataforma universitaria. Este jogo percorre os <b>5 passos do laboratorio</b> + <b>reflexao</b> + <b>entrega</b>, em 7 salas de decisoes. <b>Nenhum codigo pronto sera mostrado:</b> cada resposta treina uma decisao que VOCE implementara depois.</p>'+
+ '<div class="phases"><span class="chip">1. Arquitetura</span><span class="chip">2. Servidor</span><span class="chip">3. Cliente</span><span class="chip">4. Integridade</span><span class="chip">5. Docker</span><span class="chip">6. Reflexao</span><span class="chip">7. Entrega</span></div>'+
+ '<input id="pname" maxlength="20" placeholder="Nome do arquiteto..." onkeydown="if(event.key===\'Enter\')startGame()">'+
+ '<button class="btn" onclick="startGame()">Entrar no laboratorio</button>'+
+ '<div class="note" style="margin-top:16px">Lembrete de integridade academica: use este guia para estruturar seu raciocinio. O codigo, os testes e o relatorio devem ser criados por voce, conforme as politicas da Jala University.</div></div>';
+}
+function startGame(){
+ const v=document.getElementById("pname").value.trim();player=v||"Arquiteto";
+ score=0;PH=0;IT=0;firstTry=true;answered=false;phaseFirst=0;seals=[];
+ phaseIntro();
+}
+function phaseIntro(){
+ const p=PHASES[PH];
+ app.innerHTML=hud("Sala "+(PH+1)+" de "+PHASES.length,"Mapa do laboratorio")+
+ '<div class="card center"><span class="tag">SALA '+(PH+1)+' - '+p.tag+'</span>'+
+ '<h1 style="font-size:1.5rem">'+p.name+'</h1>'+
+ '<div class="rub">'+p.rub+'</div>'+
+ '<p class="txt" style="text-align:left">'+p.intro+'</p>'+
+ '<p class="muted">'+p.items.length+' desafio(s) - 10 pts por acerto na primeira tentativa, 5 pts com tentativas</p>'+
+ '<button class="btn" onclick="renderPhase()">Iniciar sala</button></div>';
+}
+function cur(){return PHASES[PH].items[IT];}
+function renderPhase(){
+ answered=false;firstTry=true;
+ const p=PHASES[PH],it=cur();
+ const prog="Desafio "+(IT+1)+" de "+p.items.length+" - "+p.name;
+ let body="";
+ if(it.t==="d"){
+  body='<h3>'+it.q+'</h3>'+it.opts.map((o,i)=>'<button class="opt" id="o'+i+'" onclick="clickOpt('+i+')">'+o+'</button>').join("");
+ }else{
+  orderArr=shuffle(it.steps.map((s,i)=>({s:s,i:i})));
+  if(orderArr.every((x,k)=>x.i===k))orderArr=shuffle(orderArr);
+  orderPos=0;orderErr=false;
+  body='<h3>'+it.q+'</h3><p class="muted" id="oprog">Passos confirmados: 0/'+it.steps.length+'</p>'+
+  orderArr.map((x,k)=>'<button class="opt" id="s'+k+'" onclick="clickStep('+k+')">'+x.s+'</button>').join("");
+ }
+ app.innerHTML=hud("Sala "+(PH+1)+" de "+PHASES.length,prog)+'<div class="card">'+body+'<div id="fb"></div></div>';
+}
+function clickOpt(i){
+ if(answered)return;
+ const it=cur();
+ if(it.ok.indexOf(i)>=0){
+  answered=true;
+  const gain=firstTry?10:5;if(firstTry)phaseFirst++;
+  score+=gain;updScore();
+  document.getElementById("o"+i).classList.add("correct");
+  it.opts.forEach((_,k)=>document.getElementById("o"+k).disabled=true);
+  document.getElementById("fb").innerHTML='<div class="exp"><b>Decisao registrada (+'+gain+' pts).</b><br>'+it.exp+'</div><button class="btn" onclick="nextItem()">Continuar</button>';
+ }else{
+  firstTry=false;
+  document.getElementById("o"+i).classList.add("wrong");document.getElementById("o"+i).disabled=true;
+  document.getElementById("fb").innerHTML='<div class="exp warn"><b>Opa, pense de novo:</b><br>'+it.why[i]+'</div>';
+ }
+}
+function clickStep(k){
+ if(answered)return;
+ const it=cur();
+ if(orderArr[k].i===orderPos){
+  const btn=document.getElementById("s"+k);
+  btn.classList.add("done");btn.textContent=(orderPos+1)+". "+orderArr[k].s;
+  orderPos++;
+  document.getElementById("oprog").textContent="Passos confirmados: "+orderPos+"/"+it.steps.length;
+  if(orderPos===it.steps.length){
+   answered=true;
+   const gain=orderErr?5:10;if(!orderErr)phaseFirst++;
+   score+=gain;updScore();
+   document.getElementById("fb").innerHTML='<div class="exp"><b>Sequencia completa (+'+gain+' pts).</b><br>'+it.exp+'</div><button class="btn" onclick="nextItem()">Continuar</button>';
+  }
+ }else{
+  orderErr=true;
+  const btn=document.getElementById("s"+k);
+  btn.classList.add("wrong");setTimeout(function(){btn.classList.remove("wrong");},450);
+ }
+}
+function nextItem(){
+ IT++;
+ if(IT<PHASES[PH].items.length){renderPhase();}else{phaseResult();}
+}
+function phaseResult(){
+ const p=PHASES[PH],pct=Math.round(phaseFirst/p.items.length*100);
+ let seal,phrase;
+ if(pct>=80){seal="SELO DE OURO";phrase="Decisoes quase perfeitas nesta sala!";}
+ else if(pct>=50){seal="SELO DE PRATA";phrase="Boa base; revise os pontos em que precisou de mais tentativas.";}
+ else{seal="SELO DE BRONZE";phrase="Releia os feedbacks desta sala antes de codificar: eles sao o resumo da teoria.";}
+ seals.push({n:p.name,s:seal});
+ app.innerHTML=hud("Sala "+(PH+1)+" concluida",p.name)+
+ '<div class="card center"><div class="big">'+seal+'</div><h1 style="font-size:1.4rem">'+p.name+'</h1>'+
+ '<p class="muted">'+phaseFirst+' de '+p.items.length+' desafios na primeira tentativa ('+pct+'%)</p>'+
+ '<p style="font-weight:700">'+phrase+'</p>'+
+ '<button class="btn" style="margin-top:14px" onclick="nextPhase()">'+(PH+1<PHASES.length?"Proxima sala":"Ver plano de voo")+'</button></div>';
+}
+function nextPhase(){
+ PH++;IT=0;phaseFirst=0;
+ if(PH<PHASES.length){phaseIntro();}else{finalScreen();}
+}
+function finalScreen(){
+ const pct=Math.round(score/(PHASES.reduce((a,p)=>a+p.items.length,0)*10)*100);
+ let title;
+ if(pct>=90)title="ARQUITETO-CHEFE DA REDE";
+ else if(pct>=70)title="ENGENHEIRO DE REDES SENIOR";
+ else if(pct>=50)title="DESENVOLVEDOR EM ASCENSAO";
+ else title="APRENDIZ DE SOCKETS (revisite as salas!)";
+ let sl="";seals.forEach(x=>{sl+='<div class="seal">'+x.n+': '+x.s+'</div>';});
+ app.innerHTML=hud("Plano de voo","Missao de decisoes concluida")+
+ '<div class="card"><div class="center"><div class="big">'+pct+'%</div><h1 style="font-size:1.5rem">'+title+'</h1><p class="muted">'+player+' - '+score+' pontos de decisao</p></div>'+
+ '<div class="sealbox">'+sl+'</div>'+
+ '<h4 class="sec">PLANO DE VOO - checklist de implementacao (seu codigo, sua mao)</h4>'+
+ '<label class="ck"><input type="checkbox"> Servidor TCP: socket, bind, listen, accept em uma porta fixa</label>'+
+ '<label class="ck"><input type="checkbox"> Concorrencia no servidor: thread por cliente OU async IO (justificar a escolha)</label>'+
+ '<label class="ck"><input type="checkbox"> Registro de clientes ativos para broadcast e mensagens privadas</label>'+
+ '<label class="ck"><input type="checkbox"> Mensagens serializadas (JSON ou MessagePack) com emissor, destino e conteudo</label>'+
+ '<label class="ck"><input type="checkbox"> Cliente: conectar por IP/porta, enviar pelo console e exibir recebidas em paralelo</label>'+
+ '<label class="ck"><input type="checkbox"> Hash (MD5/SHA-256) no emissor + validacao no receptor + politica para hash divergente</label>'+
+ '<label class="ck"><input type="checkbox"> Excecoes: queda de conexao, cliente indisponivel e erro de transmissao isolados</label>'+
+ '<label class="ck"><input type="checkbox"> (Opcional) Dockerfile por servico + docker-compose.yml com a rede entre eles</label>'+
+ '<h4 class="sec">CHECKLIST DE ENTREGA - rubrica de 29 pontos</h4>'+
+ '<label class="ck"><input type="checkbox"> PDF individual: passo a passo de cada atividade</label>'+
+ '<label class="ck"><input type="checkbox"> Diagrama de sequencia do fluxo de mensagens</label>'+
+ '<label class="ck"><input type="checkbox"> Capturas de tela: varios clientes, hash valido, falha tratada</label>'+
+ '<label class="ck"><input type="checkbox"> README.md: objetivo, estrutura, instrucoes (com Docker se usado) e testes</label>'+
+ '<label class="ck"><input type="checkbox"> URL do repositorio GitLab institucional dentro do PDF</label>'+
+ '<label class="ck"><input type="checkbox"> Conclusoes proprias comparando os dois modelos de comunicacao</label>'+
+ '<h4 class="sec">ROTEIRO DE INVESTIGACAO - o que estudar na documentacao oficial</h4>'+
+ '<ul class="res">'+
+ '<li><b>Sockets TCP:</b> ciclo socket, bind, listen, accept, send/recv, close na sua linguagem</li>'+
+ '<li><b>Concorrencia:</b> threads (uma por cliente) ou async IO da sua linguagem</li>'+
+ '<li><b>Serializacao:</b> biblioteca JSON (ou MessagePack) nativa</li>'+
+ '<li><b>Hash:</b> biblioteca padrao de MD5/SHA-256 da sua linguagem</li>'+
+ '<li><b>Excecoes de rede:</b> como a linguagem sinaliza conexao encerrada e timeout</li>'+
+ '<li><b>Docker (opcional):</b> Dockerfile e docker-compose com rede interna</li>'+
+ '</ul>'+
+ '<h4 class="sec">PERGUNTAS PARA AS SUAS CONCLUSOES (responda com suas palavras no PDF)</h4>'+
+ '<ul class="res">'+
+ '<li>1. Que diferencas fundamentais existem entre comunicacao sincrona e assincrona?</li>'+
+ '<li>2. Por que Publish-Subscribe escala mais que cliente-servidor?</li>'+
+ '<li>3. Em quais cenarios reais voce usaria sockets TCP em vez de eventos?</li>'+
+ '<li>4. Como o desacoplamento impacta a manutenibilidade?</li>'+
+ '<li>5. Que vantagens o Docker oferece para simular infraestrutura real?</li>'+
+ '</ul>'+
+ '<div class="mission">Dica de ouro: o cenario de teste da Sala 2 (servidor travando sem concorrencia) e a Sala 4 (hash divergente, cliente caindo no broadcast) sao as evidencias mais valiosas do relatorio: capture o ANTES e o DEPOIS de cada correcao.</div>'+
+ '<div class="center" style="margin-top:14px"><button class="btn" onclick="startScreen()">Jogar de novo</button></div></div>';
+}
+startScreen();
+</script>
+</body>
+</html>
