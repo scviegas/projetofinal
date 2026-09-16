@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação Sentinela — Firewall & Serviços · Packet Tracer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d09; --panel:#12150e; --panel2:#171b12; --inset:#0d100a;
+  --line:#282e1f; --line2:#3a4230;
+  --ink:#ece9db; --dim:#a8ad97; --faint:#6d7460;
+  --acc:#ffb454; --acc2:#ff8a3d;
+  --netA:#ffb454; --netB:#5fd4d0; --netF:#57d97a;
+  --ok:#57d97a; --bad:#ff6b5e; --warn:#ffd166;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:14px; line-height:1.55;
+  background-image:
+    linear-gradient(rgba(255,180,84,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,180,84,.025) 1px, transparent 1px);
+  background-size:34px 34px;
+  overflow:hidden;
+}
+::selection{background:var(--acc);color:#141005}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2c331f;border:2px solid var(--bg);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+button{font-family:inherit;cursor:pointer;color:inherit;background:none;border:none}
+.ic{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;flex:none}
+.brief code,.hint code,.steps code{background:var(--inset);border:1px solid var(--line);padding:1px 6px;font-size:11.5px;color:var(--netB)}
+
+/* ============ BOOT ============ */
+#boot{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#bootInner{width:min(680px,92vw)}
+#bootLines{font-size:14px;color:var(--dim);min-height:230px;white-space:pre-wrap}
+#bootLines .bl{display:block;opacity:0;animation:blin .25s forwards}
+@keyframes blin{to{opacity:1}}
+#bootLines .em{color:var(--acc)} #bootLines .gd{color:var(--ok)}
+#bootTitle{font-family:var(--disp);font-weight:700;font-size:clamp(30px,5vw,52px);letter-spacing:.04em;color:var(--ink);margin:6px 0 2px}
+#bootTitle span{color:var(--acc)}
+#bootSub{color:var(--faint);font-size:12px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:26px}
+#bootForm{display:none;gap:12px;align-items:stretch;flex-wrap:wrap}
+#bootForm.on{display:flex}
+#techName{flex:1;min-width:240px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:15px;padding:13px 14px;outline:none}
+#techName:focus{border-color:var(--acc)}
+.btn-acc{background:var(--acc);color:#171004;font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.08em;padding:13px 22px;text-transform:uppercase;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+.btn-acc:hover{background:var(--acc2)}
+#bootSkip{margin-top:26px;color:var(--faint);font-size:12px;text-decoration:underline dotted}
+#bootSkip:hover{color:var(--dim)}
+
+/* ============ APP GRID ============ */
+#app{display:grid;grid-template-columns:252px minmax(0,1fr) 392px;grid-template-rows:56px minmax(0,1fr);height:100vh;gap:1px;background:var(--line);opacity:0;transition:opacity .5s}
+#app.on{opacity:1}
+header,nav,main,#rightCol{background:var(--bg)}
+
+#topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 18px;background:var(--panel)}
+.brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+.brand b{font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.05em}
+.brand b::before{content:"";display:inline-block;width:10px;height:10px;background:var(--acc);margin-right:9px;vertical-align:0}
+.brand small{color:var(--faint);font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+#hudName{color:var(--dim);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+#hudName b{color:var(--ink)}
+#hudRank{font-size:11px;color:var(--acc);border:1px solid var(--line2);padding:2px 8px;letter-spacing:.08em;white-space:nowrap;text-transform:uppercase}
+.xpwrap{display:flex;align-items:center;gap:8px;min-width:130px}
+.xpbar{flex:1;height:6px;background:var(--inset);border:1px solid var(--line2)}
+.xpbar i{display:block;height:100%;background:var(--acc);width:0;transition:width .6s}
+#xpTxt{font-size:11px;color:var(--dim);white-space:nowrap}
+#hudClock{font-size:13px;color:var(--ink);letter-spacing:.06em;display:flex;gap:6px;align-items:center}
+.tbtns{margin-left:auto;display:flex;gap:6px}
+.tbtn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line2);color:var(--dim)}
+.tbtn:hover{border-color:var(--acc);color:var(--acc)}
+
+nav{overflow-y:auto;padding:14px 10px 30px}
+.navprog{height:4px;background:var(--inset);border:1px solid var(--line2);margin:2px 4px 16px}
+.navprog i{display:block;height:100%;background:var(--acc);transition:width .6s}
+.ph{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);padding:14px 10px 6px}
+.mnav{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:9px 10px;border:1px solid transparent;border-left:2px solid var(--line);color:var(--dim);font-size:12.5px;margin-bottom:2px}
+.mnav .num{font-size:10px;color:var(--faint);width:32px;flex:none;letter-spacing:.05em}
+.mnav .ti{flex:1;min-width:0}
+.mnav .ti b{display:block;font-weight:500;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mnav .ti small{display:block;font-size:9.5px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+.mnav .st{color:var(--faint)}
+.mnav:hover{border-color:var(--line2);color:var(--ink)}
+.mnav.active{background:var(--panel2);border-color:var(--line2);border-left-color:var(--acc);color:var(--ink)}
+.mnav.done .st{color:var(--ok)} .mnav.done .num{color:var(--ok)}
+.mnav.locked{opacity:.42;cursor:not-allowed}
+
+main{overflow-y:auto;padding:26px 34px 60px;scroll-behavior:smooth}
+.mwrap{max-width:760px}
+.m-head{display:flex;align-items:flex-start;gap:18px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
+.m-code{font-family:var(--disp);font-weight:700;font-size:30px;color:var(--acc);letter-spacing:.04em;line-height:1;border:1px solid var(--line2);padding:10px 12px 8px;background:var(--panel)}
+.m-tt{flex:1;min-width:0}
+.m-tt h2{font-family:var(--disp);font-weight:700;font-size:24px;letter-spacing:.02em}
+.m-sub{color:var(--faint);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.m-xp{font-family:var(--disp);font-weight:600;color:var(--ok);border:1px solid var(--line2);padding:8px 12px;font-size:14px;white-space:nowrap}
+.done-badge{display:inline-flex;gap:7px;align-items:center;color:var(--ok);border:1px solid var(--ok);padding:7px 12px;font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.1em}
+
+.sec{margin-bottom:26px}
+.sec-h{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--acc);margin-bottom:10px}
+.sec-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.brief{background:var(--panel);border:1px solid var(--line);padding:16px 18px;color:var(--dim)}
+.brief p+p{margin-top:9px}
+.brief b,.steps b{color:var(--ink)}
+.steps{counter-reset:st;list-style:none}
+.steps li{counter-increment:st;position:relative;padding:9px 0 9px 44px;color:var(--dim);border-bottom:1px dashed var(--line)}
+.steps li:last-child{border-bottom:none}
+.steps li::before{content:counter(st,decimal-leading-zero);position:absolute;left:0;top:10px;font-family:var(--disp);font-weight:700;color:var(--acc);font-size:15px}
+.steps .cli pre{white-space:pre}
+.hint{display:flex;gap:12px;background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--acc);padding:13px 15px;color:var(--dim);font-size:13px}
+.hint .ic{color:var(--acc);margin-top:2px}
+.hint b{color:var(--ink)}
+.hint.red{border-left-color:var(--bad)} .hint.red .ic{color:var(--bad)}
+
+.iptab{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0}
+.iptab th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line2)}
+.iptab td{padding:7px 10px;border-bottom:1px dashed var(--line);color:var(--dim)}
+.iptab td:first-child{color:var(--ink);font-weight:500}
+.iptab td.num{color:var(--netA)}
+.iptab tr.hr td{color:var(--netB)}
+
+.cli{background:var(--inset);border:1px solid var(--line2);margin:10px 0}
+.cli-h{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--line2);background:var(--panel2)}
+.cli-h span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+.copy{font-size:10px;letter-spacing:.1em;color:var(--dim);border:1px solid var(--line2);padding:3px 9px;display:flex;gap:5px;align-items:center;text-transform:uppercase}
+.copy:hover{color:var(--acc);border-color:var(--acc)}
+.cli pre{padding:13px 15px;font-size:12.5px;line-height:1.65;color:#d8dcc8;overflow-x:auto;white-space:pre}
+
+.q{border:1px solid var(--line);background:var(--panel);margin-bottom:14px}
+.q-q{padding:13px 16px;border-bottom:1px solid var(--line);color:var(--ink)}
+.q-q::before{content:"? ";color:var(--acc);font-weight:600}
+.opts{padding:10px;display:grid;gap:7px}
+.opt{text-align:left;border:1px solid var(--line2);background:var(--panel2);padding:9px 13px;color:var(--dim);font-size:13px;display:flex;gap:10px;align-items:center;transition:border-color .15s}
+.opt::before{content:"";width:8px;height:8px;border:1px solid var(--faint);flex:none}
+.opt:hover:not(:disabled){border-color:var(--acc);color:var(--ink)}
+.opt:disabled{cursor:default;opacity:.55}
+.opt.ok{border-color:var(--ok);color:var(--ok);opacity:1}
+.opt.ok::before{background:var(--ok);border-color:var(--ok)}
+.opt.bad{border-color:var(--bad);color:var(--bad);animation:shake .4s}
+.opt.bad::before{background:var(--bad);border-color:var(--bad)}
+@keyframes shake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.q-ex{display:none;padding:11px 16px;border-top:1px solid var(--line);color:var(--ok);font-size:12.5px;background:var(--panel2)}
+.q.solved .q-ex{display:block}
+
+.pair{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.pair:last-child{border-bottom:none}
+.pair .term{width:110px;font-family:var(--disp);font-weight:600;color:var(--netB);font-size:14px}
+.pair select{flex:1;min-width:220px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:8px 10px;outline:none}
+.pair select:focus{border-color:var(--acc)}
+.pair.right select{border-color:var(--ok)}
+
+.tsk{display:flex;gap:11px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);background:var(--panel);margin-bottom:7px;text-align:left;color:var(--dim);font-size:13px;width:100%}
+.tsk:hover{border-color:var(--line2)}
+.tsk .bx{width:18px;height:18px;border:1px solid var(--line2);display:grid;place-items:center;flex:none;margin-top:1px;color:transparent}
+.tsk.on{color:var(--ink)} .tsk.on .bx{background:var(--ok);border-color:var(--ok);color:#0c1409}
+
+.valbar{display:flex;gap:14px;align-items:center;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+#valBtn{display:flex;gap:10px;align-items:center;background:var(--acc);color:#171004;font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.09em;text-transform:uppercase;padding:14px 26px;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+#valBtn:disabled{background:var(--panel2);color:var(--faint);cursor:not-allowed}
+#valHint{color:var(--faint);font-size:12px}
+textarea#diagText{width:100%;min-height:90px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:13px;padding:12px;outline:none;resize:vertical}
+textarea#diagText:focus{border-color:var(--acc)}
+
+/* simulador */
+.sim{border:1px solid var(--line2);background:var(--panel)}
+.sim-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line2);background:var(--panel2);flex-wrap:wrap}
+.sim-top .sab{color:var(--warn);font-size:12.5px;display:flex;gap:8px;align-items:center}
+.sim-top button{margin-left:auto;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line2);padding:5px 10px;display:flex;gap:6px;align-items:center}
+.sim-top button:hover{color:var(--acc);border-color:var(--acc)}
+.sim-grid{display:grid;grid-template-columns:218px minmax(0,1fr);gap:1px;background:var(--line2)}
+.sim-l{background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:8px}
+.sim-l label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.sim-l select,.sim-l input{background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:8px;outline:none}
+.sim-l input:focus,.sim-l select:focus{border-color:var(--acc)}
+.scmd{text-align:left;border:1px solid var(--line2);background:var(--inset);padding:8px 10px;color:var(--dim);font-size:12px}
+.scmd:hover{border-color:var(--acc);color:var(--acc)}
+.sim-c{background:#080a06;min-height:250px;max-height:290px;overflow-y:auto;padding:12px 14px;font-size:12.5px;line-height:1.6}
+.sim-c .ln{white-space:pre-wrap;word-break:break-word}
+.sim-c .cmd{color:var(--acc)} .sim-c .ok{color:var(--ok)} .sim-c .err{color:var(--bad)} .sim-c .wrn{color:var(--warn)} .sim-c .dim{color:var(--faint)}
+.sim-acc{padding:14px;border-top:1px solid var(--line2)}
+.sim-acc h5{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--bad);margin-bottom:10px}
+.acc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:7px;margin-bottom:12px}
+.acc-opt{border:1px solid var(--line2);background:var(--panel2);padding:9px 11px;text-align:left;color:var(--dim);font-size:12.5px;display:flex;gap:9px;align-items:center}
+.acc-opt::before{content:"";width:8px;height:8px;border-radius:50%;border:1px solid var(--faint);flex:none}
+.acc-opt:hover{border-color:var(--bad)}
+.acc-opt.sel{border-color:var(--bad);color:var(--ink)} .acc-opt.sel::before{background:var(--bad);border-color:var(--bad)}
+.acc-opt.wrong{border-color:var(--bad);color:var(--bad);animation:shake .4s}
+#closeCase{display:flex;gap:8px;align-items:center;border:1px solid var(--bad);color:var(--bad);font-family:var(--disp);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:13px;padding:10px 18px}
+#closeCase:hover{background:var(--bad);color:#160806}
+.verdict{border:1px solid var(--ok);background:var(--panel2);padding:16px}
+.verdict h5{color:var(--ok);font-family:var(--disp);font-size:16px;letter-spacing:.06em;display:flex;gap:9px;align-items:center;margin-bottom:8px}
+.verdict p{color:var(--dim);font-size:13px}
+.verdict .rk{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2);color:var(--warn);font-size:12.5px}
+.verdict .rk b{color:var(--ink)}
+
+/* coluna direita */
+#rightCol{display:flex;flex-direction:column;min-height:0}
+#topoWrap{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:relative}
+#topoWrap::before,#topoWrap::after,#rightCol .corner::before,#rightCol .corner::after{content:"";position:absolute;width:12px;height:12px;border-color:var(--acc);border-style:solid}
+#topoWrap::before{top:6px;left:6px;border-width:1px 0 0 1px}
+#topoWrap::after{top:6px;right:6px;border-width:1px 1px 0 0}
+#rightCol .corner::before{bottom:6px;left:6px;border-width:0 0 1px 1px}
+#rightCol .corner::after{bottom:6px;right:6px;border-width:0 1px 1px 0}
+.panel-t{display:flex;gap:8px;align-items:center;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.panel-t .ic{color:var(--acc)}
+#topoSvg{width:100%;display:block;background:var(--inset);border:1px solid var(--line)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--faint);letter-spacing:.05em}
+.legend i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+#logWrap{flex:1;min-height:110px;display:flex;flex-direction:column;padding:12px 16px 14px;position:relative}
+#logList{flex:1;overflow-y:auto;font-size:11.5px;line-height:1.7;color:var(--dim)}
+#logList .t{color:var(--faint);margin-right:8px}
+#logList .g{color:var(--ok)} #logList .a{color:var(--acc)} #logList .r{color:var(--bad)}
+
+/* topo svg */
+.dev{opacity:0;transform:translateY(6px);transition:opacity .5s,transform .5s}
+.dev.show{opacity:1;transform:none}
+.tlink{stroke:#3a4230;stroke-width:1.6;fill:none;transition:stroke .5s}
+.tlink.up{stroke-width:2;opacity:.8}
+.tlink.netA{stroke:var(--netA)} .tlink.netB{stroke:var(--netB)} .tlink.netF{stroke:var(--netF)}
+.tlink.tr{stroke-dasharray:5 5;animation:dashmove 1.2s linear infinite;stroke:var(--ink)}
+@keyframes dashmove{to{stroke-dashoffset:-20}}
+.dlbl{font-family:var(--mono);font-size:10.5px;fill:var(--ink)}
+.dip{font-family:var(--mono);font-size:8.5px}
+.led{animation:ledpulse 1.6s infinite}
+@keyframes ledpulse{50%{opacity:.25}}
+
+/* stamp */
+#stamp{position:fixed;inset:0;display:none;place-items:center;z-index:120;pointer-events:none}
+#stamp.on{display:grid}
+#stampIn{font-family:var(--disp);font-weight:700;font-size:clamp(28px,4vw,46px);letter-spacing:.14em;color:var(--ok);border:4px solid var(--ok);padding:16px 34px;transform:rotate(-7deg) scale(2.6);opacity:0;background:rgba(11,13,9,.85);animation:stampin .55s cubic-bezier(.2,1.6,.4,1) forwards;text-transform:uppercase}
+@keyframes stampin{to{transform:rotate(-7deg) scale(1);opacity:1}}
+
+/* toast */
+#toastHost{position:fixed;top:66px;right:16px;z-index:150;display:flex;flex-direction:column;gap:8px}
+.toast{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--acc);padding:11px 14px;font-size:12.5px;color:var(--ink);max-width:330px;animation:tin .3s}
+.toast.ok{border-left-color:var(--ok)} .toast.err{border-left-color:var(--bad)}
+.toast .ic{margin-top:1px;color:var(--acc)} .toast.ok .ic{color:var(--ok)} .toast.err .ic{color:var(--bad)}
+@keyframes tin{from{transform:translateX(30px);opacity:0}}
+.toast.out{transition:.3s;opacity:0;transform:translateX(30px)}
+
+/* modal */
+#modalHost{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;background:rgba(5,6,4,.78)}
+#modalHost.on{display:flex}
+.modal{width:min(720px,92vw);max-height:84vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line2);padding:24px 26px}
+.modal h3{font-family:var(--disp);font-size:19px;letter-spacing:.05em;color:var(--acc);display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.modal h4{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin:18px 0 8px}
+.modal p,.modal li{color:var(--dim);font-size:13px}
+.modal ul{padding-left:18px} .modal li{margin:4px 0}
+.modal b{color:var(--ink)}
+.modal .mclose{margin-top:20px;border:1px solid var(--line2);color:var(--dim);padding:9px 18px;font-family:var(--disp);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+.modal .mclose:hover{border-color:var(--acc);color:var(--acc)}
+.modal table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+.modal td{padding:6px 8px;border-bottom:1px dashed var(--line);color:var(--dim)}
+.modal td:first-child{color:var(--ink);white-space:nowrap}
+
+/* certificado */
+#certWrap{position:fixed;inset:0;z-index:190;display:none;align-items:center;justify-content:center;background:rgba(5,6,4,.9);overflow-y:auto;padding:30px 14px}
+#certWrap.on{display:flex}
+.cert{width:min(760px,94vw);background:var(--panel);border:1px solid var(--acc);position:relative;padding:6px}
+.cert-in{border:1px dashed var(--line2);padding:44px 46px;text-align:center}
+.cert .top{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--faint)}
+.cert h1{font-family:var(--disp);font-weight:700;font-size:32px;letter-spacing:.1em;margin:14px 0 4px;color:var(--acc)}
+.cert .rl{color:var(--dim);font-size:13px;max-width:520px;margin:10px auto 0}
+.cert .nm{font-family:var(--disp);font-weight:700;font-size:26px;margin:22px 0 2px;border-bottom:1px solid var(--line2);display:inline-block;padding:0 26px 8px}
+.cert .meta{display:flex;justify-content:center;gap:34px;margin:26px 0;flex-wrap:wrap}
+.cert .meta div{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.14em}
+.cert .meta b{display:block;font-family:var(--disp);font-size:16px;color:var(--ink);letter-spacing:.05em;margin-top:3px}
+.cert .sign{display:flex;justify-content:space-between;margin-top:40px;color:var(--faint);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.cert .sign span{border-top:1px solid var(--line2);padding-top:8px;width:200px}
+.certbtns{display:flex;gap:10px;justify-content:center;margin-top:18px}
+@media print{
+  body>*:not(#certWrap){display:none!important}
+  body{overflow:visible;background:#fff}
+  #certWrap{display:flex!important;position:static;background:#fff;padding:0}
+  .cert{border-color:#000} .cert-in{border-color:#999}
+  .certbtns{display:none}
+}
+@media (max-width:1240px){#app{grid-template-columns:220px minmax(0,1fr) 330px}}
+@media (max-width:1000px){
+  body{overflow:auto}
+  #app{display:flex;flex-direction:column;height:auto;min-height:100vh}
+  nav{display:flex;overflow-x:auto;padding:10px}
+  .ph,.navprog{display:none}
+  .mnav{width:auto;white-space:nowrap;border:1px solid var(--line)}
+  main{overflow:visible}
+  #rightCol{flex:none}
+  #topbar{flex-wrap:wrap;height:auto;padding:10px 14px;gap:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- sprite de ícones -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="i-volx" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-rot" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2-9.4L1 10"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-net" viewBox="0 0 24 24"><rect x="2" y="9" width="20" height="6" rx="1"/><circle cx="6.5" cy="12" r="1"/><circle cx="17.5" cy="12" r="1"/><path d="M12 2v7M12 15v7"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+</svg>
+
+<!-- ===== BOOT ===== -->
+<div id="boot">
+  <div id="bootInner">
+    <div id="bootLines"></div>
+    <div id="bootTitle" style="display:none">OPERAÇÃO <span>SENTINELA</span></div>
+    <div id="bootSub" style="display:none">Protocolo de treinamento em redes · Ordem de serviço #0047</div>
+    <form id="bootForm">
+      <input id="techName" maxlength="28" placeholder="Identifique-se, técnico…" autocomplete="off">
+      <button class="btn-acc" type="submit">Assinar contrato</button>
+    </form>
+    <button id="bootSkip" style="display:none">pular introdução</button>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <header id="topbar">
+    <div class="brand"><b>SENTINELA</b><small>firewall & serviços · pt</small></div>
+    <span id="hudName"></span>
+    <span id="hudRank">Estagiário</span>
+    <div class="xpwrap"><div class="xpbar"><i id="xpFill"></i></div><span id="xpTxt">0 XP</span></div>
+    <span id="hudClock"><svg class="ic"><use href="#i-clock"/></svg><span id="clock">00:00</span></span>
+    <div class="tbtns">
+      <button class="tbtn" id="sndBtn" title="Som"><svg class="ic"><use href="#i-vol"/></svg></button>
+      <button class="tbtn" id="tutBtn" title="Guia do instrutor"><svg class="ic"><use href="#i-book"/></svg></button>
+      <button class="tbtn" id="rstBtn" title="Reiniciar operação"><svg class="ic"><use href="#i-rot"/></svg></button>
+    </div>
+  </header>
+
+  <nav id="nav"><div class="navprog"><i id="navFill"></i></div><div id="navList"></div></nav>
+  <main id="main"><div class="mwrap" id="mwrap"></div></main>
+
+  <aside id="rightCol">
+    <section id="topoWrap">
+      <div class="panel-t"><svg class="ic"><use href="#i-net"/></svg> Topologia da missão</div>
+      <svg id="topoSvg" viewBox="0 0 660 560"></svg>
+      <div class="legend">
+        <span><i style="background:var(--netA)"></i>USUÁRIOS · 192.168.1.0/24</span>
+        <span><i style="background:var(--netB)"></i>WAN · 10.0.0.0/30 + 10.0.1.0/30</span>
+        <span><i style="background:var(--netF)"></i>DMZ · 192.168.2.0/24</span>
+      </div>
+    </section>
+    <section id="logWrap" class="corner">
+      <div class="panel-t"><svg class="ic"><use href="#i-term"/></svg> Log da operação</div>
+      <div id="logList"></div>
+    </section>
+  </aside>
+</div>
+
+<div id="stamp"><div id="stampIn"></div></div>
+<div id="toastHost"></div>
+<div id="modalHost"><div class="modal" id="modalBox"></div></div>
+<div id="certWrap"></div>
+
+<script>
+/* ============================================================
+   OPERAÇÃO SENTINELA — jogo-guia: 5 PCs · 2 roteadores · ASA ·
+   servidores Web/DNS/FTP/E-mail no Packet Tracer
+   ============================================================ */
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ic=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`;
+
+/* ---------- estado ---------- */
+const DEF={name:'',xp:0,done:[],cur:'m1',qs:{},tk:{},pr:{},diag:'',
+  sim:{sc:null,cmds:0,acc:null,solved:false,bonus:false,hist:[]},t0:null,tEnd:null,muted:false};
+let save;
+try{save=Object.assign({},DEF,JSON.parse(localStorage.getItem('sentinela-save')||'{}'));}catch(e){save=Object.assign({},DEF);}
+save.sim=Object.assign({},DEF.sim,save.sim||{});
+if(!Array.isArray(save.sim.hist))save.sim.hist=[];
+const persist=()=>localStorage.setItem('sentinela-save',JSON.stringify(save));
+
+/* ---------- áudio ---------- */
+let AC=null;
+function tone(f,d,type='square',v=.05,delay=0){
+  if(save.muted)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+delay;
+    o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,t);
+    g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d);
+  }catch(e){}
+}
+const snd={
+  click:()=>tone(660,.05,'square',.03),
+  type:()=>tone(1100+Math.random()*300,.02,'square',.012),
+  ok:()=>{tone(740,.09);tone(1108,.14,'square',.05,.09);},
+  err:()=>tone(160,.22,'sawtooth',.06),
+  done:()=>{tone(660,.1);tone(880,.1,'square',.05,.1);tone(1320,.2,'square',.05,.2);},
+  stamp:()=>tone(140,.18,'sawtooth',.08)
+};
+
+/* ---------- log / toast / tempo ---------- */
+function logAdd(msg,cls=''){
+  const box=$('#logList');const t=fmtTime(Date.now()-(save.t0||Date.now()));
+  const d=document.createElement('div');
+  d.innerHTML=`<span class="t">[${t}]</span><span class="${cls}">${esc(msg)}</span>`;
+  box.appendChild(d);
+  while(box.children.length>60)box.removeChild(box.firstChild);
+  box.scrollTop=box.scrollHeight;
+}
+function toast(msg,type=''){
+  const d=document.createElement('div');d.className='toast '+type;
+  d.innerHTML=`${ic(type==='err'?'alert':type==='ok'?'check':'zap')}<span>${msg}</span>`;
+  $('#toastHost').appendChild(d);
+  setTimeout(()=>{d.classList.add('out');setTimeout(()=>d.remove(),350);},3800);
+}
+function fmtTime(ms){
+  const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60,p=n=>String(n).padStart(2,'0');
+  return h?`${p(h)}:${p(m)}:${p(ss)}`:`${p(m)}:${p(ss)}`;
+}
+const RANKS=[[0,'Estagiário'],[250,'Técnico Aprendiz'],[500,'Técnico Júnior'],[750,'Técnico Pleno'],[1150,'Analista de Redes'],[1700,'Especialista em Perímetro'],[2370,'Arquiteto de Redes']];
+const rankFor=n=>{let r=RANKS[0][1];for(const[k,v]of RANKS)if(n>=k)r=v;return r;};
+
+/* ============================================================
+   MISSÕES
+   ============================================================ */
+const PHASES={
+  p1:'Fase I · Cablagem',p2:'Fase II · Endereçamento',p3:'Fase III · Roteadores',
+  p4:'Fase IV · Firewall',p5:'Fase V · Serviços',p6:'Fase VI · Diagnóstico',p7:'Contrato final'
+};
+const MISSIONS=[
+/* ---------- M1 ---------- */
+{ id:'m1',code:'M-01',phase:'p1',title:'A fortaleza sem muros',sub:'Topologia física · ~20 min',xp:100,
+  brief:`<p>A <b>Orion Distribuidora S.A.</b> contratou você para erguer a rede da matriz. O projeto prevê: uma <b>rede de usuários</b>, dois roteadores formando o núcleo e uma <b>DMZ</b> — área blindada onde ficarão os servidores <b>Web, DNS, FTP e E-mail</b>, protegidos por um <b>firewall ASA</b>.</p>
+  <p>Primeira entrega: a infraestrutura física no <b>Cisco Packet Tracer</b>. O diagrama ao lado acompanha seu progresso.</p>`,
+  steps:[
+    `No Packet Tracer, posicione: <b>2 roteadores 2911</b>, <b>1 firewall ASA 5505</b> (categoria Security), <b>2 switches 2960</b>, <b>5 PCs</b> e <b>4 Servers</b>.`,
+    `Distribua conforme o diagrama: <b>PC0 a PC4</b> no <b>Switch1</b>; <b>R1</b> liga o Switch1 à WAN; <b>R2</b> segue para o <b>ASA</b>; o ASA desce para o <b>Switch2</b>, onde moram os <b>4 servidores</b>.`,
+    `Conecte todos os cabos seguindo cada ponta do diagrama.`,
+    `<b>Não configure nada ainda.</b> Observe as pontas dos cabos: <b>verde</b> = link OK. Vermelho/âmbar = cabo errado — troque antes de continuar.`
+  ],
+  hint:{ic:'zap',t:`<b>Regra de bolso do cabo:</b> dispositivos <b>SEMELHANTES</b> (PC–PC, switch–switch, PC–router, ASA–switch) pedem cabo <b>cruzado</b>; dispositivos <b>DIFERENTES</b> (PC–switch, switch–router) pedem cabo <b>direto</b>. O ASA 5505 tem switch embutido — trate-o "como um switch" ao escolher o cabo.`},
+  quiz:[
+    {q:'Qual cabo liga o PC0 ao Switch1?',o:['Cabo direto (straight-through)','Cabo cruzado (crossover)','Cabo console','Fibra óptica'],a:0,ex:'Dispositivos diferentes (PC e switch) usam pares de pinos complementares: o cabo direto resolve.'},
+    {q:'Qual cabo liga o R1 ao R2 (a WAN)?',o:['Cabo direto','Cabo cruzado (crossover)','Cabo console','Serial DCE'],a:1,ex:'Roteador com roteador: dispositivos semelhantes, ambos transmitem nos mesmos pinos — o cruzado troca TX↔RX.'},
+    {q:'O ASA 5505 liga ao Switch2 com qual cabo?',o:['Cabo direto','Cabo cruzado (crossover)','Cabo console','Não se conecta a switch'],a:1,ex:'As portas Ethernet do ASA 5505 têm switch embutido — switch com switch = cabo cruzado. Se o LED discordou, agora você sabe o porquê.'}
+  ],
+  tasks:['Todos os cabos com LED verde nos dois lados.'],
+  log:'M-01 CONCLUÍDA — Infraestrutura física da Orion no ar.'
+},
+/* ---------- M2 ---------- */
+{ id:'m2',code:'M-02',phase:'p2',title:'Identidade dos usuários',sub:'Endereçamento estático · Rede dos usuários · ~15 min',xp:120,
+  brief:`<p>Cablagem aprovada. Agora as cinco estações ganham identidade na rede <b>192.168.1.0/24</b>.</p>
+  <p>Antes de responder, discuta em grupo: <b>qual máscara</b> combina com essa rede? <b>quem</b> é o gateway dos PCs? <b>que DNS</b> eles devem apontar?</p>`,
+  table:[
+    ['Dispositivo','Endereço IP','Papel','A'],
+    ['R1 (G0/0)','192.168.1.1','Gateway da rede dos usuários','A'],
+    ['PC0','192.168.1.10','Estação de trabalho','A'],
+    ['PC1','192.168.1.11','Estação de trabalho','A'],
+    ['PC2','192.168.1.12','Estação de trabalho','A'],
+    ['PC3','192.168.1.13','Estação de trabalho','A'],
+    ['PC4','192.168.1.14','Estação de trabalho','A']
+  ],
+  steps:[
+    `Em cada PC: <b>Desktop → IP Configuration</b>. Preencha IP, máscara <b>255.255.255.0</b>, gateway <b>192.168.1.1</b> e DNS <b>192.168.2.11</b> (o DNS da DMZ — ainda não responde, mas já deixamos apontado).`,
+    `No <b>Desktop → Command Prompt</b> do PC0: <b>ping 192.168.1.14</b> e depois <b>ping 192.168.1.1</b>.`
+  ],
+  quiz:[
+    {q:'Qual máscara corresponde à rede 192.168.1.0/24?',o:['255.0.0.0','255.255.0.0','255.255.255.0','255.255.255.255'],a:2,ex:'/24 = 24 bits ligados = 255.255.255.0. É ela quem diz ao PC: "meu vizinho de rede termina no terceiro octeto".'},
+    {q:'Qual é o gateway padrão dos cinco PCs?',o:['192.168.2.11 (o servidor DNS)','192.168.1.1 (a porta do R1)','192.168.1.255','10.0.0.1'],a:1,ex:'Gateway é a porta do roteador NA MESMA rede do PC: 192.168.1.1. É a única saída para qualquer mundo além do switch.'}
+  ],
+  tasks:['PC0 pinga o PC4 (192.168.1.14).','Todos os PCs pingam o gateway 192.168.1.1.'],
+  cp:'CHECKPOINT 1',log:'CHECKPOINT 1 VALIDADO — Rede dos usuários (192.168.1.0/24) operacional.'
+},
+/* ---------- M3 ---------- */
+{ id:'m3',code:'M-03',phase:'p3',title:'A estrada entre roteadores',sub:'CLI · interfaces + rotas estáticas · ~25 min',xp:150,
+  brief:`<p>Os PCs conversam entre si, mas o mundo vai além do R1. Configure as <b>interfaces</b> dos dois roteadores e ensine a cada um <b>para onde encaminhar</b> o que não é dele: as rotas estáticas.</p>`,
+  cli:[
+    {t:'R1 · interfaces + rotas',c:`enable
+configure terminal
+hostname R1
+interface g0/0
+ description LAN DOS USUARIOS
+ ip address 192.168.1.1 255.255.255.0
+ no shutdown
+exit
+interface g0/1
+ description WAN PARA R2
+ ip address 10.0.0.1 255.255.255.252
+ no shutdown
+exit
+ip route 10.0.1.0 255.255.255.252 10.0.0.2
+ip route 192.168.2.0 255.255.255.0 10.0.0.2
+end
+write memory`},
+    {t:'R2 · interfaces + rotas',c:`enable
+configure terminal
+hostname R2
+interface g0/1
+ description WAN PARA R1
+ ip address 10.0.0.2 255.255.255.252
+ no shutdown
+exit
+interface g0/0
+ description LINK PARA O FIREWALL
+ ip address 10.0.1.1 255.255.255.252
+ no shutdown
+exit
+ip route 192.168.1.0 255.255.255.0 10.0.0.1
+ip route 192.168.2.0 255.255.255.0 10.0.1.2
+end
+write memory`}
+  ],
+  steps:[
+    `Cole/digite cada bloco na aba <b>CLI</b> do roteador correspondente (ajuste <b>g0/0 · g0/1</b> ao nome real das interfaces do seu modelo).`,
+    `Em ambos: <b>show ip interface brief</b> — todas as interfaces precisam terminar <b>up / up</b>.`,
+    `No PC0: <b>ping 10.0.0.2</b> — o R2 deve responder.`
+  ],
+  quiz:[
+    {q:'No comando "ip route 192.168.2.0 255.255.255.0 10.0.0.2", o último endereço significa:',o:['O destino final do pacote','A interface de saída do R1','O próximo salto: quem entrega adiante','O endereço de broadcast'],a:2,ex:'Rota estática = rede destino + máscara + PRÓXIMO SALTO. O R1 não conhece o caminho todo — só sabe entregar o pacote ao vizinho 10.0.0.2.'},
+    {q:'Por que a WAN usa máscara 255.255.255.252 (/30)?',o:['Economia: /30 tem exatamente 2 hosts úteis, um por ponta','Porque /30 é mais rápida','Porque o Packet Tracer exige','Porque 30 PCs usarão o link'],a:0,ex:'Link ponto a ponto precisa de 2 endereços. /30 = 4 endereços − rede − broadcast = 2 úteis. Nada se desperdiça.'}
+  ],
+  tasks:['show ip interface brief com up/up nas interfaces de R1 e R2.','PC0 pinga 10.0.0.2 (R2) com sucesso.'],
+  cp:'CHECKPOINT 2',log:'CHECKPOINT 2 VALIDADO — Núcleo roteado: R1 ↔ R2 com rotas estáticas.'
+},
+/* ---------- M4 ---------- */
+{ id:'m4',code:'M-04',phase:'p3',title:'O muro invisível',sub:'Investigação · ~10 min',xp:150,
+  brief:`<p>Núcleo pronto. A diretora pediu: "confira se os servidores já respondem". Você executa no PC0: <b>ping 192.168.2.11</b> — o DNS da DMZ.</p>
+  <p><b>Timeout.</b> As rotas estão corretas, os cabos verdes… e o pacote morre no caminho. Sua missão: descobrir <b>quem</b> o bloqueou.</p>`,
+  hint:{ic:'alert',t:`Siga o rastro: <b>PC0</b> → gateway <b>192.168.1.1</b> → <b>R1</b> → rota estática → <b>R2</b> → rota estática → <b>10.0.1.2</b>… e aqui o pacote encontra o <b>ASA</b>. Entrando pela <b>outside (nível 0)</b> rumo à <b>inside (nível 100)</b>. O que o ASA faz com tráfego "de fora para dentro", por padrão?`},
+  quiz:[
+    {q:'As rotas estáticas estão corretas e mesmo assim o ping morre. Quem descarta o pacote?',o:['O Switch1, por segurança','O ASA: por padrão ele nega TODO tráfego vindo da outside (0) para a inside (100)','O PC4, porque a rede está congestionada','O R1, porque falta rota de retorno'],a:1,ex:'Roteamento ≠ permissão. O pacote CHEGA ao ASA — e o firewall, sem regra que o autorize, descarta. É o muro fazendo o trabalho dele.'},
+    {q:'Num firewall ASA, o que representam "security-level 100" e "security-level 0"?',o:['Velocidade da porta em Mbps','Nível de confiança: 100 = interna confiável, 0 = externa hostil','Número de usuários suportados','Prioridade do roteamento'],a:1,ex:'O nível é o grau de confiança da zona. Regra de ouro do ASA: tráfego flui do mais confiável para o menos confiável — e é NEGADO no sentido contrário, salvo liberação explícita.'}
+  ],
+  tasks:[],
+  log:'M-04 CONCLUÍDA — Diagnóstico conceitual: o ASA bloqueia outside→inside por padrão.'
+},
+/* ---------- M5 ---------- */
+{ id:'m5',code:'M-05',phase:'p4',title:'Erguendo as muralhas',sub:'CLI do ASA 5505 · zonas inside/outside · ~25 min',xp:200,
+  brief:`<p>O firewall está ligado mas "mudo": sem zonas, sem IP, sem rota. Vamos erguer as muralhas: <b>Vlan1 = inside</b> (a DMZ dos servidores, nível 100) e <b>Vlan2 = outside</b> (o link para o R2, nível 0).</p>
+  <p>No ASA, a senha <b>enable</b> vem em branco (ou tente <b>cisco</b>). Aba <b>CLI</b>:</p>`,
+  cli:[{t:'ASA 5505 · zonas e rota',c:`enable
+configure terminal
+hostname ASA-FW
+interface vlan 1
+ nameif inside
+ security-level 100
+ ip address 192.168.2.1 255.255.255.0
+ no shutdown
+exit
+interface vlan 2
+ nameif outside
+ security-level 0
+ ip address 10.0.1.2 255.255.255.252
+ no shutdown
+exit
+interface ethernet0/0
+ switchport access vlan 2
+ no shutdown
+exit
+interface ethernet0/1
+ switchport access vlan 1
+ no shutdown
+exit
+route outside 192.168.1.0 255.255.255.0 10.0.1.1
+write memory`}],
+  steps:[
+    `Cole o bloco na CLI do ASA. Se um comando reclamar que já está configurado, siga em frente.`,
+    `Confira com <b>show ip address</b> e <b>show route</b>: outside 10.0.1.2, inside 192.168.2.1 e a rota de volta à rede dos usuários.`,
+    `Do próprio ASA: <b>ping 10.0.1.1</b> — o R2 deve responder.`
+  ],
+  quiz:[
+    {q:'Por que as portas físicas do ASA entram em "switchport access vlan 2" e "vlan 1"?',o:['Porque o ASA roteia direto nas portas físicas','Porque o ASA 5505 tem um switch embutido: portas → VLAN → interface lógica (nameif) com IP e security-level','Porque VLAN acelera o firewall','Porque é obrigatório usar todas as 8 portas'],a:1,ex:'O 5505 é um switch com firewall por cima: as zonas (inside/outside) nascem das VLANs.'},
+    {q:'A rota "route outside 192.168.1.0 255.255.255.0 10.0.1.1" existe para:',o:['O ASA conhecer o caminho de VOLTA até a rede dos usuários','Os servidores terem internet','Acelerar o tráfego HTTP','Anunciar rotas ao R2'],a:0,ex:'Sem rota de retorno, o servidor responde… para lugar nenhum. Pergunta clássica de prova: "o ping sai mas não volta" — procure a rota que falta.'}
+  ],
+  tasks:['ASA com inside e outside configurados (show ip address confere).','ASA pinga o R2 em 10.0.1.1.'],
+  log:'M-05 CONCLUÍDA — Muralhas erguidas: zonas inside (100) e outside (0) ativas.'
+},
+/* ---------- M6 ---------- */
+{ id:'m6',code:'M-06',phase:'p4',title:'A portaria define as regras',sub:'ACL do firewall · liberação de serviços · ~25 min',xp:250,
+  brief:`<p>Muralhas erguidas — mas ninguém entra nem sai. Um firewall profissional não derruba o muro: abre a <b>portaria</b>, e cada porta só passa para quem tem direito. Vamos escrever a <b>ACL</b> que autoriza, uma a uma, as portas dos serviços da DMZ.</p>`,
+  cli:[{t:'ASA · ACL de serviços',c:`access-list LIBERA extended permit icmp any any
+access-list LIBERA extended permit tcp any host 192.168.2.10 eq www
+access-list LIBERA extended permit udp any host 192.168.2.11 eq domain
+access-list LIBERA extended permit tcp any host 192.168.2.12 eq ftp
+access-list LIBERA extended permit tcp any host 192.168.2.12 eq ftp-data
+access-list LIBERA extended permit tcp any host 192.168.2.13 eq smtp
+access-list LIBERA extended permit tcp any host 192.168.2.13 eq pop3
+access-group LIBERA in interface outside
+write memory`}],
+  steps:[
+    `Aplique a ACL na CLI do ASA. A última linha — <b>access-group ... in interface outside</b> — é quem liga a lista à portaria.`,
+    `No PC0: <b>ping 192.168.2.11</b> — agora o pacote atravessa o muro.`,
+    `No PC0: <b>Web Browser → http://192.168.2.10</b>. A página padrão do Packet Tracer deve aparecer.`
+  ],
+  quiz:[
+    {q:'Você criou a access-list mas esqueceu o access-group. O que acontece?',o:['A ACL entra em modo de teste','A ACL fica INATIVA: criada, mas aplicada a nenhuma interface','O ASA desliga','A ACL bloqueia tudo'],a:1,ex:'Lista criada ≠ lista aplicada. Sem access-group na interface, o ASA mantém a regra padrão: negar tudo de fora para dentro.'},
+    {q:'Na linha "permit tcp any host 192.168.2.10 eq www", o "eq www" especifica:',o:['O endereço de origem','A porta de DESTINO 80 (HTTP)','O protocolo UDP','O nome do servidor'],a:1,ex:'eq = "exatamente esta porta de destino". www é o alias da porta 80. Cada serviço da DMZ tem sua linha — a portaria com uma porta para cada setor.'},
+    {q:'A linha "permit icmp any any" foi incluída porque:',o:['ICMP substitui o TCP','Permite testar com ping — útil no laboratório (na produção costuma ficar de fora)','O ASA exige ICMP para funcionar','DNS precisa de ICMP'],a:1,ex:'Ping é o estetoscópio da rede. Em laboratório, liberamos; em produção, avalia-se o risco — o ping revela que o host existe.'}
+  ],
+  tasks:['PC0 pinga o servidor DNS (192.168.2.11) através do firewall.','PC0 abre http://192.168.2.10 no navegador.'],
+  cp:'CHECKPOINT 3',log:'CHECKPOINT 3 VALIDADO — Portaria ativa: tráfego autorizado atravessa o ASA.'
+},
+/* ---------- M7 ---------- */
+{ id:'m7',code:'M-07',phase:'p5',title:'A vitrine',sub:'Servidor Web · HTTP · ~15 min',xp:150,
+  brief:`<p>O caminho até a DMZ está liberado. Agora, dar função a cada servidor — começando pela <b>vitrine</b>: o site institucional da Orion.</p>
+  <p>Enderece o servidor web: <b>IP 192.168.2.10</b>, máscara <b>255.255.255.0</b>, gateway <b>192.168.2.1</b>, DNS <b>192.168.2.11</b>.</p>`,
+  steps:[
+    `No <b>Server Web</b>: Desktop → IP Configuration (dados acima).`,
+    `Aba <b>Services → HTTP</b>: HTTP <b>On</b> (e HTTPS, se quiser).`,
+    `Clique em <b>(edit)</b> no index.html, personalize e <b>Save</b>. Sugestão:
+     <div class="cli"><pre>&lt;html&gt;
+&lt;center&gt;&lt;h1&gt;Orion Distribuidora S.A.&lt;/h1&gt;
+&lt;p&gt;Intranet oficial — setor de tecnologia.&lt;/p&gt;&lt;/center&gt;
+&lt;/html&gt;</pre></div>`,
+    `Em qualquer PC: <b>Web Browser → http://192.168.2.10</b>.`
+  ],
+  quiz:[
+    {q:'O navegador do PC4 usa qual porta de destino ao acessar http://192.168.2.10?',o:['21','53','80','110'],a:2,ex:'HTTP = porta 80 — exatamente a linha da ACL que libera esse destino. Serviço, porta e regra alinhados.'},
+    {q:'O que torna possível o PC da rede dos usuários conversar com o servidor da DMZ?',o:['O Switch1 repetindo o sinal','A cadeia completa: rotas estáticas + zonas do ASA + ACL autorizando a porta','O cabo cruzado entre os roteadores','A máscara /24'],a:1,ex:'Nenhum item sozinho basta: o roteamento leva o pacote, o firewall decide, a ACL autoriza. Redes são engenharia em camadas.'}
+  ],
+  tasks:['A página personalizada abre em todos os 5 PCs.'],
+  log:'M-07 CONCLUÍDA — Vitrine publicada: http://192.168.2.10 responde na DMZ.'
+},
+/* ---------- M8 ---------- */
+{ id:'m8',code:'M-08',phase:'p5',title:'Ninguém decora IP',sub:'Servidor DNS · registros A · ~15 min',xp:200,
+  brief:`<p>Reclamação no mural: <i>"ninguém vai decorar 192.168.2.10"</i>. Solução: o servidor <b>DNS</b>, que responde pelos nomes. Enderece-o: <b>IP 192.168.2.11</b>, /24, gateway <b>192.168.2.1</b>.</p>
+  <p>Em <b>Services → DNS</b>: serviço <b>On</b> e cadastre os três registros <b>A</b>:</p>`,
+  table:[
+    ['Registro (Nome)','Tipo','Aponta para','B'],
+    ['www.empresa.local','A Record','192.168.2.10','B'],
+    ['ftp.empresa.local','A Record','192.168.2.12','B'],
+    ['mail.empresa.local','A Record','192.168.2.13','B']
+  ],
+  steps:[
+    `Crie os três registros A (Nome → <b>A Record</b> → endereço → <b>Add</b>, um por um).`,
+    `Feche e reabra o Web Browser de um PC e acesse <b>http://www.empresa.local</b>.`,
+    `Confirme que PCs e servidores usam <b>DNS 192.168.2.11</b>.`
+  ],
+  pairs:[
+    ['DNS',['Traduz nomes em endereços IP','Entrega páginas ao navegador','Transfere arquivos entre cliente e servidor','Envia e-mails entre servidores e clientes'],0],
+    ['HTTP',['Traduz nomes em endereços IP','Entrega páginas ao navegador','Transfere arquivos entre cliente e servidor','Envia e-mails entre servidores e clientes'],1],
+    ['FTP',['Traduz nomes em endereços IP','Entrega páginas ao navegador','Transfere arquivos entre cliente e servidor','Envia e-mails entre servidores e clientes'],2],
+    ['SMTP',['Traduz nomes em endereços IP','Entrega páginas ao navegador','Transfere arquivos entre cliente e servidor','Envia e-mails entre servidores e clientes'],3]
+  ],
+  tasks:['http://www.empresa.local abre no PC0.','ftp.empresa.local e mail.empresa.local resolvem (ping/nslookup pelo nome).'],
+  log:'M-08 CONCLUÍDA — DNS ativo: os nomes da Orion respondem em toda a rede.'
+},
+/* ---------- M9 ---------- */
+{ id:'m9',code:'M-09',phase:'p5',title:'O cofre de arquivos',sub:'Servidor FTP · ~20 min',xp:200,
+  brief:`<p>O setor de compras precisa trocar arquivos grandes com o depósito — e e-mail não comporta. Entrada em cena: o <b>FTP</b>. Enderece: <b>IP 192.168.2.12</b>, /24, gateway <b>192.168.2.1</b>, DNS <b>192.168.2.11</b>.</p>`,
+  steps:[
+    `No <b>Server FTP</b>: Desktop → IP Configuration (dados acima).`,
+    `Aba <b>Services → FTP</b>: serviço <b>On</b>. Use o usuário padrão <b>cisco / cisco</b> com <b>Write, Read, Delete, Rename, List</b> marcados (botão <b>+</b>) — ou crie seu usuário.`,
+    `No PC0, Command Prompt:
+     <div class="cli"><pre>ftp ftp.empresa.local
+usuário: cisco
+senha: cisco
+dir
+get arquivo.txt
+bye</pre></div>`,
+    `Com arquivos listados, baixe um com <b>get</b> e confirme o sucesso.`
+  ],
+  quiz:[
+    {q:'Por que a ACL do firewall precisa de DUAS linhas para o FTP (ftp e ftp-data)?',o:['Uma para cada servidor','Porque o FTP usa canal de CONTROLE (21) e canal de DADOS (20) separados','Porque o FTP é mais lento','Porque usuários repetem o login'],a:1,ex:'Comandos pela 21, arquivos pela 20 (modo ativo). Bloqueou uma das duas? O login pode até funcionar — mas a listagem/arquivo não vem.'},
+    {q:'O comando dir dentro da sessão FTP devolveu a lista de arquivos. Isso prova que:',o:['Somente o canal de controle funciona','O canal de DADOS (ftp-data) também atravessa o firewall','O DNS está com problema','O usuário é administrador'],a:1,ex:'Ver a listagem depende do canal de dados — o teste definitivo de que as duas linhas da ACL cumprem seu papel.'}
+  ],
+  tasks:['ftp ftp.empresa.local conecta a partir do PC0.','dir lista arquivos e get baixa um arquivo com sucesso.'],
+  log:'M-09 CONCLUÍDA — Cofre de arquivos operando: FTP pelo nome, controle e dados liberados.'
+},
+/* ---------- M10 ---------- */
+{ id:'m10',code:'M-10',phase:'p5',title:'As cartas da empresa',sub:'Servidor E-mail · SMTP + POP3 · ~25 min',xp:200,
+  brief:`<p>Último servidor da DMZ: o <b>correio</b>. Enderece: <b>IP 192.168.2.13</b>, /24, gateway <b>192.168.2.1</b>, DNS <b>192.168.2.11</b>. Depois, dois funcionários viram usuários de e-mail.</p>`,
+  steps:[
+    `No <b>Server Mail</b>: IP conforme acima.`,
+    `Aba <b>Services → EMAIL</b>: <b>Domain Name = empresa.local</b>, ligue <b>SMTP</b> e <b>POP3</b>.`,
+    `Crie dois usuários (User/Password e <b>+</b>): <b>alice / 123</b> e <b>bruno / 123</b>.`,
+    `<b>PC0 → Desktop → E-Mail</b>: Display Name "Alice", e-mail <b>alice@empresa.local</b>, Incoming/Outgoing = <b>mail.empresa.local</b>, user <b>alice</b>, senha <b>123</b> → Save.`,
+    `<b>PC1 → E-Mail</b>: o mesmo, com <b>bruno@empresa.local</b> e usuário <b>bruno</b>.`,
+    `No PC0: <b>Compose</b> → para <b>bruno@empresa.local</b> → <b>Send</b>. No PC1: <b>Receive</b>.`
+  ],
+  quiz:[
+    {q:'Qual protocolo o PC0 usa para ENTREGAR a mensagem ao servidor?',o:['POP3','SMTP','FTP','DNS'],a:1,ex:'SMTP é o carteiro do envio: do cliente ao servidor e de servidor a servidor. Por isso o campo "Outgoing" aponta para o SMTP.'},
+    {q:'Os campos Incoming e Outgoing apontam para o MESMO servidor. Por quê?',o:['Economia de DNS','Porque o mesmo host roda os DOIS serviços: envia (SMTP) e guarda para busca (POP3)','Porque POP3 também envia','Porque o firewall exige'],a:1,ex:'Um host hospeda vários serviços. O firewall libera cada um pela sua porta: SMTP (25) e POP3 (110) — as duas linhas da ACL.'}
+  ],
+  tasks:['PC0 envia e-mail para bruno@empresa.local com sucesso.','PC1 recebe a mensagem de alice@empresa.local.'],
+  cp:'CHECKPOINT 4',log:'CHECKPOINT 4 VALIDADO — Correio da Orion circulando pela DMZ.'
+},
+/* ---------- M11 ---------- */
+{ id:'m11',code:'M-11',phase:'p6',title:'Sabotagem',sub:'Troubleshooting · terminal simulado · ~20 min',xp:250,
+  brief:`<p>Redes de verdade quebram <b>sem explicar o motivo</b>. Aqui você treina o método que separa técnicos de curiosos: uma hipótese de cada vez, do mais próximo ao mais distante.</p>
+  <p><b>Método da cadeia:</b> minha configuração está certa? → pingo o gateway? → cruzo os roteadores? → atravesso o firewall? → o servidor responde por IP? → responde pelo nome?</p>
+  <p>Abaixo, um <b>laboratório de sabotagem</b>: plantaram uma falha desconhecida na rede já entregue. Interrogue a rede e <b>feche o caso</b>. Depois, o instrutor sabota o Packet Tracer real — encontre e corrija <b>sem apagar a topologia</b>.</p>`,
+  sim:true,
+  tasks:['Caso fechado no simulador de diagnóstico.','Sabotagem real do instrutor encontrada e corrigida no Packet Tracer.'],
+  log:'M-11 CONCLUÍDA — Técnico habilitado em troubleshooting de perímetro.'
+},
+/* ---------- FINAL ---------- */
+{ id:'fin',code:'FINAL',phase:'p7',title:'O contrato da expansão',sub:'Capstone · sem passo a passo · ~30 min',xp:400,
+  brief:`<p>Última ordem de serviço — e agora <b>sem instruções</b>:</p>
+  <p><b>"O RH contratou mais funcionários e nenhum computador pode mais ser configurado à mão. 1) Ative o DHCP no R1 para a rede 192.168.1.0/24 e faça os 5 PCs receberem IP, gateway e DNS automaticamente. 2) A diretoria ganhou uma página própria: publique o endereço financeiro.empresa.local no servidor web e garanta o acesso pelo nome. 3) Um problema proposital foi plantado na infraestrutura — identifique-o e corrija-o. Restrição: você NÃO pode alterar o endereçamento dos 4 servidores."</b></p>`,
+  hint:{ic:'alert',t:`Pistas de campo: o pool DHCP do R1 precisa de <b>excluded-address</b> para o gateway (192.168.1.1) — senão o roteador "aluga" o próprio endereço. E o DNS do pool deve apontar para <b>192.168.2.11</b>. Sintaxe: <code>ip dhcp pool USUARIOS</code> → <code>network 192.168.1.0 255.255.255.0</code> → <code>default-router 192.168.1.1</code> → <code>dns-server 192.168.2.11</code>. Nos PCs: IP Configuration → <b>DHCP</b>.`},
+  quiz:[
+    {q:'Para que serve "ip dhcp excluded-address 192.168.1.1" no pool?',o:['Bloquear o gateway no firewall','Reservar o endereço do gateway FORA do aluguel do DHCP','Acelerar o DHCP','Criar uma segunda rede'],a:1,ex:'Sem a exclusão, o DHCP poderia entregar 192.168.1.1 a um PC — e a rede inteira perderia a saída. Gateways e servidores ficam fora do pool.'},
+    {q:'Ao trocar um PC de estático para DHCP, a primeira mensagem que ele grita na rede é:',o:['DHCP REQUEST','DHCP OFFER','DHCP DISCOVER','DHCP ACK'],a:2,ex:'DISCOVER (broadcast): "tem algum servidor DHCP aí?" → OFFER → REQUEST → ACK. A dança de quatro passos do DORA.'},
+    {q:'O nome financeiro.empresa.local precisa de qual ação no servidor DNS?',o:['Um registro CNAME obrigatoriamente','Um novo registro A apontando para 192.168.2.10','Trocar o domínio do servidor de e-mail','Reiniciar o ASA'],a:1,ex:'Vários nomes podem apontar para o MESMO IP: www e financeiro vivem no mesmo servidor web (192.168.2.10). Registro A, Add, e pronto.'}
+  ],
+  tasks:[
+    'Pool DHCP criado no R1 (com excluded-address do gateway e DNS 192.168.2.11).',
+    'Os 5 PCs em modo DHCP, confirmado pelo ipconfig.',
+    'http://www.empresa.local continua abrindo em um PC qualquer.',
+    'http://financeiro.empresa.local abre no navegador.',
+    'O problema proposital foi identificado e corrigido — sem alterar os servidores.'
+  ],
+  diag:true,
+  log:'CONTRATO #0047 ENCERRADO — Operação Sentinela cumprida.'
+}
+];
+const byId=id=>MISSIONS.find(m=>m.id===id);
+const idxOf=id=>MISSIONS.findIndex(m=>m.id===id);
+const TOTAL_XP=MISSIONS.reduce((a,m)=>a+m.xp,0);
+
+/* ============================================================
+   NAVEGAÇÃO
+   ============================================================ */
+function unlocked(i){return i===0||save.done.includes(MISSIONS[i-1].id);}
+function renderNav(){
+  let h='',lastPhase='';
+  MISSIONS.forEach((m,i)=>{
+    const un=unlocked(i),done=save.done.includes(m.id),active=save.cur===m.id;
+    if(m.phase!==lastPhase){h+=`<div class="ph">${PHASES[m.phase]}</div>`;lastPhase=m.phase;}
+    h+=`<button class="mnav${active?' active':''}${done?' done':''}${un?'':' locked'}" data-id="${m.id}" ${un?'':'disabled'}>
+      <span class="num">${done?'✓':m.code}</span>
+      <span class="ti"><b>${m.title}</b><small>${done?'concluída':un?m.sub:'bloqueada'}</small></span>
+      <span class="st">${done?ic('check'):un?ic('chev'):ic('lock')}</span>
+    </button>`;
+  });
+  $('#navList').innerHTML=h;
+  $('#navFill').style.width=Math.round(save.done.length/MISSIONS.length*100)+'%';
+  document.querySelectorAll('.mnav').forEach(b=>b.onclick=()=>{save.cur=b.dataset.id;persist();snd.click();renderNav();renderMission();updateTopo();$('#main').scrollTop=0;});
+}
+function goTo(id){save.cur=id;persist();snd.click();renderNav();renderMission();updateTopo();$('#main').scrollTop=0;}
+function nextId(id){return MISSIONS[Math.min(idxOf(id)+1,MISSIONS.length-1)].id;}
+
+/* ---------- requisitos ---------- */
+const quizSolved=m=>!(m.quiz||[]).length||(m.quiz.every((q,i)=>save.qs[m.id]&&save.qs[m.id][i]===q.a));
+const pairsSolved=m=>!(m.pairs||[]).length||(m.pairs.every((p,i)=>save.pr[m.id]&&save.pr[m.id][i]===p[2]));
+const tasksDone=m=>!(m.tasks||[]).length||((save.tk[m.id]||[]).filter(Boolean).length===m.tasks.length);
+const simSolved=m=>!m.sim||save.sim.solved;
+const canValidate=m=>quizSolved(m)&&pairsSolved(m)&&tasksDone(m)&&simSolved(m);
+
+/* ============================================================
+   RENDER DA MISSÃO
+   ============================================================ */
+function tableHTML(m){
+  const rows=m.table.slice(1).map(r=>`<tr class="${r[3]==='B'?'hr':''}"><td>${r[0]}</td><td class="num">${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+  return `<div class="sec"><div class="sec-h">${ic('net')} Plano de endereçamento</div>
+    <table class="iptab"><tr><th>${m.table[0][0]}</th><th>${m.table[0][1]}</th><th>${m.table[0][2]}</th></tr>${rows}</table></div>`;
+}
+function cliHTML(c){
+  return `<div class="cli"><div class="cli-h"><span>${c.t}</span><button class="copy">${ic('copy')} copiar</button></div><pre>${esc(c.c)}</pre></div>`;
+}
+function quizHTML(m){
+  const st=save.qs[m.id]||{};
+  return `<div class="sec"><div class="sec-h">${ic('award')} Verificação de conhecimento</div>`+
+    m.quiz.map((q,qi)=>{
+      const solved=st[qi]===q.a;
+      const opts=q.o.map((o,oi)=>{
+        let cls='opt';
+        if(solved){if(oi===q.a)cls+=' ok';}
+        return `<button class="${cls}" data-q="${qi}" data-o="${oi}" ${solved?'disabled':''}>${esc(o)}</button>`;
+      }).join('');
+      return `<div class="q${solved?' solved':''}"><div class="q-q">${esc(q.q)}</div><div class="opts">${opts}</div><div class="q-ex">${esc(q.ex)}</div></div>`;
+    }).join('')+`</div>`;
+}
+function pairsHTML(m){
+  const st=save.pr[m.id]||{};
+  const opts=m.pairs[0][1];
+  return `<div class="sec"><div class="sec-h">${ic('net')} Quadro de conceitos</div>
+  <p style="color:var(--faint);font-size:12px;margin-bottom:10px">Relacione cada protocolo à sua função:</p>`+
+  m.pairs.map((p,pi)=>{
+    const right=st[pi]===p[2];
+    return `<div class="pair${right?' right':''}"><span class="term">${esc(p[0])}</span>
+      <select data-p="${pi}" ${right?'disabled':''}>
+        <option value="">— selecione —</option>
+        ${opts.map((o,oi)=>`<option value="${oi}" ${st[pi]===oi?'selected':''}>${esc(o)}</option>`).join('')}
+      </select>${right?`<span style="color:var(--ok)">${ic('check')}</span>`:''}</div>`;
+  }).join('')+`</div>`;
+}
+function tasksHTML(m){
+  const st=save.tk[m.id]||[];
+  return `<div class="sec"><div class="sec-h">${ic('check')} Checklist de entrega</div>`+
+    m.tasks.map((t,ti)=>`<button class="tsk${st[ti]?' on':''}" data-t="${ti}"><span class="bx">${ic('check')}</span><span>${t}</span></button>`).join('')+`</div>`;
+}
+
+function renderMission(){
+  const m=byId(save.cur)||MISSIONS[0];
+  const done=save.done.includes(m.id);
+  const i=idxOf(m.id);
+  const main=$('#main'),sy=main.scrollTop;
+  let h=`<div class="m-head">
+    <div class="m-code">${m.code}</div>
+    <div class="m-tt"><h2>${m.title}</h2><div class="m-sub">${m.sub}</div></div>
+    ${done?`<span class="done-badge">${ic('check')} MISSÃO CUMPRIDA</span>`:`<div class="m-xp">+${m.xp} XP</div>`}
+  </div>
+  <div class="sec"><div class="sec-h">${ic('term')} Briefing</div><div class="brief">${m.brief}</div></div>`;
+  if(m.table)h+=tableHTML(m);
+  if(m.cli)h+=m.cli.map(cliHTML).join('');
+  if(m.hint)h+=`<div class="sec"><div class="hint ${m.hint.red?'red':''}">${ic(m.hint.ic||'zap')}<div>${m.hint.t}</div></div></div>`;
+  if(m.steps)h+=`<div class="sec"><div class="sec-h">${ic('chev')} Execução</div><ol class="steps">${m.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>`;
+  if(m.quiz)h+=quizHTML(m);
+  if(m.pairs)h+=pairsHTML(m);
+  if(m.sim)h+=simHTML();
+  if(m.tasks&&m.tasks.length)h+=tasksHTML(m);
+  if(m.diag)h+=`<div class="sec"><div class="sec-h">${ic('term')} Relatório de campo</div>
+    <p style="color:var(--dim);font-size:13px;margin-bottom:8px">Descreva, com suas palavras, qual era o problema proposital e como você o encontrou:</p>
+    <textarea id="diagText" placeholder="Sintoma → hipótese → teste → causa raiz → correção…">${esc(save.diag||'')}</textarea></div>`;
+  h+=`<div class="valbar">
+    <button id="valBtn" ${done?'disabled':''}>${ic('flag')} ${done?'Missão concluída':'Validar entrega'}</button>
+    <span id="valHint">${done?'Entrega registrada no log da operação.':'Complete perguntas, tarefas'+(m.sim?' e o caso do simulador':'')+' para validar.'}</span>
+  </div>
+  ${done&&i<MISSIONS.length-1?`<div style="margin-top:18px;text-align:right"><button class="btn-acc" onclick="goTo(nextId('${m.id}'))">Próxima missão ${ic('chev')}</button></div>`:''}`;
+  $('#mwrap').innerHTML=h;
+  main.scrollTop=sy;
+  wireMission(m);
+}
+
+function wireMission(m){
+  document.querySelectorAll('#mwrap .copy').forEach(b=>b.onclick=()=>{
+    const pre=b.closest('.cli').querySelector('pre');
+    try{navigator.clipboard.writeText(pre.textContent);}catch(e){}
+    b.innerHTML=ic('check')+' copiado';snd.ok();setTimeout(()=>b.innerHTML=ic('copy')+' copiar',1600);
+  });
+  document.querySelectorAll('#mwrap .opt').forEach(btn=>{
+    btn.onclick=()=>{
+      const qi=+btn.dataset.q,oi=+btn.dataset.o,q=m.quiz[qi];
+      const st=save.qs[m.id]=save.qs[m.id]||{};
+      if(st[qi]===q.a)return;
+      if(oi===q.a){st[qi]=oi;snd.ok();toast('Resposta correta','ok');persist();renderMission();}
+      else{btn.classList.add('bad');snd.err();setTimeout(()=>btn.classList.remove('bad'),500);}
+    };
+  });
+  document.querySelectorAll('#mwrap .pair select').forEach(sel=>{
+    sel.onchange=()=>{
+      const pi=+sel.dataset.p,v=sel.value===''?null:+sel.value,p=m.pairs[pi];
+      const st=save.pr[m.id]=save.pr[m.id]||{};
+      if(v===p[2]){st[pi]=v;snd.ok();persist();renderMission();}
+      else{sel.style.borderColor='var(--bad)';snd.err();setTimeout(()=>sel.style.borderColor='',600);}
+    };
+  });
+  document.querySelectorAll('#mwrap .tsk').forEach(btn=>{
+    btn.onclick=()=>{
+      const ti=+btn.dataset.t;const st=save.tk[m.id]=save.tk[m.id]||[];
+      st[ti]=!st[ti];snd.click();persist();renderMission();
+    };
+  });
+  const dt=$('#diagText');if(dt)dt.oninput=()=>{save.diag=dt.value;persist();};
+  if(m.sim)wireSim(m);
+  $('#valBtn').onclick=()=>validate(m);
+}
+
+/* ---------- validação ---------- */
+function validate(m){
+  if(save.done.includes(m.id))return;
+  const miss=[];
+  if(m.quiz&&!quizSolved(m))miss.push('perguntas respondidas corretamente');
+  if(m.pairs&&!pairsSolved(m))miss.push('quadro de conceitos completo');
+  if(m.sim&&!save.sim.solved)miss.push('caso fechado no simulador');
+  if(m.tasks&&m.tasks.length&&!tasksDone(m))miss.push('checklist completo');
+  if(miss.length){snd.err();toast('Falta: '+miss.join(' · '),'err');return;}
+  save.done.push(m.id);save.xp+=m.xp;
+  if(!save.tEnd)save.tEnd=Date.now();
+  logAdd(m.log,'g');toast(`+${m.xp} XP — ${m.code} validada`,'ok');snd.done();
+  if(m.cp){stamp(m.cp);setTimeout(()=>toast(m.cp+' alcançado','ok'),700);}
+  persist();updateHud();renderNav();updateTopo();renderMission();
+  if(m.id==='fin')setTimeout(showCert,1600);
+}
+function stamp(txt){$('#stampIn').textContent=txt;$('#stamp').classList.add('on');snd.stamp();setTimeout(()=>$('#stamp').classList.remove('on'),1500);}
+
+/* ============================================================
+   SIMULADOR DE SABOTAGEM (M-11)
+   ============================================================ */
+const IP={web:'192.168.2.10',dns:'192.168.2.11',ftp:'192.168.2.12',mail:'192.168.2.13'};
+const FAULTS={
+  dns:{acc:0,short:'registro DNS do www corrompido',verdict:'O registro A do www apontava para 192.168.2.99 — um endereço que não existe. Quem sabia o caminho por IP achava a página; quem confiava no nome caía no fosso. Correção: editar o registro no servidor DNS.'},
+  http:{acc:1,short:'serviço HTTP desligado no servidor web',verdict:'O serviço HTTP estava OFF no servidor web — o IP respondia ao ping (camada 3 OK), mas ninguém atendia a porta 80 (aplicação). Correção: Services → HTTP → On.'},
+  acl:{acc:2,short:'ACL do ASA sem as linhas do FTP',verdict:'As duas linhas do FTP haviam sido removidas da ACL do ASA. Sem as portas 21/20 liberadas, o firewall descartava a conexão. Correção: reinserir as linhas e confirmar o access-group.'},
+  gw:{acc:3,short:'gateway errado no servidor FTP',verdict:'O servidor FTP estava com gateway 192.168.2.99. Ele ouvia — mas nunca conseguia responder além da própria rede. Correção: Desktop → IP Configuration → gateway 192.168.2.1.'}
+};
+const ACCS=['Registro DNS do www apontando para o IP errado','Serviço HTTP desligado no servidor web','ACL do ASA sem as linhas do FTP (21/20)','Gateway do servidor FTP apontando para 192.168.2.99','Cabo do servidor DNS desconectado','Alarme falso — nada foi sabotado'];
+function dnsResolve(name,f){
+  const map={'www.empresa.local':IP.web,'ftp.empresa.local':IP.ftp,'mail.empresa.local':IP.mail,'dns.empresa.local':IP.dns};
+  let ip=map[name];
+  if(f==='dns'&&name==='www.empresa.local')ip='192.168.2.99';
+  return ip;
+}
+const reach=(ip,f)=>!(f==='gw'&&ip===IP.ftp);
+
+function simHTML(){
+  if(!save.sim.sc){
+    return `<div class="sec"><div class="sec-h">${ic('alert')} Laboratório de sabotagem</div>
+    <div class="sim"><div class="sim-top"><span class="sab">${ic('alert')} ALERTA · usuários relatam que "a internet da empresa não funciona" — sintoma vago, como sempre.</span></div>
+    <div class="sim-acc"><button id="simStart" class="btn-acc">Assumir o plantão</button></div></div></div>`;
+  }
+  const f=save.sim.sc;
+  return `<div class="sec"><div class="sec-h">${ic('alert')} Laboratório de sabotagem</div><div class="sim">
+  <div class="sim-top"><span class="sab">${ic('alert')} Falha plantada — interrogue a rede antes de acusar.</span>
+    <button id="simReset">${ic('rot')} reiniciar caso</button></div>
+  <div class="sim-grid">
+    <div class="sim-l">
+      <label>Comandos rápidos</label>
+      ${['ping 192.168.2.11','ping 192.168.2.10','nslookup www.empresa.local','browser www.empresa.local','ftp ftp.empresa.local','show acl','svc web','svc dns','svc ftp','svc mail','ipconfig','help'].map(c=>`<button class="scmd" data-cmd="${c}">${c}</button>`).join('')}
+      <label>Terminal</label>
+      <input id="simIn" placeholder="digite um comando…">
+      <button id="simRunBtn" class="scmd">executar</button>
+    </div>
+    <div class="sim-c" id="simOut"></div>
+  </div>
+  <div class="sim-acc">${save.sim.solved?
+    `<div class="verdict"><h5>CASO ENCERRADO ${ic('check')}</h5><p>${FAULTS[f].verdict}</p>
+     <div class="rk">Bônus de perícia: <b>${save.sim.bonus?'+50 XP':'já concedido'}</b> · Comandos usados: <b>${save.sim.cmds}</b>${save.sim.cmds<=5?' — investigação enxuta, parabéns!':''}</div></div>`:
+    `<h5>Acusação — qual foi a sabotagem?</h5>
+     <div class="acc-grid">${ACCS.map((a,i)=>`<button class="acc-opt${save.sim.acc===i?' sel':''}" data-acc="${i}">${esc(a)}</button>`).join('')}</div>
+     <button id="closeCase">${ic('flag')} Fechar o caso</button>`}
+  </div></div></div>`;
+}
+function simPrint(lines){
+  lines.forEach((l,i)=>setTimeout(()=>{
+    const box=$('#simOut');if(!box)return;
+    const d=document.createElement('div');d.className='ln '+(l[1]||'');d.textContent=l[0];
+    box.appendChild(d);box.scrollTop=box.scrollHeight;if(i%3===0)snd.type();
+  },i*110));
+}
+function simRun(raw){
+  const box=$('#simOut');if(!box)return;
+  const f=save.sim.sc;if(!f)return;
+  const cmd=raw.trim();if(!cmd)return;
+  const out=[];const P=(t,c)=>out.push([t,c]);
+  P('PC0> '+cmd,'cmd');
+  const parts=cmd.split(/\s+/);const c=parts[0].toLowerCase();const a=(parts.slice(1).join(' ')||'').toLowerCase();
+  const isIp=s=>/^\d{1,3}(\.\d{1,3}){3}$/.test(s);
+  const resolve=s=>isIp(s)?s:dnsResolve(s,f);
+  if(c==='help'){P('Comandos: ping <ip|nome> · nslookup <nome> · browser <url> · ftp <ip|nome> · show acl · svc web|dns|ftp|mail · ipconfig · clear','dim');}
+  else if(c==='clear'){box.innerHTML='';save.sim.hist=[];save.sim.cmds++;persist();return;}
+  else if(c==='ipconfig'){P('Configuração IP do PC0:','dim');P('   IPv4 . . . . . . . : 192.168.1.10');P('   Máscara  . . . . . : 255.255.255.0');P('   Gateway  . . . . . : 192.168.1.1');P('   DNS  . . . . . . . : 192.168.2.11','dim');}
+  else if(c==='ping'){
+    if(!a)P('Uso: ping <ip|nome>','wrn');
+    else{const ip=resolve(a);
+      if(!ip)P('Falha ao resolver "'+a+'" (DNS não conhece o nome).','err');
+      else if(!reach(ip,f))P('Esgotado o tempo limite do pedido para '+ip+'.','err');
+      else P('Resposta de '+ip+': bytes=32 tempo=1ms TTL=125','ok');}
+  }
+  else if(c==='nslookup'){
+    if(!a)P('Uso: nslookup <nome>','wrn');
+    else{P('Servidor: dns.empresa.local   Address: 192.168.2.11','dim');
+      const ip=dnsResolve(a,f);
+      if(ip){P('Nome:    '+a);P('Address: '+ip);}
+      else P('*** Não existe registro para "'+a+'"','err');}
+  }
+  else if(c==='browser'){
+    const host=a.replace(/^https?:\/\//,'').split('/')[0];
+    const byName=!isIp(host);
+    const ip=resolve(host);
+    if(byName&&!ip)P('Erro DNS: '+host+' não resolve.','err');
+    else if(byName&&ip!==IP.web&&host.startsWith('www'))P('Timeout: '+host+' resolveu para '+ip+', que não responde.','err');
+    else{
+      const target=isIp(host)?host:ip;
+      if(target===IP.web){
+        if(f==='http')P('Não foi possível exibir — conexão recusada em '+host+' (porta 80 fechada).','err');
+        else P('Página carregada: Orion Distribuidora S.A. — intranet oficial.','ok');
+      }else if(target===IP.ftp)P('Este é o servidor de ARQUIVOS. Use o comando ftp.','wrn');
+      else if(target===IP.dns)P('192.168.2.11 responde, mas não publica páginas (é o DNS).','wrn');
+      else P('Host respondeu com uma página padrão.','ok');
+    }
+  }
+  else if(c==='ftp'){
+    const ip=resolve(a);
+    if(!a)P('Uso: ftp <ip|nome>','wrn');
+    else if(!ip)P('Falha ao resolver '+a,'err');
+    else if(!reach(ip,f))P('> ftp: connect — tempo esgotado, o host não responde.','err');
+    else if(f==='acl')P('> conexão recusada pelo firewall (portas 21/20 descartadas na ACL).','err');
+    else{P('Conectado a '+ip,'ok');P('220 FTP Server (Packet Tracer) pronto.');P('Usuário: cisco · Senha: ***  →  230 login OK','ok');P('ftp> dir  →  arquivo-projeto.txt · inventario.csv  (2 arquivos)','ok');}
+  }
+  else if(c==='show'&&a==='acl'){
+    P('access-list LIBERA; elementos:','dim');
+    P('access-list LIBERA extended permit icmp any any');
+    P('access-list LIBERA extended permit tcp any host 192.168.2.10 eq www');
+    P('access-list LIBERA extended permit udp any host 192.168.2.11 eq domain');
+    if(f!=='acl'){P('access-list LIBERA extended permit tcp any host 192.168.2.12 eq ftp');P('access-list LIBERA extended permit tcp any host 192.168.2.12 eq ftp-data');}
+    P('access-list LIBERA extended permit tcp any host 192.168.2.13 eq smtp');
+    P('access-list LIBERA extended permit tcp any host 192.168.2.13 eq pop3');
+    P('access-group LIBERA in interface outside','dim');
+  }
+  else if(c==='svc'){
+    if(a==='web'){P('SERVIDOR WEB (192.168.2.10):','dim');P('  HTTP: '+(f==='http'?'OFF (serviço desligado)':'ON · porta 80'));P('  Gateway: 192.168.2.1');}
+    else if(a==='dns'){P('SERVIDOR DNS (192.168.2.11) — registros A:','dim');P('  www.empresa.local  →  '+(f==='dns'?'192.168.2.99':'192.168.2.10'));P('  ftp.empresa.local  →  192.168.2.12');P('  mail.empresa.local →  192.168.2.13');}
+    else if(a==='ftp'){P('SERVIDOR FTP (192.168.2.12):','dim');P('  FTP: ON · portas 21/20');P('  Gateway: '+(f==='gw'?'192.168.2.99':'192.168.2.1'));}
+    else if(a==='mail'){P('SERVIDOR E-MAIL (192.168.2.13):','dim');P('  Domínio: empresa.local · SMTP: ON (25) · POP3: ON (110)');P('  Gateway: 192.168.2.1');}
+    else P('Uso: svc web|dns|ftp|mail','wrn');
+  }
+  else P('Comando desconhecido: '+c+' (digite help)','err');
+  save.sim.cmds++;
+  out.forEach(l=>save.sim.hist.push(l));
+  if(save.sim.hist.length>80)save.sim.hist=save.sim.hist.slice(-80);
+  persist();simPrint(out);
+}
+function wireSim(m){
+  const st=$('#simStart');
+  if(st)st.onclick=()=>{
+    const keys=Object.keys(FAULTS);
+    save.sim={sc:keys[Math.floor(Math.random()*keys.length)],cmds:0,acc:null,solved:false,bonus:save.sim.bonus,hist:[]};
+    persist();snd.ok();renderMission();logAdd('Plantão assumido: uma falha foi plantada no laboratório.','a');
+  };
+  const rs=$('#simReset');
+  if(rs)rs.onclick=()=>{
+    const keys=Object.keys(FAULTS);
+    let k=keys[Math.floor(Math.random()*keys.length)];
+    if(keys.length>1&&k===save.sim.sc)k=keys[(keys.indexOf(k)+1)%keys.length];
+    save.sim={sc:k,cmds:0,acc:null,solved:false,bonus:save.sim.bonus,hist:[]};
+    persist();snd.click();renderMission();
+  };
+  document.querySelectorAll('#mwrap .scmd[data-cmd]').forEach(b=>b.onclick=()=>simRun(b.dataset.cmd));
+  const inp=$('#simIn');
+  if(inp){
+    inp.onkeydown=e=>{if(e.key==='Enter'){simRun(inp.value);inp.value='';}};
+    const rb=$('#simRunBtn');if(rb)rb.onclick=()=>{simRun(inp.value);inp.value='';};
+  }
+  const box=$('#simOut');
+  if(box&&save.sim.hist.length){
+    box.innerHTML=save.sim.hist.map(l=>`<div class="ln ${l[1]||''}">${esc(l[0])}</div>`).join('');
+    box.scrollTop=box.scrollHeight;
+  }
+  document.querySelectorAll('#mwrap .acc-opt').forEach(b=>b.onclick=()=>{
+    if(save.sim.solved)return;
+    save.sim.acc=+b.dataset.acc;persist();snd.click();
+    document.querySelectorAll('#mwrap .acc-opt').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+  });
+  const cc=$('#closeCase');
+  if(cc)cc.onclick=()=>{
+    const f=save.sim.sc;
+    if(save.sim.acc==null){toast('Selecione uma acusação antes de fechar o caso','err');snd.err();return;}
+    if(save.sim.cmds<3){toast('Interrogue mais a rede — pelo menos 3 comandos antes de acusar','err');return;}
+    if(save.sim.acc===FAULTS[f].acc){
+      const first=!save.sim.solved;
+      save.sim.solved=true;
+      if(first&&!save.sim.bonus){save.xp+=50;save.sim.bonus=true;}
+      persist();snd.done();updateHud();renderMission();
+      logAdd('Caso de sabotagem encerrado: '+FAULTS[f].short+'.','g');
+      toast('Caso encerrado — acusação correta'+(first?' (+50 XP)':''),'ok');
+    }else{
+      snd.err();toast('Acusação refutada. Volte ao terminal e colete mais evidências.','err');
+      const sel=document.querySelector('#mwrap .acc-opt.sel');
+      if(sel){sel.classList.add('wrong');setTimeout(()=>sel.classList.remove('wrong'),500);}
+    }
+  };
+}
+
+/* ============================================================
+   TOPOLOGIA SVG
+   ============================================================ */
+const DEV=[
+  {id:'pc0',x:54,y:44,t:'pc',lb:'PC0'},{id:'pc1',x:54,y:96,t:'pc',lb:'PC1'},{id:'pc2',x:54,y:148,t:'pc',lb:'PC2'},
+  {id:'pc3',x:54,y:200,t:'pc',lb:'PC3'},{id:'pc4',x:54,y:252,t:'pc',lb:'PC4'},
+  {id:'sw1',x:170,y:148,t:'sw',lb:'SW1'},
+  {id:'r1',x:288,y:148,t:'rt',lb:'R1',ip:'192.168.1.1 · 10.0.0.1'},
+  {id:'r2',x:424,y:148,t:'rt',lb:'R2',ip:'10.0.0.2 · 10.0.1.1'},
+  {id:'asa',x:424,y:258,t:'fw',lb:'ASA-FW',ip:'out 10.0.1.2 · in 192.168.2.1'},
+  {id:'sw2',x:424,y:368,t:'sw',lb:'SW2'},
+  {id:'web',x:572,y:308,t:'sv',lb:'WEB',ip:'.10'},{id:'dns',x:572,y:356,t:'sv',lb:'DNS',ip:'.11'},
+  {id:'ftp',x:572,y:404,t:'sv',lb:'FTP',ip:'.12'},{id:'mail',x:572,y:452,t:'sv',lb:'MAIL',ip:'.13'}
+];
+const LNK=[['pc0','sw1','A'],['pc1','sw1','A'],['pc2','sw1','A'],['pc3','sw1','A'],['pc4','sw1','A'],
+  ['sw1','r1','A'],['r1','r2','B'],['r2','asa','B'],['asa','sw2','F'],
+  ['sw2','web','F'],['sw2','dns','F'],['sw2','ftp','F'],['sw2','mail','F']];
+const ROUTES={m4:['pc0','sw1','r1','r2','asa'],m6:['pc0','sw1','r1','r2','asa','sw2','dns'],m11:['pc0','sw1','r1','r2','asa','sw2','dns']};
+function devSVG(d){
+  const yl=d.y+(d.t==='sv'?30:d.t==='rt'?32:28),yi=yl+11;
+  let body='';
+  if(d.t==='pc')body=`<rect x="${d.x-16}" y="${d.y-12}" width="32" height="24" rx="2" fill="#171b12" stroke="var(--netA)" stroke-width="1.4"/><rect x="${d.x-10}" y="${d.y-7}" width="20" height="13" fill="none" stroke="var(--netA)" stroke-width="1" opacity=".7"/>`;
+  else if(d.t==='sw')body=`<rect x="${d.x-24}" y="${d.y-11}" width="48" height="22" rx="2" fill="#171b12" stroke="var(--netA)" stroke-width="1.4"/><line x1="${d.x-13}" y1="${d.y-3}" x2="${d.x+9}" y2="${d.y-3}" stroke="var(--netA)" stroke-width="1.2"/><polygon points="${d.x+15},${d.y-3} ${d.x+9},${d.y-6} ${d.x+9},${d.y}" fill="var(--netA)"/><line x1="${d.x+13}" y1="${d.y+4}" x2="${d.x-9}" y2="${d.y+4}" stroke="var(--netA)" stroke-width="1.2"/><polygon points="${d.x-15},${d.y+4} ${d.x-9},${d.y+1} ${d.x-9},${d.y+7}" fill="var(--netA)"/>`;
+  else if(d.t==='rt')body=`<circle cx="${d.x}" cy="${d.y}" r="15" fill="#171b12" stroke="var(--acc)" stroke-width="1.4"/><path d="M${d.x-9} ${d.y} h18 M${d.x} ${d.y-9} v18 M${d.x-9} ${d.y} l4 -3 m-4 3 l4 3 M${d.x+9} ${d.y} l-4 -3 m4 3 l-4 3 M${d.x} ${d.y-9} l-3 4 m3 -4 l3 4 M${d.x} ${d.y+9} l-3 -4 m3 4 l3 -4" fill="none" stroke="var(--acc)" stroke-width="1.1" opacity=".9"/>`;
+  else if(d.t==='fw')body=`<rect x="${d.x-21}" y="${d.y-14}" width="42" height="28" rx="2" fill="#171b12" stroke="var(--netF)" stroke-width="1.4"/><path d="M${d.x-15} ${d.y-7} h30 M${d.x-15} ${d.y} h30 M${d.x-15} ${d.y+7} h30" stroke="var(--netF)" stroke-width="1" opacity=".6"/>`;
+  else body=`<rect x="${d.x-14}" y="${d.y-16}" width="28" height="32" rx="2" fill="#171b12" stroke="var(--netF)" stroke-width="1.4"/><path d="M${d.x-8} ${d.y-9} h16 M${d.x-8} ${d.y-3} h16 M${d.x-8} ${d.y+3} h16" stroke="var(--netF)" stroke-width="1" opacity=".6"/><circle cx="${d.x}" cy="${d.y+10}" r="2" fill="var(--netF)" opacity=".8"/>`;
+  return `<g class="dev" data-dev="${d.id}">${body}
+    <text class="dlbl" x="${d.x}" y="${yl}" text-anchor="middle">${d.lb}</text>
+    ${d.ip?`<text class="dip" x="${d.x}" y="${yi}" text-anchor="middle" fill="#6d7460">${d.ip}</text>`:''}</g>`;
+}
+function buildTopo(){
+  const pos=Object.fromEntries(DEV.map(d=>[d.id,d]));
+  let s='';
+  LNK.forEach(([a,b,net])=>{
+    const A=pos[a],B=pos[b];
+    s+=`<line id="lk-${a}-${b}" class="tlink net${net}" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}"/>`;
+  });
+  DEV.forEach(d=>s+=devSVG(d));
+  $('#topoSvg').innerHTML=s;
+}
+function updateTopo(){
+  const phys=save.done.includes('m1');
+  document.querySelectorAll('#topoSvg .dev').forEach(g=>g.classList.toggle('show',phys));
+  LNK.forEach(([a,b])=>{
+    const el=document.getElementById(`lk-${a}-${b}`);if(!el)return;
+    el.classList.toggle('up',phys);el.classList.remove('tr');
+  });
+  const route=ROUTES[save.cur]||[];
+  for(let i=0;i<route.length-1;i++){
+    const el=document.getElementById(`lk-${route[i]}-${route[i+1]}`);
+    if(el)el.classList.add('tr');
+  }
+  const asaG=document.querySelector('#topoSvg [data-dev="asa"]');
+  if(asaG)asaG.classList.toggle('led',save.cur==='m4'||save.cur==='m5');
+}
+
+/* ============================================================
+   HUD / BOOT / MODAIS / CERTIFICADO
+   ============================================================ */
+function updateHud(){
+  $('#hudName').innerHTML=save.name?`técnico <b>${esc(save.name)}</b>`:'';
+  $('#hudRank').textContent=rankFor(save.xp);
+  $('#xpFill').style.width=Math.min(100,Math.round(save.xp/TOTAL_XP*100))+'%';
+  $('#xpTxt').textContent=save.xp+' XP';
+}
+function clockTick(){$('#clock').textContent=fmtTime((save.tEnd||Date.now())-(save.t0||Date.now()));}
+function renderAll(){renderNav();renderMission();updateTopo();updateHud();}
+
+let started=false;
+function startApp(){
+  if(started)return;started=true;
+  $('#boot').style.display='none';
+  $('#app').classList.add('on');
+  if(!save.t0)save.t0=Date.now();
+  persist();renderAll();
+  logAdd('Contrato assinado por '+save.name+'. Operação Sentinela iniciada.','a');
+  logAdd('Ordem de serviço #0047 carregada. Boa sorte, técnico.','');
+  setInterval(clockTick,1000);clockTick();
+}
+const BOOT=[
+  'CISCO PACKET TRACER · MÓDULO DE INSTRUÇÃO v8.2',
+  '> montando ambiente de laboratório .......... <span class="gd">OK</span>',
+  '> ordem de serviço #0047 .................... <span class="gd">ABERTA</span>',
+  '> cliente: ORION DISTRIBUIDORA S.A. ......... <span class="gd">CADASTRADO</span>',
+  '> perímetro: DMZ + FIREWALL ASA ............. <span class="em">CLASSIFICADO</span>',
+  '> aguardando técnico responsável…'
+];
+function boot(){
+  let i=0,aborted=false;
+  const lines=$('#bootLines');
+  const next=()=>{
+    if(aborted)return;
+    if(i<BOOT.length){
+      const d=document.createElement('span');d.className='bl';d.innerHTML=BOOT[i];
+      lines.appendChild(d);snd.type();i++;
+      setTimeout(next,i===BOOT.length?500:240+Math.random()*220);
+    }else{
+      $('#bootTitle').style.display='block';$('#bootSub').style.display='block';
+      if(save.name)startApp();
+      else{$('#bootForm').classList.add('on');$('#techName').focus();}
+      $('#bootSkip').style.display='block';
+    }
+  };
+  next();
+  $('#bootForm').onsubmit=e=>{
+    e.preventDefault();
+    const v=$('#techName').value.trim();
+    if(!v){toast('Identifique-se para assinar o contrato','err');return;}
+    save.name=v;save.t0=save.t0||Date.now();persist();snd.ok();startApp();
+  };
+  $('#bootSkip').onclick=()=>{
+    aborted=true;
+    if(!save.name){save.name='Técnico';save.t0=save.t0||Date.now();persist();}
+    startApp();
+  };
+}
+
+/* ---------- modais ---------- */
+function openModal(html){$('#modalBox').innerHTML=html;$('#modalHost').classList.add('on');}
+function closeModal(){$('#modalHost').classList.remove('on');}
+ $('#modalHost').onclick=e=>{if(e.target.id==='modalHost')closeModal();};
+const GUIDE=`<h3>Guia do instrutor</h3>
+<h4>Objetivos</h4>
+<p>Cablagem e tipos de cabo · endereçamento estático · roteamento estático entre dois roteadores · firewall ASA 5505 (zonas, security-levels, ACL) · serviços HTTP, DNS, FTP e E-mail (SMTP/POP3) · DHCP no capstone · método de troubleshooting.</p>
+<h4>Checkpoints</h4>
+<table>
+<tr><td>CP1 · M-02</td><td>LAN 192.168.1.0/24 — ping entre PCs e até o gateway</td></tr>
+<tr><td>CP2 · M-03</td><td>WAN 10.0.0.0/30 + rotas estáticas — PC0 pinga o R2</td></tr>
+<tr><td>CP3 · M-06</td><td>ASA com zonas + ACL — ping ao DNS e HTTP por IP funcionam</td></tr>
+<tr><td>CP4 · M-10</td><td>4 serviços ativos — web, dns, ftp e e-mail pelo nome</td></tr>
+</table>
+<h4>Cartela de sabotagens (Packet Tracer real, para a M-11 e o FINAL)</h4>
+<ul>
+<li>Trocar um cabo direto por cruzado (ou desconectar uma ponta)</li>
+<li>Apagar o registro A do www no servidor DNS</li>
+<li>Desligar o serviço HTTP ou FTP no servidor</li>
+<li>Remover linhas da ACL no ASA e reaplicar o access-group</li>
+<li>Trocar o gateway de um servidor para 192.168.2.99</li>
+<li>Remover uma rota estática do R2 (ping "sai, mas não volta")</li>
+</ul>
+<h4>Avaliação sugerida</h4>
+<p>XP + checklists servem de rubrica formativa; o relatório de campo do capstone é o registro individual. Tempo total estimado: 3h30–4h em duplas.</p>
+<button class="mclose" onclick="closeModal()">fechar</button>`;
+ $('#tutBtn').onclick=()=>{snd.click();openModal(GUIDE);};
+ $('#rstBtn').onclick=()=>{snd.click();openModal(`<h3>Reiniciar operação</h3><p>Isso apaga progresso, XP e registro local deste navegador. Deseja continuar?</p><div style="display:flex;gap:10px;margin-top:18px"><button class="mclose" onclick="doReset()">sim, apagar tudo</button><button class="mclose" onclick="closeModal()">cancelar</button></div>`);};
+function doReset(){localStorage.removeItem('sentinela-save');location.reload();}
+ $('#sndBtn').onclick=()=>{save.muted=!save.muted;persist();$('#sndBtn').innerHTML=ic(save.muted?'volx':'vol');if(!save.muted)snd.ok();};
+
+/* ---------- certificado ---------- */
+function showCert(){
+  const time=fmtTime((save.tEnd||Date.now())-(save.t0||Date.now()));
+  $('#certWrap').innerHTML=`<div class="cert"><div class="cert-in">
+    <div class="top">Cisco Packet Tracer · Operação Sentinela</div>
+    <h1>CERTIFICADO DE CONCLUSÃO</h1>
+    <p class="rl">Certificamos que o técnico abaixo concluiu a cablagem, o endereçamento, o roteamento entre dois roteadores, a proteção por firewall ASA com ACL de serviços, os servidores Web/DNS/FTP/E-mail, o caso de sabotagem e o capstone DHCP da rede Orion Distribuidora.</p>
+    <div class="nm">${esc(save.name||'Técnico')}</div>
+    <div class="meta">
+      <div>XP FINAL<b>${save.xp}</b></div>
+      <div>PATENTE<b>${rankFor(save.xp)}</b></div>
+      <div>MISSÕES<b>${save.done.length}/${MISSIONS.length}</b></div>
+      <div>TEMPO<b>${time}</b></div>
+    </div>
+    <div class="sign"><span>Instrutor</span><span>OS #0047</span></div>
+    <div class="certbtns">
+      <button class="btn-acc" onclick="window.print()">imprimir / salvar PDF</button>
+      <button class="btn-acc" onclick="document.getElementById('certWrap').classList.remove('on')">voltar ao painel</button>
+    </div>
+  </div></div>`;
+  $('#certWrap').classList.add('on');
+}
+
+/* ---------- start ---------- */
+ $('#sndBtn').innerHTML=ic(save.muted?'volx':'vol');
+buildTopo();
+boot();
+</script>
+</body>
+</html>
