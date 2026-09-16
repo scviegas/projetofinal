@@ -465,9 +465,23 @@ function evalAcl(id,pkt){
   for(const ln of list){if(matchLine(ln,pkt)){ln.hits++;return{action:ln.action,implicit:false};}}
   return{action:'deny',implicit:true};
 }
+// Retorna a interface diretamente conectada ao IP informado.
+// IMPORTANTE: inNet() trabalha com WILDCARD, enquanto IF.mask armazena
+// máscara de sub-rede (ex.: 255.255.255.224). A versão anterior passava
+// a máscara diretamente como wildcard e fazia a "Prova de fogo" acusar
+// no-route mesmo com endereçamento correto.
+function maskToWildcard(mask){
+  if(!isIp(mask))return null;
+  return String(mask).split('.').map(o=>255-Number(o)).join('.');
+}
 function ifaceFor(ip){
-  for(const k of IFKEYS){const IF=save.rtr.ifaces[k];
-    if(IF.up&&IF.ip&&inNet(ip,IF.ip,IF.mask))return k;}
+  if(!isIp(ip))return null;
+  for(const k of IFKEYS){
+    const IF=save.rtr.ifaces[k];
+    if(!IF.up||!IF.ip||!IF.mask)continue;
+    const wc=maskToWildcard(IF.mask);
+    if(wc&&inNet(ip,IF.ip,wc))return k;
+  }
   return null;
 }
 function throughAcls(src,dst,proto,dport){
