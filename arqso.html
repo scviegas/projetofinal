@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SO-QUEST — Simulador de Sistemas Operacionais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ BASE ============ */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e0b; --panel:#0f1511; --panel2:#131b15; --line:#223026; --line2:#314237;
+  --txt:#c8d6cb; --dim:#7e9184; --faint:#54655a;
+  --amber:#f2b544; --amber2:#ffd27d; --green:#63d68a; --red:#e5604f; --cyan:#7ad0d6; --pink:#df92b8;
+}
+html{scrollbar-color:var(--line2) var(--bg)}
+body{
+  background:var(--bg); color:var(--txt);
+  font-family:'JetBrains Mono',monospace; font-size:14px; line-height:1.6;
+  min-height:100vh; padding-bottom:60px;
+}
+body::before{ /* grade de plano técnico */
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(126,175,140,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(126,175,140,.045) 1px, transparent 1px);
+  background-size:44px 44px;
+}
+body::after{ /* scanlines sutis + vinheta */
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:60;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 3px);
+  box-shadow:inset 0 0 180px rgba(0,0,0,.55);
+}
+::selection{background:var(--amber);color:#141008}
+.hidden{display:none!important}
+.wrap{max-width:1100px;margin:0 auto;padding:30px 26px;position:relative;z-index:1}
+h1,h2,h3{font-weight:800;letter-spacing:.04em}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+:focus-visible{outline:1px solid var(--amber);outline-offset:2px}
+::-webkit-scrollbar{height:10px;width:10px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:5px}
+::-webkit-scrollbar-track{background:var(--panel)}
+
+.lbl{font-size:10px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
+.num{color:var(--amber2)}
+.ok{color:var(--green)} .err{color:var(--red)} .warn{color:var(--amber)} .info{color:var(--cyan)}
+
+/* ============ BOTÕES / INPUTS ============ */
+.btn{
+  background:transparent;border:1px solid var(--line2);color:var(--txt);
+  padding:7px 14px;font-size:12px;letter-spacing:.08em;border-radius:3px;
+  transition:background .15s,color .15s,border-color .15s;text-transform:uppercase;
+}
+.btn:hover:not(:disabled){background:var(--amber);border-color:var(--amber);color:#171204}
+.btn.primary{border-color:var(--amber);color:var(--amber)}
+.btn.primary:hover:not(:disabled){background:var(--amber);color:#171204}
+.btn.good{border-color:var(--green);color:var(--green)}
+.btn.good:hover:not(:disabled){background:var(--green);color:#0c1a10;border-color:var(--green)}
+.btn.bad{border-color:var(--red);color:var(--red)}
+.btn.bad:hover:not(:disabled){background:var(--red);color:#1d0a08;border-color:var(--red)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.small{padding:4px 9px;font-size:10px}
+input[type=text],input[type=number],select{
+  background:#0b110d;border:1px solid var(--line2);color:var(--txt);
+  padding:6px 10px;border-radius:3px;font-size:13px;
+}
+input[type=number]{width:80px}
+input:focus,select:focus{border-color:var(--amber);outline:none}
+input[type=radio],input[type=checkbox]{accent-color:var(--amber)}
+
+/* ============ PAINÉIS ============ */
+.panel{border:1px solid var(--line);background:rgba(15,21,17,.78);border-radius:4px;margin-bottom:22px}
+.ph{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:8px 14px;border-bottom:1px solid var(--line);font-size:10px;
+  letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.pb{padding:16px}
+
+/* ============ TOASTS ============ */
+#toasts{position:fixed;top:18px;right:18px;z-index:100;display:flex;flex-direction:column;gap:8px}
+.toast{
+  background:#101812;border:1px solid var(--line2);border-left:3px solid var(--amber);
+  color:var(--txt);padding:10px 16px;font-size:12px;border-radius:3px;max-width:340px;
+  animation:tin .2s ease-out;
+}
+.toast.good{border-left-color:var(--green)} .toast.bad{border-left-color:var(--red)} .toast.info{border-left-color:var(--cyan)}
+@keyframes tin{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+
+/* ============ BOOT ============ */
+#scr-boot{min-height:100vh;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;z-index:1}
+.boot-inner{width:min(760px,92vw)}
+#bootlog{font-size:13px;color:var(--dim);white-space:pre-wrap;line-height:1.75;min-height:320px}
+#bootlog .bl-ok{color:var(--green)} #bootlog .bl-hi{color:var(--amber)} #bootlog .bl-er{color:var(--red)}
+#bootready{text-align:center;margin-top:28px}
+#bootready h1{font-size:52px;color:var(--amber);letter-spacing:.22em;margin-bottom:8px}
+#bootready p{color:var(--dim);font-size:12px;letter-spacing:.2em;animation:blink 1.1s step-end infinite}
+.cursor{animation:blink 1s step-end infinite;color:var(--amber)}
+@keyframes blink{50%{opacity:0}}
+
+/* ============ STATUSBAR ============ */
+#statusbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:70;
+  display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+  background:#0d130f;border-top:1px solid var(--line);
+  padding:7px 18px;font-size:11px;color:var(--dim);letter-spacing:.06em;
+}
+#statusbar b{color:var(--amber2);font-weight:700}
+#statusbar .sb-sep{color:var(--faint)}
+
+/* ============ HUB ============ */
+.hubhead{margin-bottom:26px}
+.hub-topline{color:var(--faint);font-size:12px;margin-bottom:10px}
+.hubhead h1{font-size:44px;color:var(--amber);letter-spacing:.14em}
+.hub-sub{color:var(--dim);margin-top:6px;font-size:13px;max-width:640px}
+.sysline{display:flex;gap:8px 26px;flex-wrap:wrap;padding:10px 16px;font-size:11px;color:var(--dim)}
+.sysline b{color:var(--txt);font-weight:500}
+
+.prow,.phead{
+  display:grid;grid-template-columns:56px 200px 1fr 112px 150px 58px 84px 26px;
+  gap:12px;align-items:center;padding:11px 16px;
+}
+.phead{font-size:10px;letter-spacing:.16em;color:var(--faint);text-transform:uppercase;border-bottom:1px solid var(--line)}
+.prow{border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s;position:relative}
+.prow:last-child{border-bottom:none}
+.prow:hover{background:rgba(242,181,68,.06)}
+.prow:hover .pgo{color:var(--amber);transform:translateX(3px)}
+.prow .pid{color:var(--faint);font-size:12px}
+.prow .pname{color:var(--amber2);font-weight:700;font-size:13px}
+.prow .pname em{display:block;font-style:normal;color:var(--faint);font-weight:400;font-size:10px;letter-spacing:.14em}
+.prow .pdesc{color:var(--dim);font-size:12px}
+.pstate{font-size:10px;letter-spacing:.12em}
+.st-sleep{color:var(--faint)} .st-ready{color:var(--amber)} .st-run{color:var(--cyan)} .st-done{color:var(--green)}
+.pbar{height:6px;background:#0b100c;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--amber);transition:width .6s}
+.prow.done .pbar i{background:var(--green)}
+.pscore{color:var(--txt);font-weight:700;font-size:13px}
+.pmedal{font-size:10px;letter-spacing:.1em}
+.pgo{color:var(--faint);transition:transform .15s,color .15s}
+
+#termout{padding:14px 16px 4px;font-size:12.5px;max-height:240px;overflow-y:auto;line-height:1.7}
+#termout .t-cmd{color:var(--amber2)} #termout .t-dim{color:var(--faint)} #termout .t-ok{color:var(--green)} #termout .t-er{color:var(--red)}
+.termrow{display:flex;gap:10px;padding:10px 16px 14px;align-items:center}
+.tprompt{color:var(--green);font-size:12.5px;white-space:nowrap}
+#terminput{flex:1;background:transparent;border:none;color:var(--txt);font-size:13px;padding:4px 0}
+#terminput:focus{outline:none}
+.hubfoot{color:var(--faint);font-size:11px;text-align:center;padding:6px 0 20px}
+
+/* ============ MÓDULO ============ */
+.modhead{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.modhead h2{font-size:22px;color:var(--amber2)}
+.modhead .mweek{font-size:10px;letter-spacing:.2em;color:var(--faint)}
+.modhead .mscore{margin-left:auto;text-align:right;font-size:11px;color:var(--dim)}
+.modhead .mscore b{color:var(--amber);font-size:15px}
+.tabs{display:flex;gap:2px;margin-bottom:0}
+.tab{
+  background:transparent;border:1px solid var(--line);border-bottom:none;color:var(--dim);
+  padding:9px 20px;font-size:11px;letter-spacing:.12em;border-radius:4px 4px 0 0;text-transform:uppercase;
+}
+.tab.active{background:var(--panel);color:var(--amber);border-color:var(--line2)}
+.tab:hover:not(.active){color:var(--txt)}
+.tabbox{border:1px solid var(--line2);background:var(--panel);border-radius:0 4px 4px 4px;padding:24px;min-height:300px}
+
+/* ============ TEORIA ============ */
+.theory{max-width:820px}
+.theory p{margin:0 0 14px;color:var(--txt)}
+.theory h3{color:var(--amber);font-size:14px;letter-spacing:.1em;margin:26px 0 10px;text-transform:uppercase}
+.theory h3::before{content:'§ ';color:var(--faint)}
+.theory ul{margin:0 0 14px 20px}
+.theory li{margin-bottom:6px}
+.theory li::marker{color:var(--amber)}
+.tbox{border:1px solid var(--line2);border-left:3px solid var(--amber);background:rgba(242,181,68,.05);
+  padding:12px 16px;margin:0 0 16px;border-radius:0 3px 3px 0}
+.tbox .lbl{display:block;margin-bottom:4px;color:var(--amber)}
+.tnote{border-left:3px solid var(--cyan);background:rgba(122,208,214,.05);padding:10px 16px;margin:0 0 16px;font-size:12.5px;color:var(--dim);border-radius:0 3px 3px 0}
+.ttable{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:12.5px}
+.ttable th{color:var(--amber);text-align:left;border-bottom:1px solid var(--line2);padding:6px 10px;font-size:11px;letter-spacing:.08em}
+.ttable td{border-bottom:1px solid var(--line);padding:6px 10px;color:var(--txt)}
+.theory code{color:var(--green);background:rgba(99,214,138,.08);padding:1px 5px;border-radius:3px;font-size:12.5px}
+.tnext{margin-top:26px;padding-top:14px;border-top:1px dashed var(--line2);color:var(--faint);font-size:12px}
+
+/* ============ QUIZ / DESAFIO ============ */
+.chalhead{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;
+  border:1px dashed var(--line2);padding:10px 16px;border-radius:3px}
+.chalhead .pts{font-size:12px;color:var(--amber)}
+.qcard{border:1px solid var(--line);background:var(--panel2);padding:18px;border-radius:4px;margin-bottom:14px}
+.qcard .qq{margin-bottom:14px;font-weight:500}
+.opt{
+  display:block;width:100%;text-align:left;background:transparent;border:1px solid var(--line);
+  color:var(--txt);padding:9px 14px;margin-bottom:8px;border-radius:3px;font-size:13px;transition:all .12s;
+}
+.opt:hover:not(:disabled){border-color:var(--amber);background:rgba(242,181,68,.07)}
+.opt.correct{border-color:var(--green);color:var(--green);background:rgba(99,214,138,.08)}
+.opt.wrong{border-color:var(--red);color:var(--red);background:rgba(229,96,79,.08)}
+.opt:disabled{cursor:default;opacity:.75}
+.why{font-size:12px;color:var(--dim);border-left:2px solid var(--line2);padding:6px 12px;margin-top:8px}
+.fieldrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.fieldrow label{font-size:12px;color:var(--dim);min-width:220px}
+.fieldmsg{font-size:12px;margin-left:8px}
+.resline{border-top:1px dashed var(--line2);margin-top:18px;padding-top:16px}
+
+/* ============ M1 CLASSIFICADOR ============ */
+.modeq{border:1px solid var(--line2);background:var(--panel2);padding:22px;text-align:center;border-radius:4px;margin-bottom:14px}
+.modeq .op{font-size:17px;color:var(--amber2);font-weight:700;margin-bottom:4px}
+.modeq .opctx{font-size:12px;color:var(--dim)}
+.modefb{min-height:54px;font-size:12.5px;margin-bottom:14px;padding:0 4px}
+.streak{font-size:11px;color:var(--dim)}
+
+/* ============ M2 THREADS ============ */
+.workers{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.wk{display:grid;grid-template-columns:64px 1fr 150px;gap:12px;align-items:center;border:1px solid var(--line);
+  padding:8px 12px;border-radius:3px;background:var(--panel2)}
+.wk .wid{color:var(--faint);font-size:11px}
+.wk .wbar{height:14px;background:#0b100c;border:1px solid var(--line);border-radius:2px;overflow:hidden;position:relative}
+.wk .wbar i{display:block;height:100%;transition:width .3s linear}
+.wk .wst{font-size:11px;letter-spacing:.08em}
+.qchips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chip{border:1px solid var(--line2);padding:3px 9px;font-size:11px;border-radius:3px;color:var(--dim)}
+.chip.io{border-color:var(--pink);color:var(--pink)}
+.wk.st-block{border-color:var(--red)} .wk.st-run{border-color:var(--green)}
+.cmp table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+.cmp th,.cmp td{border:1px solid var(--line);padding:6px 10px;text-align:left}
+.cmp th{color:var(--amber);font-size:10px;letter-spacing:.1em}
+
+/* ============ M3 GANTT ============ */
+.proctbl{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px}
+.proctbl th{font-size:10px;letter-spacing:.14em;color:var(--faint);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line2)}
+.proctbl td{padding:5px 10px;border-bottom:1px solid var(--line)}
+.proctbl input{width:64px}
+.gantt{display:flex;height:44px;border:1px solid var(--line2);border-radius:3px;overflow:hidden;background:#0b100c;margin:12px 0 4px}
+.gcell{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#101408;min-width:0;overflow:hidden}
+.gcell.idle{background:repeating-linear-gradient(45deg,#161d18 0 6px,#0e130f 6px 12px);color:var(--faint)}
+.gcur{font-size:12px;margin:6px 0 2px}
+.rdyq{display:flex;gap:6px;align-items:center;min-height:30px;flex-wrap:wrap;margin-bottom:10px}
+.stats-row{display:flex;gap:24px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin:8px 0}
+.stats-row b{color:var(--amber2)}
+
+/* ============ M4 FILÓSOFOS ============ */
+.philo-wrap{display:flex;gap:24px;flex-wrap:wrap}
+.philo-stage{position:relative;width:400px;height:400px;flex:0 0 auto;border:1px solid var(--line);border-radius:6px;background:var(--panel2)}
+.philo{position:absolute;width:66px;height:66px;border-radius:50%;border:2px solid var(--line2);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--dim);
+  transform:translate(-50%,-50%);transition:border-color .3s,color .3s,background .3s;background:#0d130f;z-index:2}
+.philo small{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:3px;font-size:9px;
+  letter-spacing:.08em;white-space:nowrap;font-weight:400}
+.philo.think{border-color:var(--line2)} .philo.hungry{border-color:var(--amber);color:var(--amber)}
+.philo.seated{border-color:var(--amber);color:var(--amber);background:rgba(242,181,68,.12)}
+.philo.eat{border-color:var(--green);color:var(--green);background:rgba(99,214,138,.12)}
+.philo.dead{border-color:var(--red);color:var(--red);animation:blink 0.8s step-end infinite}
+.gfork{position:absolute;width:8px;height:26px;border-radius:2px;background:#3d4c43;transform:translate(-50%,-50%);
+  transition:all .4s;z-index:1}
+.phud{flex:1;min-width:260px}
+.sembox{border:1px solid var(--line2);border-radius:4px;padding:12px 16px;margin-bottom:12px;display:flex;gap:24px;align-items:center}
+.sembox .sv{font-size:30px;font-weight:800;color:var(--amber)}
+.plog{font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:3px;padding:10px 12px;
+  height:150px;overflow-y:auto;line-height:1.7;background:#0b100d}
+.plog .lg-bad{color:var(--red)} .plog .lg-ok{color:var(--green)} .plog .lg-hi{color:var(--amber)}
+
+/* ============ M5 MEMÓRIA ============ */
+.membar{display:flex;height:56px;border:1px solid var(--line2);border-radius:4px;overflow:hidden;margin:12px 0;background:#0b100c}
+.mseg{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;
+  border-right:1px solid #0a0e0b;min-width:0;overflow:hidden;transition:background .3s}
+.mseg .msz{color:var(--faint);font-size:9px}
+.mseg.os{background:#1b2530;color:#8fb2cc}
+.mseg.proc{color:#101408;font-weight:700}
+.mseg.free{background:repeating-linear-gradient(45deg,#121a15 0 7px,#0d120e 7px 14px);color:var(--green);cursor:default}
+.mseg.free.clickable{cursor:pointer}
+.mseg.free.clickable:hover{outline:1px dashed var(--green);outline-offset:-3px}
+.pillrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.ptable-mini{font-size:12.5px;border:1px solid var(--line);display:inline-block;border-radius:3px;overflow:hidden;margin-bottom:12px}
+.ptable-mini div{display:flex;border-bottom:1px solid var(--line)}
+.ptable-mini div:last-child{border-bottom:none}
+.ptable-mini span{padding:4px 12px;min-width:96px}
+.ptable-mini span:first-child{color:var(--faint);border-right:1px solid var(--line);font-size:11px}
+.stepcards{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.stepcard{border:1px solid var(--line);border-radius:3px;min-width:58px;font-size:12px;background:var(--panel2);overflow:hidden}
+.stepcard .sch{padding:3px 0;text-align:center;font-weight:700;border-bottom:1px solid var(--line)}
+.stepcard .sch.f{background:rgba(229,96,79,.15);color:var(--red)} .stepcard .sch.h{background:rgba(99,214,138,.12);color:var(--green)}
+.stepcard .sfr{padding:3px 0;text-align:center;border-bottom:1px solid var(--line);color:var(--dim)}
+.stepcard .sfr:last-child{border-bottom:none}
+.stepcard .sfr.hit{color:var(--green);font-weight:700}
+.stepcard.cur{border-color:var(--amber)}
+.vicbtns{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+
+/* ============ M6 DISCO ============ */
+.diskgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;max-width:560px;margin:14px 0}
+.dcell{aspect-ratio:1;border:1px solid var(--line2);border-radius:3px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:12px;color:var(--dim);background:var(--panel2);
+  cursor:pointer;transition:all .12s;position:relative;user-select:none}
+.dcell:hover{border-color:var(--amber)}
+.dcell .dn{position:absolute;top:3px;left:5px;font-size:9px;color:var(--faint)}
+.dcell.used{border-color:var(--line);background:#0c110e}
+.dcell.found{border-color:var(--green);color:var(--green);background:rgba(99,214,138,.08);font-weight:700}
+.dcell.idx{border-color:var(--amber);color:var(--amber);background:rgba(242,181,68,.08);font-weight:700}
+.dcell.wrong{border-color:var(--red);color:var(--red);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.dirline{font-size:13px;border:1px dashed var(--line2);padding:10px 14px;border-radius:3px;margin-bottom:6px;color:var(--amber2)}
+
+/* ============ SVG RAG ============ */
+.ragbox{border:1px solid var(--line);border-radius:4px;background:#0c110d;margin-bottom:14px;padding:6px}
+.rag-legend{font-size:11px;color:var(--faint);padding:6px 10px;border-top:1px dashed var(--line)}
+
+@media (max-width:900px){
+  .prow,.phead{grid-template-columns:48px 1fr 100px 110px 26px}
+  .pdesc,.pscore,.pmedal{display:none}
+  .philo-stage{width:340px;height:340px}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== BOOT ==================== -->
+<div id="scr-boot">
+  <div class="boot-inner">
+    <pre id="bootlog"></pre>
+    <div id="bootready" class="hidden">
+      <h1>SO—QUEST</h1>
+      <p>PRESSIONE ENTER OU CLIQUE PARA INICIAR O SISTEMA <span class="cursor">█</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== HUB ==================== -->
+<div id="scr-hub" class="hidden">
+  <div class="wrap">
+    <header class="hubhead">
+      <div class="hub-topline">root@soquest:~# ./iniciar --modo=educacional --aluno=root</div>
+      <h1>SO—QUEST<span class="cursor">█</span></h1>
+      <p class="hub-sub">Simulador de Sistemas Operacionais. Você é o kernel: estude a teoria, execute os
+      simuladores e resolva os desafios de cada módulo para pontuar XP de kernel.</p>
+    </header>
+
+    <div class="sysline panel" id="sysline"></div>
+
+    <div class="panel">
+      <div class="ph"><span>┌─ TABELA DE PROCESSOS — MÓDULOS DA DISCIPLINA</span><span>clique em um processo para executá-lo</span></div>
+      <div class="phead"><span>PID</span><span>NOME / SEMANA</span><span>CONTEÚDO</span><span>ESTADO</span><span>PROGRESSO</span><span>NOTA</span><span>MEDALHA</span><span></span></div>
+      <div id="plist"></div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><span>┌─ TERMINAL INTERATIVO</span><span>digite <b style="color:var(--amber)">ajuda</b> e pressione ENTER</span></div>
+      <div id="termout"></div>
+      <div class="termrow">
+        <span class="tprompt">root@soquest:~$</span>
+        <input id="terminput" autocomplete="off" spellcheck="false" placeholder="">
+      </div>
+    </div>
+
+    <footer class="hubfoot">Cada módulo: TEORIA → SIMULADOR → DESAFIO. A melhor pontuação do desafio é salva (até 100 XP por módulo, 600 no total).</footer>
+  </div>
+</div>
+
+<!-- ==================== MÓDULO ==================== -->
+<div id="scr-mod" class="hidden">
+  <div class="wrap">
+    <div id="modhead"></div>
+    <div id="modtabs" class="tabs"></div>
+    <div id="modcontent" class="tabbox"></div>
+  </div>
+</div>
+
+<footer id="statusbar">
+  <span><b>SO-QUEST v1.0</b><span class="sb-sep"> │ </span>KERNEL EDUCACIONAL</span>
+  <span id="sb-mid"></span>
+  <span id="sb-right"></span>
+</footer>
+<div id="toasts"></div>
+
+<script>
+'use strict';
+/* ================================================================
+   SO-QUEST — núcleo do jogo
+================================================================ */
+const $  = s => document.querySelector(s);
+const el = (t,c,h)=>{const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e;};
+const minBy=(a,f)=>a.reduce((x,y)=>f(x)<=f(y)?x:y);
+
+const TIMERS=[];
+const regT =(fn,ms)=>{const id=setInterval(fn,ms); TIMERS.push(id); return id;};
+const regTo=(fn,ms)=>{const id=setTimeout(fn,ms);  TIMERS.push(id); return id;};
+const clearTimers=()=>{TIMERS.forEach(t=>{clearInterval(t);clearTimeout(t);}); TIMERS.length=0;};
+
+const S = { scores:{1:0,2:0,3:0,4:0,5:0,6:0}, done:{}, visited:{}, started:Date.now(), current:null };
+function save(){ try{localStorage.setItem('soquest_save',JSON.stringify({scores:S.scores,done:S.done,visited:S.visited}));}catch(e){} }
+function load(){ try{const d=JSON.parse(localStorage.getItem('soquest_save')); if(d){Object.assign(S.scores,d.scores||{});Object.assign(S.done,d.done||{});Object.assign(S.visited,d.visited||{});} }catch(e){} }
+load();
+
+const PCOLORS=['#f2b544','#63d68a','#7ad0d6','#df92b8','#b7a4e8','#e8c07a'];
+
+function toast(msg,type){
+  const t=el('div','toast'+(type?' '+type:''),msg);
+  $('#toasts').appendChild(t);
+  regTo(()=>{t.style.opacity='0'; t.style.transition='opacity .3s';},3400);
+  regTo(()=>t.remove(),3800);
+}
+function fmtTime(ms){const s=Math.floor(ms/1000);const h=String(Math.floor(s/3600)).padStart(2,'0');const m=String(Math.floor(s%3600/60)).padStart(2,'0');const ss=String(s%60).padStart(2,'0');return h+':'+m+':'+ss;}
+function medal(sc){ return sc>=95?['OURO','var(--amber)']:sc>=80?['PRATA','#c8d6cb']:sc>=60?['BRONZE','#d29a6b']:['—',null]; }
+function totalXP(){ return Object.values(S.scores).reduce((a,b)=>a+b,0); }
+
+function updateStatusbar(){
+  const xp=totalXP();
+  const md=Object.values(S.scores).filter(s=>s>=60).length;
+  $('#sb-mid').innerHTML='XP <b>'+String(xp).padStart(3,'0')+'</b>/600 <span class="sb-sep">│</span> CONCEITO <b>'+(xp/60).toFixed(1)+'</b> <span class="sb-sep">│</span> MEDALHAS <b>'+md+'</b>/6';
+  $('#sb-right').innerHTML='UPTIME <b id="sb-uptime">'+fmtTime(Date.now()-S.started)+'</b> <span class="sb-sep">│</span> root@soquest';
+}
+setInterval(()=>{const u=$('#sb-uptime'); if(u)u.textContent=fmtTime(Date.now()-S.started);},1000);
+
+function submitScore(mod,pts,msg){
+  if(pts>(S.scores[mod]||0)){
+    S.scores[mod]=pts; save();
+    toast((msg||'Novo recorde')+' — módulo '+mod+': <b>'+pts+' XP</b>','good');
+  } else { toast('Pontuação: '+pts+' XP (seu recorde neste módulo continua em '+S.scores[mod]+')','info'); }
+  S.done[mod]=true; save(); renderModuleHead();
+}
+
+/* ================================================================
+   BOOT
+================================================================ */
+const BOOTLINES=[
+ ['SOQUEST-BIOS v2.6.3 — POST............................ ',''],
+ ['Verificando memória ....................... <span class="bl-ok">65536 KB OK</span>',''],
+ ['Detectando CPU ............................ <span class="bl-ok">KERNEL-CORE @ 4.2 THz</span>',''],
+ ['Detectando dispositivos ................... <span class="bl-ok">hd0 kbd0 tty0 fifo-cafe</span>',''],
+ ['Inicializando fifo-cafe .................. <span class="bl-er">FALHA</span> <span class="bl-ok">(ignorando)</span>',''],
+ ['Montando sistemas de arquivos ............. <span class="bl-ok">/ /edu /desafios</span>',''],
+ ['Carregando kernel SO-QUEST ................ <span class="bl-hi">6 módulos encontrados</span>',''],
+ ['Escalonador ............................... <span class="bl-ok">ROUND ROBIN (quantum = 2)</span>',''],
+ ['Integridade dos enunciados ................ <span class="bl-ok">100%</span>',''],
+ ['Modo protegido ............................ <span class="bl-ok">ATIVO</span>',''],
+];
+let bootDone=false, bootSkip=false;
+function startBoot(){
+  clearTimers(); bootDone=false; bootSkip=false;
+  const log=$('#bootlog'); log.innerHTML=''; $('#bootready').classList.add('hidden');
+  showScreen('boot');
+  let i=0;
+  const step=()=>{
+    if(i<BOOTLINES.length && !bootSkip){
+      log.innerHTML+=BOOTLINES[i][0]+BOOTLINES[i][1]+'\n';
+      i++; regTo(step, 170+Math.random()*160);
+    } else {
+      log.innerHTML=BOOTLINES.map(l=>l[0]+l[1]).join('\n');
+      bootDone=true; $('#bootready').classList.remove('hidden');
+    }
+  };
+  regTo(step,400);
+}
+ $('#scr-boot').addEventListener('click',()=>{ if(bootDone){renderHub();showScreen('hub');} else bootSkip=true; });
+document.addEventListener('keydown',e=>{
+  if(S.screen==='boot' && e.key==='Enter'){ if(bootDone){renderHub();showScreen('hub');} else bootSkip=true; }
+});
+
+/* ================================================================
+   NAVEGAÇÃO
+================================================================ */
+function showScreen(id){
+  clearTimers();
+  S.screen=id;
+  ['boot','hub','mod'].forEach(s=>$('#scr-'+s).classList.toggle('hidden',s!==id));
+  window.scrollTo(0,0);
+  if(id!=='boot') updateStatusbar();
+}
+
+/* ================================================================
+   DEFINIÇÃO DOS MÓDULOS (teoria + sims + desafios)
+================================================================ */
+const MODULES=[
+{id:1,pid:'0001',fname:'boot.sys',week:'SEMANA 1',title:'Conceitos Iniciais & Estrutura do SO',
+ desc:'O que é um SO, kernel, modo usuário/kernel, interrupções, syscalls, estruturas de sistemas'},
+
+{id:2,pid:'0002',fname:'threads.d',week:'SEMANA 2',title:'Threads & Multithreading',
+ desc:'Processos vs threads, benefícios, modelos many-to-one, one-to-one e many-to-many'},
+
+{id:3,pid:'0003',fname:'scheduler.ko',week:'SEMANA 3',title:'Escalonamento da CPU',
+ desc:'Critérios de escalonamento, FCFS, SJF, Prioridade e Round Robin com diagrama de Gantt'},
+
+{id:4,pid:'0004',fname:'sync.lockd',week:'SEMANA 4',title:'Sincronização & Deadlocks',
+ desc:'Seção crítica, semáforos, filósofos jantando, condições de Coffman e grafos de recursos'},
+
+{id:5,pid:'0005',fname:'memmgr.ko',week:'SEMANA 5',title:'Gerência de Memória',
+ desc:'Swapping, first/best/worst fit, paginação, tradução de endereços e substituição de páginas'},
+
+{id:6,pid:'0006',fname:'vfs.ko',week:'SEMANA 6',title:'Sistemas de Arquivos & I/O',
+ desc:'Arquivos, diretórios, alocação contígua/encadeada/indexada, DMA e gerência de I/O'},
+];
+
+/* ---------------- HUB ---------------- */
+function renderHub(){
+  const sl=$('#sysline');
+  const xp=totalXP();
+  sl.innerHTML=
+    '<span>XP DE KERNEL: <b>'+xp+'/600</b></span>'+
+    '<span>CONCEITO ATUAL: <b>'+(xp/60).toFixed(1)+'</b></span>'+
+    '<span>ESCALONADOR: <b>ROUND ROBIN (q=2)</b></span>'+
+    '<span>MODO: <b>PROTEGIDO</b></span>'+
+    '<span>UPTIME: <b>'+fmtTime(Date.now()-S.started)+'</b></span>'+
+    '<span>DIGITE <b>ajuda</b> NO TERMINAL</span>';
+
+  const last=Number(localStorage.getItem('soquest_last')||0);
+  const list=$('#plist'); list.innerHTML='';
+  MODULES.forEach(m=>{
+    const sc=S.scores[m.id]||0;
+    const [mdName,mdColor]=medal(sc);
+    const state=!S.visited[m.id]?'<span class="pstate st-sleep">DORMINDO</span>'
+      :S.done[m.id]&&sc>0?'<span class="pstate st-done">CONCLUÍDO</span>'
+      :m.id===last?'<span class="pstate st-run">EXECUTANDO</span>'
+      :'<span class="pstate st-ready">PRONTO</span>';
+    const row=el('div','prow'+(sc>=60?' done':''));
+    row.innerHTML=
+      '<span class="pid">'+m.pid+'</span>'+
+      '<span class="pname">'+m.fname+'<em>'+m.week+'</em></span>'+
+      '<span class="pdesc">'+m.desc+'</span>'+
+      state+
+      '<span class="pbar"><i style="width:'+sc+'%"></i></span>'+
+      '<span class="pscore">'+(sc>0?(sc/10).toFixed(1):'—')+'</span>'+
+      '<span class="pmedal" style="color:'+(mdColor||'var(--faint)')+'">'+mdName+'</span>'+
+      '<span class="pgo">▸</span>';
+    row.addEventListener('click',()=>openModule(m.id));
+    list.appendChild(row);
+  });
+  termWelcome();
+}
+
+/* ---------------- ABRIR MÓDULO ---------------- */
+function openModule(id){
+  S.current=id; S.visited[id]=true; save();
+  localStorage.setItem('soquest_last',String(id));
+  showScreen('mod');
+  renderModuleHead(); renderTabs('teoria');
+}
+function renderModuleHead(){
+  const m=MODULES.find(x=>x.id===S.current);
+  const sc=S.scores[m.id]||0;
+  const h=$('#modhead'); h.innerHTML='';
+  const back=el('button','btn small','◄ HUB');
+  back.addEventListener('click',()=>{renderHub();showScreen('hub');});
+  const box=el('div','modhead');
+  const left=el('div','');
+  left.innerHTML='<div class="mweek">'+m.week+' — '+m.fname+' ['+m.pid+']</div><h2>'+m.title+'</h2>';
+  const right=el('div','mscore','XP DO MÓDULO<br><b>'+sc+'</b>/100 · '+medal(sc)[0]);
+  box.append(back,left,right);
+  h.appendChild(box);
+}
+function renderTabs(active){
+  const t=$('#modtabs'); t.innerHTML='';
+  [['teoria','01 · TEORIA'],['sim','02 · SIMULADOR'],['desafio','03 · DESAFIO']].forEach(([k,label])=>{
+    const b=el('button','tab'+(active===k?' active':''),label);
+    b.addEventListener('click',()=>renderTabs(k));
+    t.appendChild(b);
+  });
+  const c=$('#modcontent'); c.innerHTML='';
+  const m=MODULES.find(x=>x.id===S.current);
+  clearTimers();
+  if(active==='teoria') c.innerHTML=m.theory;
+  else if(active==='sim') SIMS[m.id](c);
+  else CHALS[m.id](c);
+}
+
+/* ================================================================
+   HELPERS DE DESAFIO
+================================================================ */
+function chalHead(root,modId,total){
+  const sc=S.scores[modId]||0;
+  root.appendChild(el('div','chalhead',
+    '<span><span class="lbl">GRAVAÇÃO AUTOMÁTICA (GA)</span><br>Sua melhor pontuação fica registrada. Recorde atual: <b class="num">'+sc+'</b>/100</span>'+
+    '<span class="pts">VALER TOTAL: '+total+' XP</span>'));
+}
+function quiz(root,questions,onDone){
+  let i=0,acertos=0;
+  const box=el('div');
+  root.appendChild(box);
+  function render(){
+    box.innerHTML='';
+    if(i>=questions.length){ onDone(acertos); return; }
+    const q=questions[i];
+    const card=el('div','qcard','<div class="lbl" style="margin-bottom:8px">QUESTÃO '+(i+1)+'/'+questions.length+'</div><div class="qq">'+q.q+'</div>');
+    q.opts.forEach((opt,idx)=>{
+      const b=el('button','opt',opt);
+      b.addEventListener('click',()=>{
+        Array.from(card.querySelectorAll('.opt')).forEach(x=>x.disabled=true);
+        if(idx===q.c){ b.classList.add('correct'); acertos++; }
+        else { b.classList.add('wrong'); Array.from(card.querySelectorAll('.opt'))[q.c].classList.add('correct'); }
+        card.appendChild(el('div','why',(idx===q.c?'<span class="ok">CORRETO.</span> ':'<span class="err">INCORRETO.</span> ')+q.why));
+        const nx=el('button','btn primary','PRÓXIMA ▸');
+        nx.style.marginTop='10px';
+        nx.addEventListener('click',()=>{i++;render();});
+        card.appendChild(nx);
+      });
+      card.appendChild(b);
+    });
+    box.appendChild(card);
+  }
+  render();
+}
+function numField(root,label,answer,pts,unit,onResult){
+  const row=el('div','fieldrow','<label>'+label+'</label>');
+  const inp=el('input'); inp.type='text'; inp.style.width='110px'; inp.placeholder=unit||'';
+  const btn=el('button','btn small primary','VERIFICAR');
+  const msg=el('span','fieldmsg','');
+  let tries=0;
+  btn.addEventListener('click',()=>{
+    const v=parseFloat(String(inp.value).replace(',','.'));
+    tries++;
+    if(!isNaN(v)&&Math.abs(v-answer)<0.001){
+      const won=tries===1?pts:Math.round(pts/2);
+      msg.innerHTML='<span class="ok">CORRETO (+'+won+' pts)</span>';
+      btn.disabled=true; inp.disabled=true; onResult(won,true);
+    } else if(tries>=2){
+      msg.innerHTML='<span class="err">RESPOSTA: <b>'+answer+'</b> (0 pts)</span>';
+      btn.disabled=true; inp.disabled=true; onResult(0,false);
+    } else {
+      msg.innerHTML='<span class="err">INCORRETO — última tentativa (metade dos pontos)</span>';
+    }
+  });
+  row.append(inp,btn,msg);
+  root.appendChild(row);
+}
+
+/* ================================================================
+   TEORIAS
+================================================================ */
+MODULES[0].theory = `
+<div class="theory">
+<p>Um <b>Sistema Operacional</b> é a camada de software que fica entre os programas do usuário e o hardware.
+Sua missão: gerenciar recursos (CPU, memória, dispositivos) e oferecer abstrações seguras e convenientes —
+processos, arquivos, soquets — no lugar de registradores e controladores brutos.</p>
+
+<h3>Kernel, modo usuário e modo kernel</h3>
+<div class="tbox"><span class="lbl">DEFINIÇÃO</span>
+O <b>kernel</b> é o núcleo do SO, o único código autorizado a executar em <b>modo kernel (privilegiado)</b>,
+com acesso total ao hardware. Aplicações rodam em <b>modo usuário</b>, sem poder executar instruções
+privilegiadas (E/S direta, manipulação de memória, halting da CPU).</div>
+<p>O hardware distingue os dois modos por um bit de modo. Tentar uma instrução privilegiada em modo usuário
+gera uma exceção tratada pelo próprio SO.</p>
+
+<h3>Interrupções e chamadas de sistema (syscalls)</h3>
+<ul>
+<li><b>Interrupção de hardware:</b> o dispositivo sinaliza um evento (disco terminou leitura) e a CPU desvia
+para um manipulador do kernel.</li>
+<li><b>Trap (exceção de software):</b> gerada pelo próprio programa. É assim que uma <b>syscall</b> funciona:
+o processo chama <code>read()</code>, a biblioteca dispara um trap, o kernel valida e executa o serviço em nome do processo, devolvendo o controle depois.</li>
+</ul>
+
+<h3>Estruturas de sistemas operacionais</h3>
+<table class="ttable">
+<tr><th>ESTRUTURA</th><th>IDEIA</th><th>PONTO FORTE / FRACO</th></tr>
+<tr><td>Monolítica</td><td>Tudo (E/S, arquivos, rede) dentro do kernel</td><td>Rápida, porém uma falha derruba tudo</td></tr>
+<tr><td>Em camadas</td><td>Níveis hierárquicos, cada um usa só o de baixo</td><td>Organizada, mas define camadas é difícil</td></tr>
+<tr><td>Microkernel</td><td>Kernel mínimo; serviços rodam como processos de usuário</td><td>Robusta e isolada; custo de comunicação (mensagens)</td></tr>
+<tr><td>Módulos (Loadable)</td><td>Kernel com módulos carregáveis em tempo de execução</td><td>Equilíbrio atual (drivers do Linux/Windows)</td></tr>
+</table>
+
+<h3>Processos: a unidade fundamental</h3>
+<p>Um <b>processo</b> é um programa em execução, com seu espaço de endereçamento, registradores, pilha e um
+<code>PCB</code> (Process Control Block) que guarda estado, contador de programa, escalonamento e arquivos abertos.
+Estados clássicos: <b>novo → pronto → executando → bloqueado → terminado</b>. A troca de contexto salva/restaura PCBs.</p>
+
+<div class="tnote">Regra de ouro: se a operação toca hardware ou recurso compartilhado global (disco, rede,
+memória de outro processo, relógio de E/S), passa pelo kernel via syscall. Cálculo puro dentro do próprio
+endereçamento é modo usuário.</div>
+<div class="tnext">▸ Siga para o SIMULADOR: classifique operações entre modo usuário e chamada ao kernel.</div>
+</div>`;
+
+MODULES[1].theory = `
+<div class="theory">
+<p>Uma <b>thread</b> é a unidade básica de utilização da CPU <i>dentro</i> de um processo. Um processo
+multithread tem vários fluxos de execução que <b>compartilham</b> código, dados, arquivos abertos e sinais —
+mas cada thread possui <b>identidade própria</b>: registradores, contador de programa, pilha e estado
+(TCB — Thread Control Block).</p>
+
+<h3>Por que usar threads?</h3>
+<ul>
+<li><b>Responsividade:</b> a interface continua viva enquanto outra thread bloqueia em I/O.</li>
+<li><b>Compartilhamento de recursos:</b> memória já está alocada; criar thread é mais barato que criar processo.</li>
+<li><b>Economia:</b> trocar de contexto entre threads do mesmo processo custa muito menos que entre processos.</li>
+<li><b>Escalabilidade:</b> em máquinas multicore, threads rodam em paralelo de verdade.</li>
+</ul>
+
+<h3>Os três modelos de multithreading</h3>
+<table class="ttable">
+<tr><th>MODELO</th><th>MAPEAMENTO</th><th>VANTAGEM</th><th>PROBLEMA</th></tr>
+<tr><td>Many-to-One</td><td>N threads de usuário → 1 thread de kernel</td><td>Gerência 100% no espaço do usuário, sem chamadas ao kernel</td><td>Uma syscall bloqueante <b>bloqueia o processo inteiro</b>; sem paralelismo real</td></tr>
+<tr><td>One-to-One</td><td>Cada thread de usuário → 1 thread de kernel</td><td>Paralelismo real; bloqueio afeta só uma thread</td><td>Custo: criar thread kernel a cada thread; limites do sistema</td></tr>
+<tr><td>Many-to-Many</td><td>N threads de usuário → M threads de kernel (M ≤ N)</td><td>Flexível: bloqueio não trava tudo; desenvolvedor cria quantas quiser</td><td>Implementação mais complexa</td></tr>
+</table>
+
+<h3>Bibliotecas</h3>
+<p><b>Pthreads</b> (POSIX), <b>Windows API</b> e mapeamentos Java. Podem ser suportadas no nível de usuário
+ou de kernel — exatamente a fronteira que os modelos acima descrevem.</p>
+
+<div class="tnote">Intuição para o simulador: pense em cada thread de kernel como um "balcão de atendimento".
+Many-to-one = 1 balcão para a fila toda (se o atendente sai para buscar um documento, todos esperam).
+One-to-one = um balcão por cliente (rápido, mas caro). Many-to-many = M balcões para N clientes.</div>
+<div class="tnext">▸ Siga para o SIMULADOR: rode os três modelos na Fábrica de Threads e compare os tempos.</div>
+</div>`;
+
+MODULES[2].theory = `
+<div class="theory">
+<p>Em um sistema multiprogramado, a CPU alterna entre processos e o <b>escalonador</b> decide quem executa.
+O <b>dispatcher</b> é quem efetua a troca de contexto. Sob <b>escalonamento não preemptivo</b>, o processo
+segura a CPU até terminar ou bloquear; no <b>preemptivo</b>, o SO pode retirá-lo a qualquer momento —
+base de sistemas de tempo compartilhado.</p>
+
+<h3>Ciclos CPU–I/O</h3>
+<p>Processos alternam rajadas de CPU (<i>CPU burst</i>) e operações de I/O (<i>I/O burst</i>).
+A distribuição das rajadas é exponencial: rajadas curtas são muito mais comuns — o ingrediente que torna
+o SJF eficiente.</p>
+
+<h3>Critérios de escalonamento</h3>
+<ul>
+<li><b>Utilização da CPU:</b> manter a CPU sempre ocupada (40–90%).</li>
+<li><b>Throughput:</b> processos concluídos por unidade de tempo.</li>
+<li><b>Turnaround (TAT):</b> tempo total desde a chegada até a conclusão (TAT = CT − AT).</li>
+<li><b>Tempo de espera:</b> tempo na fila de prontos (WT = TAT − burst).</li>
+<li><b>Tempo de resposta:</b> do pedido até a <i>primeira</i> resposta — crítico em sistemas interativos.</li>
+</ul>
+
+<h3>Algoritmos</h3>
+<table class="ttable">
+<tr><th>ALGORITMO</th><th>REGRA</th><th>PONTOS FORTES / FRACOS</th></tr>
+<tr><td>FCFS</td><td>Fila: primeiro que chega, primeiro servido</td><td>Justo e simples; sofre <b>efeito comboio</b> (um processo longo trava todos)</td></tr>
+<tr><td>SJF</td><td>Executa a menor rajada primeiro</td><td>Espera média ótima; exige prever a rajada; pode causar <b>inanição</b></td></tr>
+<tr><td>Prioridade</td><td>Menor número = maior prioridade</td><td>Flexível; inanição resolvida por <b>aging</b> (envelhecimento)</td></tr>
+<tr><td>Round Robin</td><td>FCFS + preempção por <b>quantum</b> (fatia de tempo)</td><td>Ótimo tempo de resposta; quantum pequeno demais → excesso de trocas de contexto</td></tr>
+<tr><td>Filas multinível (+feedback)</td><td>Filas por classe; processos migram entre filas</td><td>Usado em SOs reais (Windows, Linux)</td></tr>
+</table>
+
+<div class="tnote">O quantum do Round Robin é uma alavanca: muito grande → vira FCFS; muito pequeno →
+a CPU passa mais tempo trocando contexto do que trabalhando (regra prática: 80% das rajadas menores que o quantum).</div>
+<div class="tnext">▸ Siga para o SIMULADOR: monte a sua própria carga de processos e anime o diagrama de Gantt.</div>
+</div>`;
+
+MODULES[3].theory = `
+<div class="theory">
+<p>Quando várias threads acessam dados compartilhados simultaneamente, o resultado depende da ordem de
+execução: é a <b>condição de corrida</b>. O trecho de código que manipula dados compartilhados é a
+<b>seção crítica</b>, e um protocolo correto precisa garantir:</p>
+<ul>
+<li><b>Exclusão mútua:</b> no máximo uma thread na seção crítica;</li>
+<li><b>Progresso:</b> se ninguém está na seção crítica, alguém precisa poder entrar;</li>
+<li><b>Espera limitada:</b> existe teto para quantas vezes outros passam na frente de quem espera.</li>
+</ul>
+
+<h3>Semáforos</h3>
+<div class="tbox"><span class="lbl">DEFINIÇÃO</span>
+Um <b>semáforo</b> é um inteiro S acessado apenas por duas operações atômicas:
+<code>wait(S)</code> — se S&gt;0, decrementa; senão, bloqueia — e <code>signal(S)</code> — incrementa e acorda
+um bloqueado, se houver. S=1 é o famoso <b>mutex</b>. Semáforos de contagem coordenam N recursos.</div>
+
+<h3>Problemas clássicos de sincronização</h3>
+<ul>
+<li><b>Produtor–Consumidor (buffer limitado):</b> produtor espera se o buffer está cheio; consumidor, se está vazio. Semáforos <code>vazio</code>/<code>cheio</code> + mutex no buffer.</li>
+<li><b>Leitores–Escritores:</b> vários leitores podem entrar juntos; escritor exige exclusividade.</li>
+<li><b>Filósofos jantando:</b> 5 filósofos, 5 garfos compartilhados; comer exige os 2 garfos vizinhos. Encarna a distribuição de recursos.</li>
+</ul>
+
+<h3>Deadlocks</h3>
+<p>Um <b>deadlock</b> é um conjunto de processos bloqueados, cada um esperando um recurso que só outro do
+conjunto pode liberar. As <b>4 condições de Coffman</b> devem valer <i>simultaneamente</i>:</p>
+<ul>
+<li><b>Exclusão mútua</b> — recurso usado por um processo por vez;</li>
+<li><b>Posse e espera</b> — segura um recurso e espera outro;</li>
+<li><b>Não-preempção</b> — recursos não são tomados à força;</li>
+<li><b>Espera circular</b> — cadeia circular de esperas (visível no Grafo de Alocação de Recursos).</li>
+</ul>
+<table class="ttable">
+<tr><th>MÉTODO</th><th>ESTRATÉGIA</th></tr>
+<tr><td>Prevenção</td><td>Estruturar o sistema para que ao menos uma condição de Coffman nunca se sustente (ex.: ordenar recursos quebra a espera circular)</td></tr>
+<tr><td>Evitação</td><td>Antes de conceder, verificar se o estado permanece <b>seguro</b> — algoritmo do Banqueiro</td></tr>
+<tr><td>Detecção + recuperação</td><td>Procurar ciclos no grafo; recuperar abortando ou preterindo processos</td></tr>
+<tr><td>Ignorar (avestruz)</td><td>Se deadlocks são raros, reiniciar é mais barato — postura de UNIX/Windows</td></tr>
+</table>
+<div class="tnext">▸ Siga para o SIMULADOR: provoque um deadlock real entre os filósofos e depois resolva com um semáforo.</div>
+</div>`;
+
+MODULES[4].theory = `
+<div class="theory">
+<p>O hardware oferece uma hierarquia de memória (registradores → cache → RAM → disco). Ao SO cabe administrar
+a RAM entre processos, e cada técnica tem um trade-off entre simplicidade, proteção e desperdício.</p>
+
+<h3>Swapping e alocação contígua</h3>
+<p><b>Swapping</b> é levar um processo inteiro da RAM para o disco (área de <i>backing store</i>) e trazê-lo de volta.
+Na <b>alocação contígua</b>, cada processo ocupa um bloco único da memória, surgindo <b>buracos (holes)</b>:</p>
+<ul>
+<li><b>First fit:</b> primeiro buraco que serve — rápido;</li>
+<li><b>Best fit:</b> menor buraco que serve — deixa sobras miúdas;</li>
+<li><b>Worst fit:</b> maior buraco — sobra pedaço grande reutilizável.</li>
+</ul>
+<div class="tnote"><b>Fragmentação externa</b>: memória livre total é suficiente, mas pulverizada em buracos que
+nenhum processo consegue usar. <b>Fragmentação interna</b>: o bloco alocado é maior que o pedido (típico da paginação).</div>
+
+<h3>Paginação</h3>
+<div class="tbox"><span class="lbl">IDEIA CENTRAL</span>
+A memória lógica é dividida em <b>páginas</b> de tamanho fixo (potência de 2) e a física em <b>quadros</b> do mesmo tamanho.
+Qualquer página pode ocupar qualquer quadro — acabou a fragmentação externa.
+Endereço lógico = <code>p | d</code>: <b>número da página</b> + <b>deslocamento</b>.
+A <b>tabela de páginas</b> traduz p → quadro. Endereço físico = quadro × tamanho_da_página + d.</div>
+<p>A <b>TLB</b> é um cache de traduções que evita dois acessos à memória por referência. Estruturas avançadas:
+tabelas hierárquicas, hash e invertidas. A <b>segmentação</b> divide o programa em blocos de tamanho variável
+com significado lógico (código, pilha, heap).</p>
+
+<h3>Memória virtual e paginação por demanda</h3>
+<p>Com <b>memória virtual</b>, o programa pode ser maior que a RAM: páginas são carregadas <b>sob demanda</b>.
+Acessar página ausente gera um <b>page fault</b>; o SO busca a página no disco. Se não há quadro livre, um
+algoritmo escolhe uma <b>vítima</b> para substituir:</p>
+<ul>
+<li><b>FIFO:</b> expulsa a página mais antiga (carregada há mais tempo);</li>
+<li><b>LRU:</b> expulsa a menos recentemente <i>usada</i>;</li>
+<li><b>Ótimo (OPT):</b> expulsa a de uso mais distante no futuro — irrealizável, serve de piso comparativo.</li>
+</ul>
+<p>O FIFO pode sofrer a <b>anomalia de Belady</b> (mais quadros ⇒ mais faults); LRU e Ótimo não sofrem, por serem
+algoritmos de pilha. Excesso de faults = <b>thrashing</b>: o sistema passa mais tempo paginando do que executando.</p>
+<div class="tnext">▸ Siga para o SIMULADOR: aloque memória na unha e ministre page faults como o gerente da RAM.</div>
+</div>`;
+
+MODULES[5].theory = `
+<div class="theory">
+<p>Para o SO, um <b>arquivo</b> é uma unidade lógica de armazenamento com atributos (nome, tipo, tamanho,
+proteção, datas). Operações clássicas: criar, abrir, ler, escrever, reposicionar, apagar. O <b>diretório</b>
+organiza arquivos — de um único nível, passando por dois níveis, até a <b>árvore</b> dos sistemas modernos,
+com caminhos absolutos e relativos. Um sistema de arquivos precisa ser <b>montado</b> antes de usar, ancorando
+sua estrutura em um ponto da árvore.</p>
+
+<h3>Métodos de acesso</h3>
+<ul>
+<li><b>Sequencial:</b> ler na ordem, byte após byte (logs, streams);</li>
+<li><b>Direto (relativo):</b> pular para o bloco N — exige saber onde está cada bloco;</li>
+<li><b>Indexado:</b> um índice aponta os blocos — bom para acesso aleatório em arquivos grandes.</li>
+</ul>
+
+<h3>Como o arquivo vira blocos no disco?</h3>
+<table class="ttable">
+<tr><th>MÉTODO</th><th>COMO FUNCIONA</th><th>PONTO FRACO</th></tr>
+<tr><td>Contígua</td><td>Blocos consecutivos: diretório guarda (bloco inicial, tamanho)</td><td><b>Fragmentação externa</b> no disco; dificuldade de crescer</td></tr>
+<tr><td>Encadeada</td><td>Cada bloco guarda um <b>ponteiro</b> para o próximo (variante: FAT na tabela)</td><td>Só leitura sequencial eficiente — cadeia do início ao fim</td></tr>
+<tr><td>Indexada</td><td>Um <b>bloco de índice</b> lista todos os blocos de dados (base do i-node UNIX)</td><td>Custo do acesso extra ao índice; arquivos pequenos desperdiçam o bloco índice</td></tr>
+</table>
+
+<h3>Sistemas de I/O e o hardware</h3>
+<p>Abaixo do SO vivem <b>controladores de dispositivo</b> (chips com registradores) e portas de comunicação
+(I/O mapeado em memória ou em portas). Três técnicas de transferência:</p>
+<ul>
+<li><b>Polling:</b> a CPU pergunta em loop se o dispositivo terminou — desperdiça ciclos;</li>
+<li><b>Interrupções:</b> o dispositivo avisa a CPU quando pronto (IRQ + manipulador);</li>
+<li><b>DMA (Direct Memory Access):</b> o controlador transfere blocos inteiros <b>direto para a RAM</b>, e só
+interrompe a CPU ao final do bloco inteiro.</li>
+</ul>
+<p>No topo, o kernel suaviza as diferenças com <b>buffering</b> (áreas temporárias), <b>caching</b> (cópias de
+blocos em RAM) e <b>spooling</b> (fila para dispositivos não compartilháveis, como impressoras).</p>
+<div class="tnext">▸ Siga para o SIMULADOR: vire o sistema de arquivos e localize arquivos bloco a bloco nos três métodos.</div>
+</div>`;
+
+/* ================================================================
+   SIMULADORES
+================================================================ */
+const SIMS={};
+
+/* ---------- M1: classificador modo usuário x kernel ---------- */
+SIMS[1]=function(root){
+  const OPS=[
+    ['Somar dois números na RAM','O cálculo acontece inteiramente dentro do espaço de endereçamento do processo — nenhuma instrução privilegiada.','user'],
+    ['Escrever dados no HD','E/S usa controladores de hardware: precisa de instrução privilegiada → syscall write().','kernel'],
+    ['Alocar uma nova página de memória','Gerência da RAM física é responsabilidade exclusiva do kernel.','kernel'],
+    ['Calcular juros de um financiamento','Aritmética pura, dentro do próprio processo.','user'],
+    ['Enviar um pacote pela rede','Placa de rede é dispositivo de E/S → acesso via kernel (syscall socket/send).','kernel'],
+    ['Renderizar um sprite no jogo','Cálculo e escrita dentro da memória virtual do próprio processo.','user'],
+    ['Criar um novo processo (fork)','Criar PCB e duplicar contextos é operação de kernel clássica.','kernel'],
+    ['Abrir um arquivo no disco','Toda manipulação de arquivos passa pelo sistema de arquivos do kernel (open()).','kernel'],
+    ['Desligar o computador','Instrução privilegiada máxima — só o kernel executa halt/poweroff.','kernel'],
+    ['Multiplicar duas matrizes','Processamento puro em memória do usuário. CPU não precisa de permissão para aritmética.','user'],
+  ];
+  root.innerHTML='<div class="lbl" style="margin-bottom:6px">MONITOR DE MODO — CLASSIFIQUE CADA OPERAÇÃO</div>'+
+  '<p style="font-size:12.5px;color:var(--dim);margin-bottom:14px">Se a operação precisa de hardware ou de um recurso gerenciado pelo SO, ela exige <b class="warn">chamada ao kernel</b>. Se roda inteira dentro do espaço do próprio processo, é <b class="info">modo usuário</b>.</p>'+
+  '<div class="modeq" id="m1q"></div><div class="modefb" id="m1fb"></div>'+
+  '<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn good" id="m1u">MODO USUÁRIO</button><button class="btn warn" id="m1k" style="border-color:var(--amber);color:var(--amber)">CHAMADA AO KERNEL</button></div>'+
+  '<div class="stats-row" style="margin-top:16px" id="m1st"></div>';
+  let i=0,ok=0,streak=0,bestStreak=0;
+  const q=$('#m1q'),fb=$('#m1fb');
+  function show(){
+    if(i>=OPS.length){
+      q.innerHTML='<div class="op">FIM DO TURNO</div><div class="opctx">Acertos: '+ok+'/10 · melhor sequência: '+bestStreak+'</div>';
+      fb.innerHTML= ok>=8?'<span class="ok">Você entendeu a fronteira usuário/kernel. Passe para o DESAFIO.</span>':
+        '<span class="warn">Revise a regra: hardware e recursos globais = kernel.</span>';
+      $('#m1u').disabled=true;$('#m1k').disabled=true; return;
+    }
+    q.innerHTML='<div class="lbl">OPERAÇÃO '+(i+1)+'/10</div><div class="op">'+OPS[i][0]+'</div>';
+    fb.innerHTML='<span class="streak">sequência: '+streak+'</span>';
+  }
+  function answer(choice){
+    if(i>=OPS.length) return;
+    const correct=OPS[i][2]===choice;
+    if(correct){ok++;streak++;bestStreak=Math.max(bestStreak,streak);} else streak=0;
+    fb.innerHTML=(correct?'<span class="ok">CORRETO ▸ </span>':'<span class="err">ERRADO — era '+
+      (OPS[i][2]==='kernel'?'CHAMADA AO KERNEL':'MODO USUÁRIO')+' ▸ </span>')+'<span style="color:var(--dim)">'+OPS[i][1]+'</span>';
+    i++; $('#m1st').innerHTML='ACERTOS <b>'+ok+'</b> / 10 · STREAK <b>'+streak+'</b>';
+    regTo(show,correct?900:2200);
+    if(!correct) q.style.animation='shake .3s'; else setTimeout(()=>q.style.animation='',50);
+  }
+  $('#m1u').addEventListener('click',()=>answer('user'));
+  $('#m1k').addEventListener('click',()=>answer('kernel'));
+  show();
+};
+
+/* ---------- M2: fábrica de threads ---------- */
+SIMS[2]=function(root){
+  root.innerHTML=
+  '<div class="lbl" style="margin-bottom:6px">FÁBRICA DE THREADS — 12 TAREFAS, 4 DELAS DE I/O</div>'+
+  '<p style="font-size:12.5px;color:var(--dim);margin-bottom:12px">Cada tarefa CPU leva 2 ticks. Cada tarefa I/O leva 1 tick de CPU + <b>3 ticks bloqueada</b> esperando o disco. Escolha o modelo e observe quem trava quando o I/O chega.</p>'+
+  '<div class="fieldrow"><label>MODELO DE MAPEAMENTO</label>'+
+    '<label style="min-width:0"><input type="radio" name="m2mod" value="m1" checked> Many-to-One</label>'+
+    '<label style="min-width:0"><input type="radio" name="m2mod" value="o2o"> One-to-One</label>'+
+    '<label style="min-width:0"><input type="radio" name="m2mod" value="m2m"> Many-to-Many</label>'+
+    '<span id="m2slwrap" style="display:none">Threads kernel: <input type="number" id="m2k" value="3" min="1" max="8" style="width:56px"></span>'+
+  '</div>'+
+  '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px"><button class="btn primary" id="m2run">EXECUTAR CARGA ▸</button><button class="btn" id="m2reset">RESET</button></div>'+
+  '<div class="rdyq" id="m2queue"></div><div class="workers" id="m2workers"></div>'+
+  '<div class="stats-row" id="m2st"></div><div class="plog" id="m2log" style="height:120px"></div>'+
+  '<div class="cmp" id="m2cmp"></div>';
+  const radio=()=>document.querySelector('input[name=m2mod]:checked').value;
+  $('#m2slwrap').style.display='inline';
+  let sim=null, results={};
+  function makeTasks(){
+    const t=[]; const ios=new Set();
+    while(ios.size<4) ios.add(Math.floor(Math.random()*12));
+    for(let i=0;i<12;i++) t.push({id:'T'+(i+1),io:ios.has(i),phase:'cpu',left:ios.has(i)?1:2,ioLeft:3});
+    return t;
+  }
+  function render(sim){
+    const w=$('#m2workers'); w.innerHTML='';
+    sim.workers.forEach((wk,i)=>{
+      const d=el('div','wk'+(wk.bloq?' st-block':wk.task?' st-run':''));
+      const cur=wk.task;
+      let bar=0,color='var(--green)';
+      if(cur){ const total=cur.io&&cur.phase==='io'?3:(cur.io?1:2+sim.overhead); bar=100*(1-(cur.phase==='io'?cur.ioLeft:cur.left)/total); color=cur.phase==='io'?'var(--pink)':PCOLORS[sim.colorIdx(cur)]; }
+      d.innerHTML='<span class="wid">K'+i+'</span><div class="wbar"><i style="width:'+(wk.task?bar:0)+'%;background:'+color+'"></i></div>'+
+        '<span class="wst">'+(wk.bloq?'<span class="err">BLOQ. I/O</span>':cur?'EXEC '+cur.id:'<span style="color:var(--faint)">LIVRE</span>')+'</span>';
+      w.appendChild(d);
+    });
+    $('#m2queue').innerHTML='<span class="lbl">FILA</span>'+sim.queue.map(t=>'<span class="chip'+(t.io?' io':'')+'">'+t.id+(t.io?'·IO':'')+'</span>').join('')+
+      '<span class="lbl" style="margin-left:auto">CONCLUÍDAS: <b class="num">'+sim.done.length+'</b>/12 · TICK: <b class="num">'+sim.tick+'</b></span>';
+    $('#m2st').innerHTML='<span>TEMPO DECORRIDO: <b>'+sim.tick+'</b> ticks</span><span>THREADS KERNEL: <b>'+sim.workers.length+'</b></span>'+
+      (sim.allBlocked?'<span class="err">SISTEMA INTEIRO BLOQUEADO EM I/O — NADA AVANÇA</span>':'');
+  }
+  function log(msg,cls){
+    const l=$('#m2log'); l.appendChild(el('div',cls||'',msg)); l.scrollTop=l.scrollHeight;
+  }
+  function build(){
+    const model=radio();
+    const s={model,tick:0,queue:makeTasks(),done:[],workers:[],overhead:model==='o2o'?1:0,allBlocked:false,
+      colorIdx:t=>parseInt(t.id.slice(1))%PCOLORS.length};
+    let n= model==='m1'?1 : model==='o2o'?12 : Math.max(1,Math.min(8,parseInt($('#m2k').value)||3));
+    for(let i=0;i<n;i++) s.workers.push({task:null,bloq:false});
+    return s;
+  }
+  function tick(){
+    const s=sim; if(!s) return;
+    s.allBlocked=false;
+    s.workers.forEach(wk=>{
+      if(wk.bloq){ wk.task.ioLeft--; if(wk.task.ioLeft<=0){ log(wk.task.id+' voltou do disco e concluiu','lg-ok'); s.done.push(wk.task); wk.task=null; wk.bloq=false; } return; }
+      if(!wk.task && s.queue.length){ wk.task=s.queue.shift(); wk.task.left += s.overhead; log('K'+s.workers.indexOf(wk)+' assumiu '+wk.task.id+(wk.task.io?' (tarefa de I/O)':'')); }
+      if(wk.task){ wk.task.left--; if(wk.task.left<=0){ if(wk.task.io){ wk.task.phase='io'; wk.bloq=true; log(wk.task.id+' pediu I/O ao disco → thread de kernel BLOQUEADA','lg-bad'); } else { log(wk.task.id+' concluída','lg-ok'); s.done.push(wk.task); wk.task=null; } } }
+    });
+    if(s.model==='m1'&&s.workers[0].bloq) s.allBlocked=true;
+    s.tick++;
+    render(s);
+    if(s.done.length===12){
+      regTo(()=>{clearInterval(s.timer); finish(s);},400); s.timer=null;
+    }
+  }
+  function finish(s){
+    log('CARGA CONCLUÍDA em '+s.tick+' ticks com '+s.workers.length+' thread(s) de kernel.','lg-hi');
+    results[s.model]=Math.min(results[s.model]||1e9,s.tick);
+    const names={m1:'Many-to-One',o2o:'One-to-One',m2m:'Many-to-Many'};
+    let html='<table><tr><th>MODELO</th><th>MELHOR TEMPO (ticks)</th></tr>';
+    ['m1','o2o','m2m'].forEach(k=>{ if(results[k]!=null) html+='<tr><td>'+names[k]+'</td><td class="'+(results[k]===Math.min(...Object.values(results))?'ok':'')+'">'+results[k]+'</td></tr>'; });
+    html+='</table><p style="font-size:12px;color:var(--dim);margin-top:10px">'+
+      (s.model==='m1'?'Muitos ticks perdidos: cada I/O congelou o processo inteiro (1 único balcão).':
+       s.model==='o2o'?'Rápido, mas custou 12 threads de kernel criadas e gerenciadas pelo SO.':
+       'Bom equilíbrio: I/O trava só uma das M threads de kernel, e o custo de criação é controlado.')+'</p>';
+    $('#m2cmp').innerHTML=html;
+  }
+  $('#m2run').addEventListener('click',()=>{
+    if(sim&&sim.timer) clearInterval(sim.timer);
+    $('#m2log').innerHTML=''; $('#m2cmp').innerHTML='';
+    sim=build(); log('Modelo: '+radio().toUpperCase()+' — '+sim.workers.length+' thread(s) de kernel. Carga: 12 tarefas (4 de I/O).','lg-hi');
+    render(sim); sim.timer=regT(tick,500);
+  });
+  $('#m2reset').addEventListener('click',()=>{ if(sim&&sim.timer)clearInterval(sim.timer); $('#m2log').innerHTML=''; $('#m2workers').innerHTML=''; $('#m2queue').innerHTML=''; $('#m2st').innerHTML=''; $('#m2cmp').innerHTML=''; sim=null; });
+};
+
+/* ---------- M3: escalonador com Gantt ---------- */
+const M3_PROCS_DEFAULT=[
+  {name:'P1',at:0,bt:5,pr:2},{name:'P2',at:1,bt:4,pr:1},{name:'P3',at:2,bt:7,pr:4},{name:'P4',at:3,bt:3,pr:3},
+];
+function schedule(procs,algo,quantum){
+  const ps=procs.map((p,i)=>({...p,idx:i,rem:p.bt,ct:0,first:-1}));
+  const pending=[...ps].sort((a,b)=>a.at-b.at||a.idx-b.idx);
+  let t=0,ready=[],run=null,q=0,completed=0,guard=0;
+  const segs=[],snaps=[],cells=[];
+  while(completed<ps.length&&guard++<5000){
+    while(pending.length&&pending[0].at<=t) ready.push(pending.shift());
+    if(!run&&ready.length){
+      let pick;
+      if(algo==='RR') pick=ready.shift();
+      else{
+        const crit= algo==='FCFS'?p=>p.at : algo==='SJF'?p=>p.bt : p=>p.pr;
+        pick=minBy(ready,p=>crit(p)*1000+p.idx);
+        ready.splice(ready.indexOf(pick),1);
+      }
+      run=pick; q=0; if(run.first<0) run.first=t;
+    }
+    snaps.push({t,run:run?run.name:'--',ready:ready.map(p=>p.name)});
+    cells.push(run?run.name:'--');
+    if(run){
+      run.rem--; q++;
+      const last=segs[segs.length-1];
+      if(last&&last.p===run.name&&last.end===t) last.end=t+1; else segs.push({p:run.name,start:t,end:t+1});
+      t++;
+      if(run.rem===0){ run.ct=t; run=null; completed++; }
+      else if(algo==='RR'&&q>=quantum){
+        while(pending.length&&pending[0].at<=t) ready.push(pending.shift());
+        ready.push(run); run=null;
+      }
+    } else {
+      const last=segs[segs.length-1];
+      if(last&&last.p==='--'&&last.end===t) last.end=t+1; else segs.push({p:'--',start:t,end:t+1});
+      t++;
+    }
+  }
+  ps.forEach(p=>{p.tat=p.ct-p.at; p.wt=p.tat-p.bt;});
+  return {ps,segs,snaps,cells,makespan:t};
+}
+SIMS[3]=function(root){
+  root.innerHTML=
+  '<div class="lbl" style="margin-bottom:6px">LABORATÓRIO DE ESCALONAMENTO — ANIME O DIAGRAMA DE GANTT</div>'+
+  '<table class="proctbl"><tr><th>PROC</th><th>CHEGADA (AT)</th><th>RAJADA (BT)</th><th>PRIORIDADE (1=alta)</th></tr>'+
+  '<tbody id="m3rows"></tbody></table>'+
+  '<div class="fieldrow" style="margin-bottom:10px">'+
+   '<label style="min-width:0">ALGORITMO <select id="m3algo"><option>FCFS</option><option>SJF</option><option>PRI</option><option>RR</option></select></label>'+
+   '<span id="m3qw" style="display:none">QUANTUM <input type="number" id="m3q" value="2" min="1" style="width:52px"></span>'+
+   '<span>VELOCIDADE <select id="m3spd"><option value="520">1×</option><option value="260">2×</option><option value="110">4×</option></select></span>'+
+   '<button class="btn primary" id="m3run">EXECUTAR ▸</button><button class="btn" id="m3inst">INSTANTÂNEO</button>'+
+  '</div>'+
+  '<div class="gantt" id="m3gantt"></div><div class="gcur" id="m3cur"></div>'+
+  '<div class="rdyq" id="m3rdy"></div><div class="stats-row" id="m3st"></div><div id="m3res"></div>';
+  const rows=$('#m3rows');
+  let procs=M3_PROCS_DEFAULT.map(p=>({...p}));
+  function drawRows(){
+    rows.innerHTML='';
+    procs.forEach((p,i)=>{
+      const tr=el('tr');
+      tr.innerHTML='<td style="color:'+PCOLORS[i%6]+';font-weight:700">'+p.name+'</td>'+
+        '<td><input type="number" min="0" value="'+p.at+'" data-f="at" data-i="'+i+'"></td>'+
+        '<td><input type="number" min="1" value="'+p.bt+'" data-f="bt" data-i="'+i+'"></td>'+
+        '<td><input type="number" min="1" value="'+p.pr+'" data-f="pr" data-i="'+i+'"></td>';
+      rows.appendChild(tr);
+    });
+    rows.querySelectorAll('input').forEach(inp=>inp.addEventListener('change',()=>{procs[+inp.dataset.i][inp.dataset.f]=Math.max(0,+inp.value||0);}));
+  }
+  drawRows();
+  $('#m3algo').addEventListener('change',()=>$('#m3qw').style.display=$('#m3algo').value==='RR'?'inline':'none');
+  let lastRun=null, timer=null, cursor=0;
+  function renderAt(k){
+    const r=lastRun;
+    const upto=k+1;
+    const gc=$('#m3gantt'); gc.innerHTML='';
+    // agrupa células consecutivas do mesmo proc
+    let i=0;
+    while(i<upto){
+      let j=i; while(j<upto&&r.cells[j]===r.cells[i]) j++;
+      const name=r.cells[i];
+      const c=el('div','gcell'+(name==='--'?' idle':''),name==='--'?'IDLE':name);
+      c.style.width=((j-i)/r.makespan*100)+'%';
+      if(name!=='--') c.style.background=PCOLORS[r.ps.find(p=>p.name===name).idx%6];
+      gc.appendChild(c); i=j;
+    }
+    const sn=r.snaps[k];
+    $('#m3cur').innerHTML='INSTANTE t = <b class="num">'+sn.t+'</b> — executando: <b class="num">'+(sn.run==='--'?'(ocioso)':sn.run)+'</b>';
+    $('#m3rdy').innerHTML='<span class="lbl">FILA DE PRONTOS:</span>'+(sn.ready.length?sn.ready.map(n=>'<span class="chip" style="color:'+PCOLORS[r.ps.find(p=>p.name===n).idx%6]+';border-color:'+PCOLORS[r.ps.find(p=>p.name===n).idx%6]+'">'+n+'</span>').join(''):'<span class="chip">vazia</span>');
+    if(k===r.makespan-1) showResult();
+  }
+  function showResult(){
+    clearInterval(timer); timer=null;
+    const r=lastRun;
+    let tb='<table class="proctbl"><tr><th>PROC</th><th>AT</th><th>BT</th><th>CT</th><th>TURNAROUND</th><th>ESPERA</th></tr>';
+    r.ps.forEach((p,i)=>tb+='<tr><td style="color:'+PCOLORS[i%6]+';font-weight:700">'+p.name+'</td><td>'+p.at+'</td><td>'+p.bt+'</td><td>'+p.ct+'</td><td>'+p.tat+'</td><td>'+p.wt+'</td></tr>');
+    const mtat=r.ps.reduce((a,p)=>a+p.tat,0)/r.ps.length, mwt=r.ps.reduce((a,p)=>a+p.wt,0)/r.ps.length;
+    tb+='</table><div class="stats-row"><span>ESPERA MÉDIA: <b>'+mwt.toFixed(2)+'</b></span><span>TURNAROUND MÉDIO: <b>'+mtat.toFixed(2)+'</b></span><span>MAKESPAN: <b>'+r.makespan+'</b></span><span>TROCAS DE CONTEXTO (aprox.): <b>'+Math.max(0,r.segs.filter(s=>s.p!=='--').length-1)+'</b></span></div>';
+    $('#m3res').innerHTML=tb;
+  }
+  function run(instant){
+    const algo=$('#m3algo').value, quantum=Math.max(1,+$('#m3q').value||2);
+    if(procs.some(p=>!(p.bt>0))){toast('Todo processo precisa de burst ≥ 1','bad');return;}
+    lastRun=schedule(procs,algo,quantum); cursor=0;
+    $('#m3res').innerHTML='';
+    if(instant){ lastRun.snaps.forEach((_,k)=>{}); renderAt(lastRun.makespan-1); return; }
+    clearInterval(timer);
+    timer=regT(()=>{ if(cursor>=lastRun.makespan){clearInterval(timer);timer=null;return;} renderAt(cursor); cursor++; }, +$('#m3spd').value);
+  }
+  $('#m3run').addEventListener('click',()=>run(false));
+  $('#m3inst').addEventListener('click',()=>run(true));
+};
+
+/* ---------- M4: filósofos jantando ---------- */
+SIMS[4]=function(root){
+  root.innerHTML=
+  '<div class="lbl" style="margin-bottom:6px">O JANTAR DOS FILÓSOFOS — DEADLOCK AO VIVO</div>'+
+  '<p style="font-size:12.5px;color:var(--dim);margin-bottom:14px">5 filósofos, 5 garfos. Para comer, um filósofo precisa dos <b>dois garfos vizinhos</b>. Rode sem controle e veja o deadlock acontecer; depois resolva com um <b>semáforo</b> que limita a 4 os filósofos disputando a mesa.</p>'+
+  '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">'+
+  '<button class="btn bad" id="m4none">SIMULAR SEM CONTROLE</button>'+
+  '<button class="btn good" id="m4sem">SIMULAR COM SEMÁFORO (S=4)</button>'+
+  '<button class="btn" id="m4reset">RESET</button></div>'+
+  '<div class="philo-wrap"><div class="philo-stage" id="m4stage"></div>'+
+  '<div class="phud"><div class="sembox"><div><div class="lbl">SEMÁFORO S</div><div class="sv" id="m4semv">—</div></div>'+
+  '<div><div class="lbl">REFEIÇÕES SERVIDAS</div><div class="sv" style="color:var(--green)" id="m4meals">0</div></div>'+
+  '<div><div class="lbl">TICKS BLOQUEADOS</div><div class="sv" style="color:var(--red)" id="m4dl">0</div></div></div>'+
+  '<div class="plog" id="m4log"></div></div></div>';
+  const stage=$('#m4stage');
+  const N=5,R=150,CX=200,CY=200;
+  const philos=[],forks=[];
+  let mode=null,tick=0,meals=0,dlTicks=0,timer=null;
+  const PSTATES={think:'PENSANDO',hungry:'COM FOME',seated:'SEGURA 1 GARFO',eat:'COMENDO',dead:'DEADLOCK'};
+  function layout(){
+    stage.innerHTML='';
+    for(let i=0;i<N;i++){
+      const a=(-90+i*72)*Math.PI/180;
+      const p={i,state:'think',think:1,hasL:false,hasR:false,x:CX+R*Math.cos(a),y:CY+R*Math.sin(a)};
+      philos.push(p);
+      const d=el('div','philo think','F'+i+'<small>PENSANDO</small>');
+      d.style.left=p.x+'px'; d.style.top=p.y+'px';
+      stage.appendChild(d); p.el=d;
+    }
+    for(let j=0;j<N;j++){
+      const a=(-90+j*72+36)*Math.PI/180;
+      const f={j,held:null,x:CX+R*Math.cos(a),y:CY+R*Math.sin(a),ox:0,oy:0};
+      forks.push(f);
+      const d=el('div','gfork'); d.style.left=f.x+'px'; d.style.top=f.y+'px';
+      stage.appendChild(d); f.el=d;
+    }
+  }
+  function log(msg,cls){
+    const l=$('#m4log'); l.appendChild(el('div',cls||'',msg)); l.scrollTop=l.scrollHeight;
+  }
+  function paint(){
+    philos.forEach(p=>{
+      const st= mode==='none'&&dlTicks>0&&p.state!=='think' ? 'dead':p.state;
+      p.el.className='philo '+st;
+      p.el.innerHTML='F'+p.i+'<small>'+(mode==='none'&&dlTicks>0?'EM DEADLOCK':PSTATES[p.state])+'</small>';
+    });
+    forks.forEach(f=>{
+      const owner=f.held;
+      let x=f.x,y=f.y;
+      if(owner!=null){
+        const o=philos[owner];
+        x=f.x+(o.x-f.x)*0.28; y=f.y+(o.y-f.y)*0.28;
+        f.el.style.background=PCOLORS[owner%6];
+      } else f.el.style.background='#3d4c43';
+      f.el.style.left=x+'px'; f.el.style.top=y+'px';
+    });
+    $('#m4semv').textContent= mode==='sem'?String(semVal):'—';
+    $('#m4meals').textContent=meals; $('#m4dl').textContent=dlTicks;
+  }
+  let semVal=0;
+  function reset(){
+    clearInterval(timer); timer=null; mode=null; tick=0; meals=0; dlTicks=0; semVal=0;
+    philos.length=0; forks.length=0; layout(); paint(); $('#m4log').innerHTML='';
+  }
+  function startNone(){
+    reset(); mode='none';
+    log('SEM SINCRONIZAÇÃO: todos os filósofos ficam famintos e agarram o garfo da ESQUERDA ao mesmo tempo...','lg-hi');
+    philos.forEach(p=>{p.state='hungry';});
+    paint();
+    regTo(()=>{ philos.forEach(p=>{ const L=(p.i+4)%5; if(forks[L].held==null){forks[L].held=p.i;p.hasL=true;p.state='seated';} }); paint();
+      log('TODOS seguram o garfo esquerdo e esperam o direito — que pertence ao vizinho.','lg-bad'); },900);
+    timer=regT(()=>{
+      tick++;
+      let allStuck=philos.every(p=>p.hasL&&!p.hasR);
+      if(allStuck){
+        dlTicks++;
+        if(dlTicks===1) log('t='+tick+' ▸ NINGUÉM pode pegar o segundo garfo. Deadlock total: espera circular formada.','lg-bad');
+        if(dlTicks===2) log('As 4 condições de Coffman valem de uma vez: exclusão mútua (garfo único), posse-e-espera, não-preempção e espera circular.','lg-bad');
+      }
+      paint();
+    },800);
+  }
+  function startSem(){
+    reset(); mode='sem'; semVal=4;
+    philos.forEach((p,i)=>{p.think=1+(i%3);});
+    log('COM SEMÁFORO S=4: no máximo 4 filósofos disputam garfos simultaneamente. Teorema: com 4 disputando, o deadlock é impossível.','lg-hi');
+    timer=regT(()=>{
+      tick++;
+      philos.forEach(p=>{
+        if(p.state==='think'){ p.think--; if(p.think<=0){ p.state='hungry'; log('F'+p.i+' ficou COM FOME'+(semVal>0?'':' — espera permissão do semáforo')); } }
+        else if(p.state==='hungry'){
+          if(semVal>0){
+            const L=(p.i+4)%5,Rt=p.i%5;
+            if(forks[L].held==null){ semVal--; forks[L].held=p.i; p.hasL=true; p.state='seated'; log('F'+p.i+' sentou à mesa (S='+semVal+') e pegou o garfo esquerdo','lg-hi'); }
+          }
+        }
+        else if(p.state==='seated'){
+          const Rt=p.i%5;
+          if(forks[Rt].held==null){ forks[Rt].held=p.i; p.hasR=true; p.state='eat'; p.eat=3; log('F'+p.i+' pegou o direito e está COMENDO','lg-ok'); }
+          else log('F'+p.i+' espera o garfo direito (F'+((p.i+1)%5)+' o tem?) — sem travar: 4 no máximo disputam');
+        }
+        else if(p.state==='eat'){ p.eat--; if(p.eat<=0){ const L=(p.i+4)%5,Rt=p.i%5; forks[L].held=null;forks[Rt].held=null;p.hasL=p.hasR=false;p.state='think';p.think=1+Math.floor(Math.random()*2);semVal++;meals++; log('F'+p.i+' terminou, devolveu os garfos e liberou o semáforo (S='+semVal+')','lg-ok'); } }
+      });
+      paint();
+    },700);
+  }
+  $('#m4none').addEventListener('click',startNone);
+  $('#m4sem').addEventListener('click',startSem);
+  $('#m4reset').addEventListener('click',reset);
+  layout();
+};
+
+/* ---------- M5: alocador contíguo + paginação ---------- */
+SIMS[5]=function(root){
+  root.innerHTML='<div class="lbl" style="margin-bottom:4px">A · ALOCADOR DE MEMÓRIA CONTÍGUA (100 KB)</div>'+
+  '<p style="font-size:12.5px;color:var(--dim);margin-bottom:10px">Chegam processos de tamanhos variados. Escolha a estratégia ou clique direto num buraco (modo manual) e compare com first/best/worst fit. Libere processos para criar fragmentação externa.</p>'+
+  '<div class="fieldrow" style="margin-bottom:6px">'+
+  '<label style="min-width:0">ESTRATÉGIA <select id="m5strat"><option value="first">FIRST FIT</option><option value="best">BEST FIT</option><option value="worst">WORST FIT</option></select></label>'+
+  '<button class="btn primary" id="m5alloc">ALOCAR PRÓXIMO ▸</button>'+
+  '<button class="btn" id="m5free">LIBERAR PROCESSO</button>'+
+  '<button class="btn" id="m5reset">RESET</button></div>'+
+  '<div class="membar" id="m5bar"></div>'+
+  '<div class="stats-row" id="m5st"></div><div class="plog" id="m5log" style="height:110px"></div>'+
+  '<hr style="border:none;border-top:1px dashed var(--line2);margin:22px 0 16px">'+
+  '<div class="lbl" style="margin-bottom:4px">B · SUBSTITUIÇÃO DE PÁGINAS — FAULT POR FAULT</div>'+
+  '<p style="font-size:12.5px;color:var(--dim);margin-bottom:10px">String de referência clássica. No modo <b>MANUAL</b>, cada page fault é VOCÊ quem escolhe a página-vítima conforme o algoritmo alvo.</p>'+
+  '<div class="fieldrow" style="margin-bottom:6px">'+
+  '<label style="min-width:0">ALGORITMO <select id="m5algo"><option>FIFO</option><option>LRU</option><option>OPT</option></select></label>'+
+  '<label style="min-width:0">QUADROS <input type="number" id="m5f" value="3" min="2" max="4" style="width:48px"></label>'+
+  '<label style="min-width:0">MODO MANUAL <input type="checkbox" id="m5man" checked></label>'+
+  '<button class="btn primary" id="m5step">PASSO ▸</button><button class="btn" id="m5auto">AUTO</button><button class="btn" id="m5rst2">RESET</button></div>'+
+  '<div id="m5pend" style="font-size:12px;color:var(--dim);min-height:26px"></div>'+
+  '<div class="stepcards" id="m5cards"></div><div class="stats-row" id="m5st2"></div>';
+  const log=(m,c)=>{const l=$('#m5log');l.appendChild(el('div',c||'',m));l.scrollTop=l.scrollHeight;};
+  /* --- parte A --- */
+  let mem,queue,nextPid;
+  function resetA(){
+    mem=[{t:'os',size:12,label:'KERNEL'},{t:'free',size:88}];
+    queue=[]; for(let i=0;i<10;i++) queue.push({name:'P'+(i+1),size:6+Math.floor(Math.random()*22)});
+    nextPid=0; log('Memória de 100 KB iniciada. KERNEL ocupa 12 KB.','lg-hi'); drawA();
+  }
+  function holes(){ const out=[]; mem.forEach((s,i)=>{if(s.t==='free')out.push({i,size:s.size});}); return out; }
+  function pickHole(strat,need){
+    const hs=holes().filter(h=>h.size>=need); if(!hs.length) return null;
+    if(strat==='first') return hs[0];
+    if(strat==='best') return minBy(hs,h=>h.size);
+    return hs.reduce((a,b)=>a.size>b.size?a:b);
+  }
+  function allocAt(idx,name,size){
+    const h=mem[idx];
+    if(h.size===size) mem[idx]={t:'proc',size,label:name};
+    else mem.splice(idx,1,{t:'proc',size,label:name},{t:'free',size:h.size-size});
+  }
+  function freeProc(name){
+    const i=mem.findIndex(s=>s.t==='proc'&&s.label===name);
+    if(i<0) return false;
+    mem[i]={t:'free',size:mem[i].size};
+    if(i>0&&mem[i-1].t==='free'){mem[i-1].size+=mem[i].size;mem.splice(i,1);i--;}
+    if(i<mem.length-1&&mem[i+1].t==='free'){mem[i].size+=mem[i+1].size;mem.splice(i+1,1);}
+    return true;
+  }
+  function drawA(){
+    const bar=$('#m5bar'); bar.innerHTML='';
+    mem.forEach(s=>{
+      const d=el('div','mseg '+s.t, '<span>'+(s.label||(s.t==='free'?'LIVRE':'?'))+'</span><span class="msz">'+s.size+'K</span>');
+      d.style.flex=s.size+' 0 0%';
+      d.style.background = s.t==='proc' ? PCOLORS[(parseInt((s.label||'P1').slice(1))-1)%6] : '';
+      if(s.t==='free') d.style.background='';
+      if(s.t==='free') d.classList.add('clickable');
+      d.addEventListener('click',()=>{
+        if(s.t!=='free')return;
+        const np=queue[nextPid]; if(!np){toast('Fila vazia','info');return;}
+        if(s.size<np.size){ log(np.name+' ('+np.size+'K) NÃO cabe nesse buraco de '+s.size+'K','lg-bad'); return; }
+        allocAt(mem.indexOf(s),np.name,np.size); nextPid++;
+        const fb=pickHole('first',np.size), bb=pickHole('best',np.size), wb=pickHole('worst',np.size);
+        const hits=k=>k&&k.i===mem.indexOf(s);
+        log('Manual: '+np.name+' alocado no buraco escolhido. (first iria p/ '+(fb?fb.size+'K':'—')+', best p/ '+(bb?bb.size+'K':'—')+', worst p/ '+(wb?wb.size+'K':'—')+')','lg-ok');
+        drawA();
+      });
+      bar.appendChild(d);
+    });
+    const free=mem.filter(s=>s.t==='free').reduce((a,s)=>a+s.size,0);
+    const hs=holes(); const big=hs.length?Math.max(...hs.map(h=>h.size)):0;
+    const frag=free>0?((1-big/free)*100).toFixed(0):0;
+    $('#m5st').innerHTML='<span>LIVRE: <b>'+free+'K</b></span><span>BURACOS: <b>'+hs.length+'</b></span><span>MAIOR BURACO: <b>'+big+'K</b></span><span>FRAGMENTAÇÃO EXTERNA: <b class="'+(frag>40?'err':'ok')+'">'+frag+'%</b></span>'+
+      '<span>PRÓXIMO DA FILA: <b class="num">'+(queue[nextPid]?queue[nextPid].name+' ('+queue[nextPid].size+'K)':'—')+'</b></span>';
+  }
+  $('#m5alloc').addEventListener('click',()=>{
+    const np=queue[nextPid]; if(!np){toast('Fila de chegada vazia — libere processos.','info');return;}
+    const h=pickHole($('#m5strat').value,np.size);
+    if(!h){ log(np.name+' ('+np.size+'K) ESPERA: nenhum buraco comporta — fragmentação externa! Libere alguém.','lg-bad'); return; }
+    allocAt(h.i,np.name,np.size); nextPid++;
+    log($('#m5strat').value.toUpperCase()+' FIT: '+np.name+' ('+np.size+'K) → buraco de '+h.size+'K','lg-ok');
+    drawA();
+  });
+  $('#m5free').addEventListener('click',()=>{
+    const procs=mem.filter(s=>s.t==='proc'&&s.label!=='KERNEL');
+    if(!procs.length){toast('Nenhum processo de usuário na memória','info');return;}
+    const victim=procs[Math.floor(Math.random()*procs.length)].label;
+    freeProc(victim); log(victim+' terminou → buraco criado e mesclado com vizinhos livres.','lg-hi'); drawA();
+  });
+  $('#m5reset').addEventListener('click',()=>{$('#m5log').innerHTML='';resetA();});
+  /* --- parte B --- */
+  const REFS=[7,0,1,2,0,3,0,4,2,3,0,3,2,1,2,0,1,7,0,1];
+  let pg=null;
+  function resetB(){ pg={i:0,frames:[],fifo:[],faults:0,hits:0,steps:[],waiting:false,acertos:0,erros:0}; $('#m5cards').innerHTML=''; $('#m5pend').innerHTML=''; drawB(); }
+  function victimOf(frames,i,algo){
+    if(algo==='FIFO') return frames.reduce((a,b)=>a.loaded<b.loaded?a:b);
+    if(algo==='LRU') return frames.reduce((a,b)=>a.used<b.used?a:b);
+    let best=null,bd=-1;
+    frames.forEach(f=>{let d=Infinity;for(let j=i+1;j<REFS.length;j++)if(REFS[j]===f.page){d=j;break;}if(d>bd){bd=d;best=f;}});
+    return best;
+  }
+  function info(f,i,algo){
+    const nextUse=(()=>{for(let j=i+1;j<REFS.length;j++)if(REFS[j]===f.page)return j-i;return 'nunca mais';})();
+    if(algo==='FIFO') return 'carregada há '+ (i-f.loaded) +' refs';
+    if(algo==='LRU') return 'usada há '+ (i-f.used) +' refs';
+    return 'próximo uso em '+(typeof nextUse==='number'?nextUse+' refs':nextUse);
+  }
+  function step(){
+    if(!pg||pg.waiting) return;
+    if(pg.i>=REFS.length){ finishB(); return; }
+    const page=REFS[pg.i];
+    const cur=pg.frames.find(f=>f.page===page);
+    if(cur){ cur.used=pg.i; pg.hits++; pg.steps.push({page,fault:false,frames:pg.frames.map(f=>f.page),changed:-1}); }
+    else{
+      pg.faults++;
+      if(pg.frames.length < Math.max(2,Math.min(4,+$('#m5f').value||3))){
+        pg.frames.push({page,loaded:pg.i,used:pg.i});
+        pg.steps.push({page,fault:true,frames:pg.frames.map(f=>f.page),changed:pg.frames.length-1});
+      } else {
+        const algo=$('#m5algo').value;
+        if($('#m5man').checked){
+          pg.waiting=true; pg.pending={page,algo};
+          $('#m5pend').innerHTML='PAGE FAULT em <b class="err">'+page+'</b> — quadros cheios! Escolha a VÍTIMA segundo <b class="warn">'+algo+'</b>:';
+          drawChoice(); drawB(); return;
+        }
+        const v=victimOf(pg.frames,pg.i,algo);
+        replace(v,algo,false);
+      }
+    }
+    pg.i++; drawB();
+    if(pg.i>=REFS.length) finishB();
+  }
+  function replace(v,algo,manual){
+    const idx=pg.frames.indexOf(v);
+    pg.frames[idx]={page:pg.pending.page,loaded:pg.i,used:pg.i};
+    pg.steps.push({page:pg.pending.page,fault:true,frames:pg.frames.map(f=>f.page),changed:idx,victim:v.page,manual});
+    if(manual){ if(v.page===victimOf(pg.frames.filter((_,k)=>k!==idx).concat([v]),pg.i,algo).page){} }
+    pg.waiting=false; $('#m5pend').innerHTML='';
+  }
+  function drawChoice(){
+    const algo=pg.pending.algo;
+    const box=el('div','vicbtns');
+    pg.frames.forEach(f=>{
+      const b=el('button','btn small','EXPULSAR '+f.page+' <span style="color:var(--dim)">('+info(f,pg.i,algo)+')</span>');
+      b.addEventListener('click',()=>{
+        const expected=victimOf(pg.frames,pg.i,algo);
+        const right=expected===f;
+        if(right){pg.acertos++; toast('EXATO! Critério do '+algo+': '+info(f,pg.i,algo),'good');}
+        else {pg.erros++; toast('A vítima do '+algo+' seria a página '+expected.page+' ('+info(expected,pg.i,algo)+')','bad');}
+        const man=true;
+        const idx=pg.frames.indexOf(f);
+        pg.frames[idx]={page:pg.pending.page,loaded:pg.i,used:pg.i};
+        pg.steps.push({page:pg.pending.page,fault:true,frames:pg.frames.map(x=>x.page),changed:idx,victim:f.page,manual:man});
+        pg.waiting=false; pg.i++; $('#m5pend').innerHTML=''; drawB();
+        if(pg.i>=REFS.length) finishB();
+      });
+      box.appendChild(b);
+    });
+    $('#m5pend').appendChild(box);
+  }
+  function drawB(){
+    const c=$('#m5cards'); c.innerHTML='';
+    pg.steps.forEach((s,k)=>{
+      const card=el('div','stepcard'+(k===pg.steps.length-1?' cur':''));
+      let h='<div class="sch '+(s.fault?'f':'h')+'">'+s.page+(s.fault?' F':' H')+'</div>';
+      s.frames.forEach((f,fi)=>{h+='<div class="sfr'+(fi===s.changed?' hit':'')+'">'+f+'</div>';});
+      card.innerHTML=h; c.appendChild(card);
+    });
+    $('#m5st2').innerHTML='<span>REFERÊNCIAS: <b>'+pg.i+'/'+REFS.length+'</b></span><span>PAGE FAULTS: <b class="err">'+pg.faults+'</b></span><span>HITS: <b class="ok">'+pg.hits+'</b></span>'+
+      (pg.steps.length?'<span>TAXA DE ACERTO: <b>'+((pg.hits/(pg.hits+pg.faults))*100).toFixed(0)+'%</b></span>':'')+
+      ($('#m5man').checked?'<span>VITIMAS CERTAS: <b class="ok">'+pg.acertos+'</b> · ERRADAS: <b class="err">'+pg.erros+'</b></span>':'');
+  }
+  function computeFaults(algo,F){
+    const frames=[]; let faults=0;
+    for(let i=0;i<REFS.length;i++){
+      const p=REFS[i];
+      const cur=frames.find(f=>f.page===p);
+      if(cur){cur.used=i;continue;}
+      faults++;
+      if(frames.length<F) frames.push({page:p,loaded:i,used:i});
+      else{ const v=victimOf(frames,i,algo); frames[frames.indexOf(v)]={page:p,loaded:i,used:i}; }
+    }
+    return faults;
+  }
+  function finishB(){
+    const F=Math.max(2,Math.min(4,+$('#m5f').value||3));
+    const fF=computeFaults('FIFO',F), fL=computeFaults('LRU',F), fO=computeFaults('OPT',F);
+    $('#m5pend').innerHTML='<b class="ok">STRING CONCLUÍDA.</b> Comparativo com '+F+' quadro(s) — FIFO: <b>'+fF+'</b> faults · LRU: <b>'+fL+'</b> · ÓTIMO (piso teórico): <b>'+fO+'</b>'+
+    '<br><span style="color:var(--dim);font-size:11.5px">Nenhum algoritmo consegue menos faults que o Ótimo. LRU se aproxima dele; FIFO é o mais simples (e o único que sofre a anomalia de Belady).</span>';
+  }
+  $('#m5step').addEventListener('click',step);
+  $('#m5auto').addEventListener('click',()=>{
+    const man=$('#m5man'); man.checked=false;
+    regT(()=>{ if(pg.i<REFS.length&&!pg.waiting) step(); },300);
+  });
+  $('#m5rst2').addEventListener('click',resetB);
+  $('#m5log').innerHTML=''; resetA(); resetB();
+};
+
+/* ---------- M6: explorador de blocos ---------- */
+SIMS[6]=function(root){
+  root.innerHTML=
+  '<div class="lbl" style="margin-bottom:6px">EXPLORADOR DE BLOCOS — VOCÊ É O SISTEMA DE ARQUIVOS</div>'+
+  '<p style="font-size:12.5px;color:var(--dim);margin-bottom:12px">O diretório só sabe o endereço do <b>primeiro bloco</b> (contígua/encadeada) ou do <b>bloco índice</b>. Clique nos blocos, NA ORDEM, até ler o arquivo inteiro.</p>'+
+  '<div class="fieldrow" style="margin-bottom:8px">'+
+  '<label style="min-width:0">MÉTODO DE ALOCAÇÃO <select id="m6mode"><option value="cont">CONTÍGUA</option><option value="chain">ENCADEADA</option><option value="index">INDEXADA</option></select></label>'+
+  '<button class="btn primary" id="m6new">GERAR ARQUIVO ▸</button><button class="btn" id="m6reset">RESET</button></div>'+
+  '<div class="dirline" id="m6dir">Diretório: gere um arquivo para começar.</div>'+
+  '<div style="font-size:12px;color:var(--dim);min-height:24px" id="m6hint"></div>'+
+  '<div class="diskgrid" id="m6grid"></div>'+
+  '<div class="stats-row" id="m6st"></div>'+
+  '<div class="cmp" id="m6cmp"><p style="font-size:12px;color:var(--dim)">Compare a experiência dos três métodos: contígua é O(1) para achar tudo; encadeada obriga a seguir a cadeia bloco a bloco; indexada exige 1 salto ao índice e depois acesso direto aos dados.</p></div>';
+  const NB=32;
+  let used={},target=null,cmp={};
+  function grid(){
+    const g=$('#m6grid'); g.innerHTML='';
+    for(let b=0;b<NB;b++){
+      const d=el('div','dcell'+(used[b]?(used[b].found?(used[b].idx?'idx':'found'):' used'):''),'<span class="dn">'+b+'</span>'+(used[b]&&used[b].found?(used[b].next!=null?'→'+used[b].next:(used[b].idx?'IDX':'DADOS')):(used[b]?used[b].name:'livre')));
+      if(used[b]&&used[b].found&&used[b].idx)d.classList.add('idx');
+      else if(used[b]&&used[b].found)d.classList.add('found');
+      d.addEventListener('click',()=>click(b));
+      g.appendChild(d);
+    }
+  }
+  function stats(){
+    $('#m6st').innerHTML= target?('<span>PROGRESSO: <b>'+target.progress+'/'+target.order.length+'</b></span><span>CLIQUES CERTOS: <b class="ok">'+target.ok+'</b></span><span>ERROS: <b class="err">'+target.err+'</b></span>'):'';
+  }
+  function newFile(){
+    used={}; // decoração: alguns arquivos de fundo
+    const deco=['log.txt','swap.sys','foto.png','core'];
+    let placed=0;
+    while(placed<10){ const b=Math.floor(Math.random()*NB); if(!used[b]){used[b]={name:deco[placed%deco.length]};placed++;} }
+    const mode=$('#m6mode').value;
+    const name=['relat.dat','video.bin','db.index','song.mp3'][Math.floor(Math.random()*4)];
+    const free=()=>{const a=[];for(let b=0;b<NB;b++)if(!used[b])a.push(b);return a;};
+    let order=[],indexBlock=null;
+    if(mode==='cont'){
+      const len=3+Math.floor(Math.random()*3);
+      for(let s=0;s<=NB-len;s++){ let okk=true; for(let k=0;k<len;k++) if(used[s+k]) {okk=false;break;} if(okk){ for(let k=0;k<len;k++)order.push(s+k); break; } }
+      if(!order.length){toast('Sem espaço contíguo — fragmentação externa! Reset e tente de novo.','bad');grid();return;}
+      $('#m6dir').innerHTML='Diretório: <b>'+name+'</b> → bloco inicial <b class="num">'+order[0]+'</b>, tamanho <b class="num">'+len+'</b> blocos consecutivos.';
+    } else if(mode==='chain'){
+      const len=4+Math.floor(Math.random()*3);
+      const f=free().sort(()=>Math.random()-.5).slice(0,len);
+      order=f;
+      $('#m6dir').innerHTML='Diretório: <b>'+name+'</b> → primeiro bloco <b class="num">'+f[0]+'</b> (os demais? só seguindo os ponteiros).';
+    } else {
+      const len=3+Math.floor(Math.random()*3);
+      const f=free().sort(()=>Math.random()-.5);
+      indexBlock=f[0]; order=[f[0],...f.slice(1,len+1)];
+      $('#m6dir').innerHTML='Diretório: <b>'+name+'</b> → bloco ÍNDICE <b class="num">'+indexBlock+'</b>.';
+    }
+    target={name,mode,order,progress:0,ok:0,err:0,indexBlock};
+    order.forEach((b,k)=>used[b]={name:'?',next: mode==='chain'&&k<order.length-1?order[k+1]:null, idx: mode==='index'&&b===indexBlock});
+    if(mode==='cont') $('#m6hint').innerHTML='Sabendo o início e o tamanho, o resto é aritmética: bloco inicial + 1, +2, +3…';
+    if(mode==='chain') $('#m6hint').innerHTML='Cada bloco revela o ponteiro do próximo. Só dá para andar na cadeia na ordem!';
+    if(mode==='index') $('#m6hint').innerHTML='Primeiro o bloco índice — ele revela a lista completa dos blocos de dados.';
+    grid(); stats();
+  }
+  function click(b){
+    if(!target){ toast('Gere um arquivo primeiro','info'); return; }
+    if(target.progress>=target.order.length){ toast('Arquivo já lido por completo — gere outro','info'); return; }
+    const expected=target.order[target.progress];
+    if(b===expected){
+      used[b].found=true; target.ok++; target.progress++;
+      if(target.mode==='index'&&b===target.indexBlock){
+        const data=target.order.slice(1);
+        $('#m6hint').innerHTML='ÍNDICE revelado: blocos de dados → <b class="num">'+data.join(', ')+'</b>. Agora leia-os em qualquer ordem lógica (na ordem listada!).';
+      } else if(target.mode==='chain'){
+        const nx=used[b].next;
+        $('#m6hint').innerHTML='Bloco '+b+' lido → ponteiro aponta para <b class="num">'+(nx!=null?nx:'FIM (NULL)')+'</b>.';
+      } else $('#m6hint').innerHTML='Bloco '+b+' lido. ('+target.progress+'/'+target.order.length+')';
+      if(target.progress>=target.order.length){
+        const total=target.ok+target.err, prec=Math.round(100*target.ok/total);
+        cmp[target.mode]=prec;
+        $('#m6hint').innerHTML='<b class="ok">ARQUIVO LIDO POR COMPLETO.</b> Precisão: '+prec+'% ('+target.ok+' certos, '+target.err+' errados)';
+        let h='<table><tr><th>MÉTODO</th><th>MELHOR PRECISÃO</th></tr>';
+        Object.keys(cmp).forEach(k=>h+='<tr><td>'+{cont:'Contígua',chain:'Encadeada',index:'Indexada'}[k]+'</td><td>'+cmp[k]+'%</td></tr>');
+        $('#m6cmp').innerHTML=h+'</table>';
+        toast('Leitura concluída: '+prec+'% de precisão','good');
+      }
+    } else {
+      target.err++;
+      const why= target.mode==='chain' ? 'Em alocação ENCADEADA não há mapa: o próximo bloco só se descobre dentro do bloco atual.' :
+                 target.mode==='index' ? (target.progress===0?'Primeiro o bloco ÍNDICE ('+target.indexBlock+'), ele conhece todos os dados.':'Siga a ordem revelada pelo índice.') :
+                 'Alocação contígua é previsível: os próximos blocos são consecutivos ao inicial.';
+      $('#m6hint').innerHTML='<span class="err">Bloco errado.</span> '+why;
+      const cell=$('#m6grid').children[b]; cell.classList.add('wrong');
+      regTo(()=>cell.classList.remove('wrong'),400);
+    }
+    grid(); stats();
+  }
+  $('#m6new').addEventListener('click',newFile);
+  $('#m6reset').addEventListener('click',()=>{used={};target=null;$('#m6dir').textContent='Diretório: gere um arquivo para começar.';$('#m6hint').textContent='';$('#m6st').innerHTML='';grid();});
+  grid();
+};
+
+/* ================================================================
+   DESAFIOS
+================================================================ */
+const CHALS={};
+
+/* ---------- Desafio 1 ---------- */
+CHALS[1]=function(root){
+  chalHead(root,1,100);
+  const zone=el('div');
+  root.appendChild(zone);
+  quiz(zone,[
+    {q:'Um programa em execução, com contador de programa, registradores, pilha e um PCB associado, é chamado de:',
+     opts:['Binário executável','Processo','Thread','Daemon'],c:1,
+     why:'O processo é o programa <b>em execução</b>, gerenciado pelo SO através do PCB.'},
+    {q:'Qual destas informações NÃO é armazenada no PCB (Process Control Block)?',
+     opts:['Valor dos registradores da CPU','Estado do processo (pronto/executando/bloqueado)','A árvore de diretórios do sistema de arquivos','O contador de programa'],c:2,
+     why:'A árvore de diretórios é estrutura global do sistema de arquivos, não do processo. O PCB guarda estado, contexto de CPU e recursos do processo.'},
+    {q:'Instruções de E/S e manipulação direta de hardware só podem ser executadas em:',
+     opts:['Modo usuário','Modo kernel (privilegiado)','Qualquer modo, se o programa for rápido','Modo gráfico'],c:1,
+     why:'O bit de modo do hardware restringe instruções privilegiadas ao modo kernel — base da proteção entre programas e SO.'},
+    {q:'Quando um processo faz uma syscall, a CPU executa uma ___ que transfere o controle para o kernel:',
+     opts:['Interrupção de hardware','Trap (exceção de software)','Troca de contexto total','Falha de segmentação'],c:1,
+     why:'A syscall é implementada como um trap: o processador desvia para o manipulador do kernel, que executa o serviço e retorna.'},
+    {q:'A principal vantagem da estrutura em MICROKERNEL sobre a monolítica é:',
+     opts:['Executar todos os serviços dentro do kernel para ser mais rápido','Rodar a maioria dos serviços em modo usuário, isolando falhas','Não precisar de interrupções','Eliminar as chamadas de sistema'],c:1,
+     why:'No microkernel, drivers e serviços ficam em processos de usuário: um driver que falha não derruba o sistema — o custo é a comunicação por mensagens.'},
+  ],acertos=>{
+    const pts=acertos*20;
+    zone.appendChild(el('div','resline','<span class="lbl">RESULTADO</span><br><b style="font-size:18px;color:var(--amber)">'+pts+' XP</b> — '+acertos+'/5 acertos.'+(pts>=80?' <span class="ok">Conceito sólido de fundamentos.</span>':'')));
+    submitScore(1,pts);
+    const again=el('button','btn','REFZER DESAFIO');
+    again.addEventListener('click',()=>{root.innerHTML='';CHALS[1](root);});
+    zone.appendChild(again);
+  });
+};
+
+/* ---------- Desafio 2 ---------- */
+CHALS[2]=function(root){
+  chalHead(root,2,100);
+  const zone=el('div'); root.appendChild(zone);
+  quiz(zone,[
+    {q:'Diferente das threads irmãs, uma thread possui exclusivamente seu próprio:',
+     opts:['Espaço de endereçamento','Conjunto de registradores e pilha','Lista de arquivos abertos','Segmento de código (text)'],c:1,
+     why:'Código, dados, heap e arquivos abertos são <b>compartilhados</b>; registradores, contador de programa, pilha e estado pertencem a cada thread.'},
+    {q:'No modelo MANY-TO-ONE, se qualquer thread de usuário faz uma chamada bloqueante:',
+     opts:['Só ela bloqueia','O processo inteiro bloqueia','O kernel cria outra thread automaticamente','O sistema troca para one-to-one'],c:1,
+     why:'Com uma única thread de kernel, a chamada bloqueante congela o processo todo — o problema que você viu na Fábrica de Threads.'},
+    {q:'Qual modelo permite MUITAS threads de usuário mapeadas em POUCAS threads de kernel, sem o bloqueio total do many-to-one?',
+     opts:['One-to-One','Many-to-Many','Many-to-One melhorado','Não existe tal modelo'],c:1,
+     why:'Many-to-many multiplexa N threads de usuário em M threads de kernel: bloqueio afeta uma thread de kernel, não o processo.'},
+    {q:'Criar uma thread é mais barato que criar um processo porque:',
+     opts:['Threads não usam memória','A thread reutiliza o espaço de endereçamento já existente do processo','O SO não participa da criação de threads','Threads dispensam escalonador'],c:1,
+     why:'Não há necessidade de duplicar espaço de endereçamento nem montar novo mapa de memória — o compartilhamento é justamente a economia.'},
+    {q:'Uma vantagem-chave de programas multithread em sistemas interativos é:',
+     opts:['Gastam menos disco','Continuam responsivos enquanto uma thread bloqueia em I/O','Dispensam sincronização','Não sofrem condições de corrida'],c:1,
+     why:'Com threads, a trava de uma operação demorada não congela a aplicação — a responsividade é o benefício nº 1 (junto com o paralelismo em multicore).'},
+  ],acertos=>{
+    const pts=acertos*20;
+    zone.appendChild(el('div','resline','<span class="lbl">RESULTADO</span><br><b style="font-size:18px;color:var(--amber)">'+pts+' XP</b> — '+acertos+'/5 acertos.'));
+    submitScore(2,pts);
+    const again=el('button','btn','REFZER DESAFIO');
+    again.addEventListener('click',()=>{root.innerHTML='';CHALS[2](root);});
+    zone.appendChild(again);
+  });
+};
+
+/* ---------- Desafio 3 ---------- */
+CHALS[3]=function(root){
+  chalHead(root,3,100);
+  const zone=el('div'); root.appendChild(zone);
+  const PROCS=[{n:'P1',at:0,bt:5},{n:'P2',at:3,bt:3},{n:'P4',at:4,bt:2},{n:'P3',at:6,bt:4}];
+  const r=schedule(PROCS.map(p=>({name:p.n,at:p.at,bt:p.bt,pr:1})),'FCFS',2);
+  const expected=r.segs.filter(s=>s.p!=='--').map(s=>s.p);
+  const mwt=(r.ps.reduce((a,p)=>a+p.wt,0)/r.ps.length);
+  let pts=0,errors=0,placed=0;
+  zone.appendChild(el('div','qcard','<div class="lbl" style="margin-bottom:6px">MISSÃO 1 — MONTE O GANTT DO FCFS (40 XP)</div>'+
+    '<div style="font-size:13px">Quatro processos chegam: <b class="num">P1</b> em t=0 (burst 5) · <b class="num">P2</b> em t=3 (burst 3) · <b class="num">P4</b> em t=4 (burst 2) · <b class="num">P3</b> em t=6 (burst 4).<br>'+
+    'Clique nos processos na <b>ordem exata</b> em que o FCFS executa (não preemptivo). Erros custam 8 XP.</div>'));
+  const tl=el('div','gantt'); tl.style.height='52px';
+  zone.appendChild(tl);
+  const pal=el('div','vicbtns');
+  zone.appendChild(pal);
+  const fb=el('div','why'); zone.appendChild(fb);
+  const orderBtns={};
+  PROCS.forEach(p=>{
+    const b=el('button','btn small','EXECUTAR '+p.n);
+    b.style.borderColor=PCOLORS[PROCS.indexOf(p)%6]; b.style.color=PCOLORS[PROCS.indexOf(p)%6];
+    b.addEventListener('click',()=>{
+      if(placed>=expected.length) return;
+      const exp=expected[placed];
+      if(p.n===exp){
+        b.disabled=true; b.style.opacity='.35';
+        const seg=r.segs.filter(s=>s.p===p.n)[0];
+        const c=el('div','gcell',p.n+'<br><span style="font-weight:400;font-size:9px">'+seg.start+'→'+seg.end+'</span>');
+        c.style.width=(p.bt/r.makespan*100)+'%'; c.style.background=PCOLORS[PROCS.indexOf(PROCS.find(x=>x.n===p.n))%6];
+        tl.appendChild(c);
+        placed++; fb.innerHTML='<span class="ok">CORRETO.</span> '+p.n+' executa de t='+seg.start+' a t='+seg.end+'.';
+        if(placed===expected.length) endPhase1();
+      } else {
+        errors++;
+        const tNow=placed===0?0:r.segs.filter(s=>s.p!=='--').slice(0,placed).reduce((a,s)=>a+(s.end-s.start),0);
+        const chosen=PROCS.find(x=>x.n===p.n);
+        let why;
+        if(chosen.at>tNow) why=p.n+' só chega em t='+chosen.at+' — em t='+tNow+' ele ainda nem está pronto.';
+        else{
+          const cand=PROCS.filter(x=>x.at<=tNow&&!placedNames().includes(x.n)).sort((a,b)=>a.at-b.at)[0];
+          why='FCFS desempata por chegada: '+cand.n+' está pronto desde t='+cand.at+', antes de '+p.n+' (chegou em t='+chosen.at+').';
+        }
+        fb.innerHTML='<span class="err">ERRADO (-8 XP).</span> '+why;
+      }
+    });
+    orderBtns[p.n]=b; pal.appendChild(b);
+  });
+  const placedNames=()=>expected.slice(0,placed);
+  function endPhase1(){
+    const p1=Math.max(10,40-errors*8); pts+=p1;
+    zone.appendChild(el('div','why','<span class="ok">MISSÃO 1 CONCLUÍDA: +'+p1+' XP ('+errors+' erro(s)).</span>'));
+    startPhase2();
+  }
+  function startPhase2(){
+    const card=el('div','qcard','<div class="lbl" style="margin-bottom:6px">MISSÃO 2 — CALCULE (30 XP)</div>'+
+      '<div style="font-size:13px">Com o Gantt acima, calcule o <b>tempo de espera MÉDIO</b> do FCFS. Lembre: espera = início da execução − chegada.</div>');
+    zone.appendChild(card);
+    numField(card,'Tempo de espera médio:',mwt,30,'ex: 2.5',won=>{
+      pts+=won;
+      zone.appendChild(el('div','why','Conferindo: P1 espera 0, P2 espera 5−3=2, P4 espera 8−4=4, P3 espera 10−6=4 → média (0+2+4+4)/4 = <b class="num">'+mwt+'</b>.'));
+      startPhase3();
+    });
+  }
+  function startPhase3(){
+    quiz(zone,[
+      {q:'Um sistema bancário interativo precisa que o usuário receba a PRIMEIRA resposta o mais rápido possível. Qual critério deve ser priorizado?',
+       opts:['Throughput máximo','Tempo de resposta (response time)','Utilização da CPU','Turnaround médio'],c:1,
+       why:'Tempo de resposta = do pedido até a primeira saída — o critério crítico de sistemas interativos (e a razão do Round Robin existir).'},
+      {q:'O escalonamento por PRIORIDADE pode sofrer inanição (starvation). Qual técnica resolve isso?',
+       opts:['Aumentar o quantum','Envelhecimento (aging): elevar a prioridade conforme o tempo de espera','Trocar para FCFS','Desligar as interrupções'],c:1,
+       why:'Aging garante que, cedo ou tarde, todo processo espera tanto que sua prioridade sobe o suficiente para executar.'},
+    ],acertos=>{
+      const p3=acertos*15; pts+=p3;
+      zone.appendChild(el('div','resline','<span class="lbl">RESULTADO FINAL</span><br><b style="font-size:18px;color:var(--amber)">'+pts+' XP</b> de 100.'));
+      submitScore(3,pts);
+      const again=el('button','btn','REFZER DESAFIO');
+      again.addEventListener('click',()=>{root.innerHTML='';CHALS[3](root);});
+      zone.appendChild(again);
+    });
+  }
+};
+
+/* ---------- Desafio 4 ---------- */
+CHALS[4]=function(root){
+  chalHead(root,4,100);
+  const zone=el('div'); root.appendChild(zone);
+  let pts=0;
+  const scenarios=[
+    {title:'CENÁRIO A — dois recursos de instância única',
+     W:340,H:230,
+     ps:{P1:[80,70],P2:[80,165]}, rs:{R1:{x:255,y:70,dots:1},R2:{x:255,y:165,dots:1}},
+     req:[['P1','R1'],['P2','R2']], assign:[['R1',0,'P2'],['R2',0,'P1']],
+     dead:true, deadProcs:['P1','P2'],
+     why:'Ciclo completo P1→R1→P2→R2→P1 com UMA instância em cada recurso: espera circular real = deadlock dos dois processos.'},
+    {title:'CENÁRIO B — a instância extra que quebra o ciclo',
+     W:340,H:230,
+     ps:{P1:[80,70],P2:[80,165]}, rs:{R1:{x:255,y:70,dots:1},R2:{x:255,y:165,dots:2}},
+     req:[['P1','R2'],['P2','R1']], assign:[['R1',0,'P1'],['R2',0,'P2']],
+     dead:false, deadProcs:[],
+     why:'Parece um ciclo, mas R2 tem 2 instâncias e uma está LIVRE: P1 (que pede R2) recebe a segunda instância, progride e libera R1 → P2 também progride. Ciclo ≠ deadlock quando há instâncias múltiplas.'},
+    {title:'CENÁRIO C — cadeia sem ciclo',
+     W:340,H:230,
+     ps:{P1:[70,115],P2:[165,50],P3:[165,180]}, rs:{R1:{x:265,y:50,dots:1},R2:{x:265,y:180,dots:1}},
+     req:[['P1','R1'],['P2','R2']], assign:[['R1',0,'P2'],['R2',0,'P3']],
+     dead:false, deadProcs:[],
+     why:'Há esperas encadeadas, mas nenhuma espera circular: P3 não espera ninguém, termina, libera R2 e a cadeia inteira se resolve. Sem ciclo → sem deadlock.'},
+  ];
+  function ragSVG(sc,id){
+    const nodeCut={P:24,R:30};
+    const dotPos=(r,k)=>{ const d=r.dots===1?[[r.x,r.y]]:[[r.x,r.y-8],[r.x,r.y+8]]; return d[k]; };
+    const findPos=n=> sc.ps[n]?{x:sc.ps[n][0],y:sc.ps[n][1],cut:nodeCut.P}:{x:sc.rs[n].x,y:sc.rs[n].y,cut:nodeCut.R,dot:false};
+    let s='<svg width="'+sc.W+'" height="'+sc.H+'" viewBox="0 0 '+sc.W+' '+sc.H+'">';
+    s+='<defs><marker id="arr'+id+'" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7e9184"/></marker></defs>';
+    const edge=(ax,ay,cA,bx,by,cB)=>{
+      const dx=bx-ax,dy=by-ay,L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L;
+      return '<line x1="'+(ax+ux*cA)+'" y1="'+(ay+uy*cA)+'" x2="'+(bx-ux*cB)+'" y2="'+(by-uy*cB)+'" stroke="#7e9184" stroke-width="1.3" marker-end="url(#arr'+id+')"/>';
+    };
+    sc.req.forEach(([p,r])=>{ const A=findPos(p),B=findPos(r); s+=edge(A.x,A.y,A.cut,B.x,B.y,B.cut); });
+    sc.assign.forEach(([r,dot,p])=>{ const d=dotPos(sc.rs[r],dot),A=findPos(p),B=findPos(p); const a=sc.rs[r]; s+=edge(d[0],d[1],4,A.x,A.y,A.cut); });
+    Object.keys(sc.ps).forEach(p=>{
+      const [x,y]=sc.ps[p];
+      s+='<circle cx="'+x+'" cy="'+y+'" r="22" fill="#0f1511" stroke="#7ad0d6" stroke-width="1.5" data-p="'+p+'"/>';
+      s+='<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" fill="#7ad0d6" font-size="12" font-family="JetBrains Mono" font-weight="700">'+p+'</text>';
+    });
+    Object.keys(sc.rs).forEach(r=>{
+      const rr=sc.rs[r];
+      s+='<rect x="'+(rr.x-26)+'" y="'+(rr.y-20)+'" width="52" height="40" rx="3" fill="#0f1511" stroke="#f2b544" stroke-width="1.5"/>';
+      s+='<text x="'+rr.x+'" y="'+(rr.y-26)+'" text-anchor="middle" fill="#f2b544" font-size="11" font-family="JetBrains Mono">'+r+'</text>';
+      for(let k=0;k<rr.dots;k++){ const d=dotPos(rr,k); s+='<circle cx="'+d[0]+'" cy="'+d[1]+'" r="4" fill="#f2b544"/>'; }
+    });
+    s+='</svg>';
+    return s;
+  }
+  function phase(scIdx){
+    const sc=scenarios[scIdx];
+    const card=el('div','qcard','<div class="lbl" style="margin-bottom:8px">DETETIVE DE DEADLOCK '+(scIdx+1)+'/3 (20 XP) — '+sc.title+'</div>');
+    const box=el('div','ragbox',ragSVG(sc,scIdx)+'<div class="rag-legend">Círculo = processo · Retângulo = recurso (bolinhas = instâncias) · Seta processo→recurso = PEDIDO · recurso→processo = ALOCADA</div>');
+    card.appendChild(box);
+    let answer=null;
+    const yn=el('div','fieldrow','<label style="min-width:0">HÁ DEADLOCK NESSE GRAFO?</label>');
+    const by=el('button','btn small','SIM'),bn=el('button','btn small','NÃO');
+    by.addEventListener('click',()=>{answer=true;by.classList.add('correct');bn.classList.remove('correct');});
+    bn.addEventListener('click',()=>{answer=false;bn.classList.add('correct');by.classList.remove('correct');});
+    yn.append(by,bn); card.appendChild(yn);
+    const cb=el('div','fieldrow','<label style="min-width:0">SE SIM, QUAIS PROCESSOS ESTÃO EM DEADLOCK?</label>');
+    Object.keys(sc.ps).forEach(p=>{
+      const l=el('label',''); l.style.minWidth='0';
+      l.innerHTML='<input type="checkbox" value="'+p+'"> '+p;
+      cb.appendChild(l);
+    });
+    card.appendChild(cb);
+    const go=el('button','btn primary','ANALISAR GRAFO ▸');
+    go.addEventListener('click',()=>{
+      if(answer===null){toast('Responda: há deadlock?','info');return;}
+      const checked=Array.from(cb.querySelectorAll('input:checked')).map(i=>i.value).sort();
+      const rightAns= answer===sc.dead;
+      const rightProcs= sc.dead ? (checked.length===sc.deadProcs.length && sc.deadProcs.every(p=>checked.includes(p))) : checked.length===0;
+      let won=0;
+      if(rightAns&&rightProcs) won=20; else if(rightAns||rightProcs) won=10;
+      pts+=won;
+      go.disabled=true; by.disabled=true; bn.disabled=true; cb.querySelectorAll('input').forEach(i=>i.disabled=true);
+      const svg=card.querySelector('svg');
+      if(sc.dead) sc.deadProcs.forEach(p=>{const c=svg.querySelector('[data-p="'+p+'"]'); if(c)c.setAttribute('stroke','#e5604f');});
+      card.appendChild(el('div','why',(won===20?'<span class="ok">ANÁLISE PERFEITA (+20).</span> ':won===10?'<span class="warn">PARCIAL (+10).</span> ':'<span class="err">ERRADO (0).</span> ')+sc.why));
+      const nx=el('button','btn',scIdx<2?'PRÓXIMO GRAFO ▸':'IR PARA AS QUESTÕES ▸');
+      nx.style.marginTop='10px';
+      nx.addEventListener('click',()=>{ scIdx<2 ? phase(scIdx+1) : quizPart(); });
+      card.appendChild(nx);
+    });
+    card.appendChild(go);
+    zone.appendChild(card);
+  }
+  function quizPart(){
+    quiz(zone,[
+      {q:'Para existir um deadlock, QUATRO condições precisam valer SIMULTANEAMENTE. Quais?',
+       opts:['Exclusão mútua, posse-e-espera, não-preempção e espera circular','Exclusão mútua, preempção, aging e ciclo','Seção crítica, semáforo, mutex e spinlock','Paginação, segmentação, swapping e thrashing'],c:0,
+       why:'São as condições de Coffman. Quebrar qualquer UMA delas (via prevenção) torna o deadlock impossível.'},
+      {q:'Qual a diferença entre PREVENÇÃO e EVITAÇÃO de deadlock?',
+       opts:['Prevenção garante que ao menos uma condição de Coffman nunca se sustente; evitação analisa cada pedido mantendo o sistema em "estado seguro" (algoritmo do Banqueiro)','São sinônimos','Prevenção usa o algoritmo do Banqueiro; evitação destrói recursos','Evitação só atua depois que o deadlock acontece'],c:0,
+       why:'Prevenção ataca a estrutura do sistema (ex.: ordenar recursos quebra a espera circular); evitação (Banqueiro) decide pedido a pedido se conceder mantém um estado seguro. Detectar+recuperar só age depois.'},
+    ],acertos=>{
+      pts+=acertos*20;
+      zone.appendChild(el('div','resline','<span class="lbl">RESULTADO FINAL</span><br><b style="font-size:18px;color:var(--amber)">'+pts+' XP</b> de 100.'));
+      submitScore(4,pts);
+      const again=el('button','btn','REFZER DESAFIO');
+      again.addEventListener('click',()=>{root.innerHTML='';CHALS[4](root);});
+      zone.appendChild(again);
+    });
+  }
+  phase(0);
+};
+
+/* ---------- Desafio 5 ---------- */
+CHALS[5]=function(root){
+  chalHead(root,5,100);
+  const zone=el('div'); root.appendChild(zone);
+  let pts=0;
+  const card=el('div','qcard',
+    '<div class="lbl" style="margin-bottom:8px">MISSÃO 1 — TRADUÇÃO DE ENDEREÇO (40 XP)</div>'+
+    '<div style="font-size:13px;margin-bottom:10px">Sistema com paginação, páginas de <b class="num">1.024 bytes</b>. Tabela de páginas:</div>'+
+    '<div class="ptable-mini"><div><span>PÁGINA</span><span>QUADRO</span></div><div><span>0</span><span>5</span></div><div><span>1</span><span>9</span></div><div><span>2</span><span>3</span></div><div><span>3</span><span>7</span></div><div><span>4</span><span>6</span></div><div><span>5</span><span>2</span></div></div>'+
+    '<div style="font-size:13px">Traduza o endereço lógico <b class="num" style="font-size:16px">5000</b>:</div>');
+  zone.appendChild(card);
+  let f1done=0;
+  function afterF1(){
+    f1done++;
+    if(f1done===3){
+      card.appendChild(el('div','why','Memória: o endereço físico = quadro × 1024 + offset = 6 × 1024 + 904 = <b class="num">7048</b>. A CPU só enxerga endereços lógicos; a tabela de páginas é quem revela onde na RAM a página está.'));
+      const card2=el('div','qcard','<div class="lbl" style="margin-bottom:8px">MISSÃO 2 — CONTE OS PAGE FAULTS DO FIFO (30 XP)</div>'+
+        '<div style="font-size:13px">String de referência: <b class="num">1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5</b> — com <b class="num">3 quadros</b>, algoritmo FIFO. Quantos page faults ocorrem no total?</div>');
+      zone.appendChild(card2);
+      numField(card2,'Número total de page faults:',10,30,'ex: 9',won=>{
+        pts+=won;
+        card2.appendChild(el('div','why','Sequência de faults: 1F, 2F, 3F, 4F(expulsa 1), 1F(expulsa 2), 2F(expulsa 3), 5F(expulsa 4), 1 hit, 2 hit, 3F(expulsa 1), 4F(expulsa 2), 5 hit → <b class="num">10 faults</b>.'));
+        quiz(zone,[{q:'Em certas sequências, AUMENTAR o número de quadros no FIFO pode AUMENTAR o número de page faults! Esse fenômeno se chama:',
+          opts:['Thrashing','Anomalia de Belady — e não ocorre em LRU/Ótimo, que são algoritmos de pilha','Fragmentação interna','Swapping duplo'],c:1,
+          why:'A anomalia de Belady quebra a intuição de que mais memória = menos faults. LRU e o algoritmo Ótimo são "algoritmos de pilha" e são imunes a ela.'}],
+        acertos=>{
+          pts+=acertos*30;
+          zone.appendChild(el('div','resline','<span class="lbl">RESULTADO FINAL</span><br><b style="font-size:18px;color:var(--amber)">'+pts+' XP</b> de 100.'));
+          submitScore(5,pts);
+          const again=el('button','btn','REFZER DESAFIO');
+          again.addEventListener('click',()=>{root.innerHTML='';CHALS[5](root);});
+          zone.appendChild(again);
+        });
+      });
+    }
+  }
+  numField(card,'Número da PÁGINA (p):',4,10,'',won=>{pts+=won;card.appendChild(el('div','why','p = 5000 div 1024 = <b>4</b> (páginas de 0 a 1023, 1024 a 2047…).'));afterF1();});
+  numField(card,'Deslocamento/OFFSET (d):',904,10,'',won=>{pts+=won;card.appendChild(el('div','why','d = 5000 − 4×1024 = 5000 − 4096 = <b>904</b>.'));afterF1();});
+  numField(card,'Endereço FÍSICO completo:',7048,20,'',won=>{pts+=won;card.appendChild(el('div','why','Página 4 está no quadro 6 → físico = 6×1024 + 904 = <b>7048</b>.'));afterF1();});
+};
+
+/* ---------- Desafio 6 ---------- */
+CHALS[6]=function(root){
+  chalHead(root,6,100);
+  const zone=el('div'); root.appendChild(zone);
+  let pts=0;
+  const card=el('div','qcard','<div class="lbl" style="margin-bottom:8px">MISSÃO 1 — CONTANDO ACESSOS AO DISCO (40 XP)</div>'+
+    '<div style="font-size:13px;margin-bottom:10px">A) Um arquivo em alocação <b class="warn">ENCADEADA</b> começa no bloco <b class="num">8</b>, e a cadeia de ponteiros é 8 → 15 → 2 → 22. Para ler o bloco <b class="num">22</b>, partindo do diretório, quantos acessos a disco são no mínimo necessários?</div>');
+  zone.appendChild(card);
+  numField(card,'Acessos para ler o bloco 22 (encadeada):',4,20,'',won=>{
+    pts+=won;
+    card.appendChild(el('div','why','É preciso ler 8, depois 15, depois 2, e só então 22: <b>4 acessos</b>. A cadeia não atalha — exatamente o que você sentiu no Explorador de Blocos.'));
+    card.appendChild(el('div','','<div style="font-size:13px;margin:14px 0 10px">B) Em alocação <b class="warn">INDEXADA</b>, o bloco índice é o <b class="num">5</b> e o bloco de dados desejado é o <b class="num">19</b>. Quantos acessos a disco para ler o bloco 19 (sem cache)?</div>'));
+    numField(card,'Acessos para ler o bloco 19 (indexada):',2,20,'',won2=>{
+      pts+=won2;
+      card.appendChild(el('div','why','Lê o índice (bloco 5) → descobre que o dado está no 19 → lê o 19: <b>2 acessos</b>, em qualquer ordem de bloco.'));
+      quiz(zone,[
+        {q:'Qual método de alocação de disco cria FRAGMENTAÇÃO EXTERNA?',
+         opts:['Contígua','Encadeada','Indexada','FAT'],c:0,
+         why:'Como tudo precisa ser consecutivo, crescer/criar arquivos vai deixando buracos inúteis entre arquivos — fragmentação externa, igual à memória contígua.'},
+        {q:'Qual mecanismo permite ao controlador do disco transferir dados DIRETAMENTE para a memória, sem ocupar a CPU byte a byte?',
+         opts:['Spooling','DMA (Direct Memory Access)','Buffering duplo','MMIO'],c:1,
+         why:'O DMA transfere o bloco inteiro sozinho e interrompe a CPU uma única vez ao final — a CPU continua executando outros processos durante a transferência.'},
+        {q:'Qual método de alocação NÃO permite acesso direto eficiente, exigindo percorrer a cadeia desde o primeiro bloco?',
+         opts:['Encadeada','Contígua','Indexada','Nenhum'],c:0,
+         why:'Contígua acessa com start+offset (aritmética pura) e indexada consulta o índice; a encadeada só oferece acesso sequencial.'},
+      ],acertos=>{
+        pts+=acertos*20;
+        zone.appendChild(el('div','resline','<span class="lbl">RESULTADO FINAL</span><br><b style="font-size:18px;color:var(--amber)">'+pts+' XP</b> de 100.'));
+        submitScore(6,pts);
+        const again=el('button','btn','REFZER DESAFIO');
+        again.addEventListener('click',()=>{root.innerHTML='';CHALS[6](root);});
+        zone.appendChild(again);
+      });
+    });
+  });
+};
+
+/* ================================================================
+   TERMINAL
+================================================================ */
+function termPrint(html,cls){
+  const o=$('#termout');
+  const d=el('div',cls||'',html);
+  o.appendChild(d); o.scrollTop=o.scrollHeight;
+  while(o.children.length>120) o.removeChild(o.firstChild);
+}
+let confirmReset=false;
+function termWelcome(){
+  const o=$('#termout');
+  if(o.dataset.welcomed) return;
+  o.dataset.welcomed='1';
+  termPrint('SO-QUEST terminal — digite <span class="t-cmd">ajuda</span> para ver os comandos.','t-dim');
+}
+function termExec(raw){
+  const cmd=raw.trim(); if(!cmd) return;
+  termPrint('<span class="t-dim">root@soquest:~$</span> <span class="t-cmd">'+cmd.replace(/</g,'&lt;')+'</span>');
+  const [c,...args]=cmd.toLowerCase().split(/\s+/);
+  switch(c){
+    case 'ajuda': case 'help':
+      termPrint('Comandos: <span class="t-cmd">ls</span> lista módulos · <span class="t-cmd">status</span> pontuação · <span class="t-cmd">abrir &lt;1-6&gt;</span> executa módulo · <span class="t-cmd">limpar</span> · <span class="t-cmd">reiniciar</span> zera o progresso · <span class="t-cmd">sobre</span> · <span class="t-cmd">uptime</span> · <span class="t-cmd">boot</span> re-executa a sequência de boot');
+      break;
+    case 'ls':
+      MODULES.forEach(m=>termPrint(m.pid+'  '+m.fname.padEnd(16)+' '+(S.scores[m.id]>0?(S.scores[m.id]/10).toFixed(1)+'/10':'—')+'  <span class="t-dim">'+m.week+'</span>'));
+      break;
+    case 'status':{
+      const xp=totalXP();
+      termPrint('XP: <span class="t-ok">'+xp+'/600</span> · conceito '+(xp/60).toFixed(1)+' · medalhas '+Object.values(S.scores).filter(s=>s>=60).length+'/6 · uptime '+fmtTime(Date.now()-S.started));
+      break;}
+    case 'abrir': case 'open':{
+      const n=parseInt(args[0]);
+      if(n>=1&&n<=6){ termPrint('Executando módulo '+n+'...','t-ok'); renderHub(); showScreen('hub'); openModule(n); }
+      else termPrint('uso: abrir &lt;1-6&gt;','t-er');
+      break;}
+    case 'limpar': case 'clear': $('#termout').innerHTML=''; break;
+    case 'uptime': termPrint('sistema ativo há '+fmtTime(Date.now()-S.started)+' — nenhum crash registrado (até agora).'); break;
+    case 'sobre': termPrint('SO-QUEST v1.0 — simulador educacional de Sistemas Operacionais: fundamentos, threads, escalonamento, sincronização/deadlocks, memória e arquivos/I/O. Feito para estudar jogando.'); break;
+    case 'sudo': termPrint('sudo: permissão negada... brincadeira — você já é root aqui.','t-er'); break;
+    case 'matrix':{
+      const chars='01アイウエオカキク$#%&@'; let k=0;
+      const iv=regTo(function g(){ termPrint(Array.from({length:58},()=>chars[Math.floor(Math.random()*chars.length)]).join(''),'t-ok'); if(++k<12) regTo(g,90); },60);
+      break;}
+    case 'boot': termPrint('Reiniciando sistema...','t-ok'); regTo(startBoot,600); break;
+    case 'reiniciar': case 'reset':
+      if(!confirmReset){ confirmReset=true; termPrint('Isto apaga TODO o progresso. Digite <span class="t-cmd">reiniciar</span> novamente para confirmar.','t-er'); }
+      else { localStorage.removeItem('soquest_save'); localStorage.removeItem('soquest_last'); termPrint('Progresso apagado. Reiniciando kernel...','t-er'); regTo(()=>location.reload(),700); }
+      break;
+    case 'ping': termPrint('PING localhost: 56 bytes... resposta em 0.04ms — o kernel está em casa.'); break;
+    default: termPrint('comando não encontrado: '+c.replace(/</g,'&lt;')+' (digite <span class="t-cmd">ajuda</span>)','t-er');
+  }
+}
+ $('#terminput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ termExec(e.target.value); e.target.value=''; }
+});
+
+/* ================================================================
+   START
+================================================================ */
+startBoot();
+updateStatusbar();
+</script>
+</body>
+</html>
