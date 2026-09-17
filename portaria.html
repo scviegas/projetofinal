@@ -631,7 +631,15 @@ function execCli(raw){
       const nm=t[3];if(!nm){P('% Informe o nome da ACL','err');return out;}
       save.rtr.named[nm]=save.rtr.named[nm]||[];cli.mode='nacl';cli.curNacl=nm;persist();return out;}
     if(c0==='no'&&t[1]==='ip'&&t[2]==='access-list'&&t[3]==='extended'){delete save.rtr.named[t[4]];persist();return out;}
-    if(c0==='do'){doShow(t.slice(2),P);return out;}
+    // Compatibilidade didática: aceita SHOW e PING diretamente no modo config,
+    // além da sintaxe IOS tradicional "do show ..." / "do ping ...".
+    if(c0==='show'){doShow(t.slice(1),P);return out;}
+    if(c0==='ping')return routerPingCmd(t[1]);
+    if(c0==='do'){
+      if((t[1]||'').toLowerCase()==='show'){doShow(t.slice(2),P);return out;}
+      if((t[1]||'').toLowerCase()==='ping')return routerPingCmd(t[2]);
+      P('% Uso: do show ... ou do ping <ip>','wrn');return out;
+    }
     if(c0==='end'||c0==='exit'){cli.mode='priv';return out;}
     if(c0==='write'){P('Building configuration...');P('[OK]','ok');return out;}
     P('% Invalid input detected. Digite "?" para ajuda.','err');return out;}
