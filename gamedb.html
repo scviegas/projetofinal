@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MongoQuest — Laboratório de Consultas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2300e070' d='M12 1.8C7.5 7.1 5.3 11.4 5.3 15.1a6.7 6.7 0 0 0 13.4 0c0-3.7-2.2-8-6.7-13.3z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f0d; --bg2:#0d1411; --panel:#101915; --panel2:#0c1310;
+    --line:#1d2b24; --line2:#2a3d33;
+    --tx:#d9e6de; --tx2:#8fa89b; --tx3:#5d7468;
+    --green:#00e070; --green-dim:#1d6b43;
+    --amber:#ffc862; --red:#ff7a6b; --cyan:#66d9c2;
+    --mono:'JetBrains Mono',monospace; --disp:'Chakra Petch',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--tx);font-family:var(--mono);overflow:hidden}
+  ::selection{background:rgba(0,224,112,.25)}
+  *::-webkit-scrollbar{width:10px;height:10px}
+  *::-webkit-scrollbar-thumb{background:#1c2a23;border-radius:99px;border:3px solid var(--panel)}
+  *::-webkit-scrollbar-track{background:transparent}
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;gap:16px;padding:0 16px;height:56px;border-bottom:1px solid var(--line);background:var(--bg2)}
+  .brand{display:flex;align-items:center;gap:9px;min-width:0}
+  .brand .leaf{width:20px;height:20px;color:var(--green);flex:none}
+  .brand-name{font:700 16px var(--disp);letter-spacing:.14em;white-space:nowrap}
+  .brand-name b{color:var(--green)}
+  .brand-sub{font:400 11px var(--mono);color:var(--tx3);border-left:1px solid var(--line2);padding-left:12px;white-space:nowrap}
+  .hstats{margin-left:auto;display:flex;align-items:center;gap:7px;flex:none}
+  .pill{font:500 11px var(--mono);color:var(--tx3);border:1px solid var(--line);border-radius:99px;padding:4px 10px;white-space:nowrap}
+  .pill b{color:var(--tx);font-weight:700}
+  .pill.xp b{color:var(--green)}
+  .iconbtn{width:30px;height:30px;display:grid;place-items:center;background:none;border:1px solid var(--line);border-radius:8px;color:var(--tx2);cursor:pointer;font:700 13px var(--disp)}
+  .iconbtn:hover{border-color:var(--green-dim);color:var(--tx)}
+  .iconbtn svg{width:15px;height:15px}
+
+  /* ---------- layout ---------- */
+  main{display:grid;grid-template-columns:minmax(0,1fr) 384px;gap:14px;padding:14px;height:calc(100vh - 56px);overflow:hidden}
+  .left{display:flex;flex-direction:column;gap:14px;min-height:0;min-width:0}
+  .right{display:flex;flex-direction:column;gap:14px;min-height:0}
+
+  /* ---------- mission card ---------- */
+  .mission{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:10px;padding:14px 16px;flex:none}
+  .mission.swap{animation:cardIn .45s ease}
+  @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .m-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .m-num{font:700 11px var(--disp);letter-spacing:.18em;color:var(--tx3)}
+  .m-tag{color:var(--amber);border:1px solid rgba(255,200,98,.35);border-radius:99px;padding:1px 8px;margin-left:6px;font-size:9px;letter-spacing:.14em}
+  .m-xp{font:700 11px var(--mono);color:var(--green);border:1px solid var(--green-dim);padding:2px 9px;border-radius:99px;white-space:nowrap}
+  .m-title{font:600 19px var(--disp);margin:7px 0 2px}
+  .m-sql{font:500 11px var(--mono);color:var(--tx3);margin-bottom:9px}
+  .m-sql span{color:var(--amber);opacity:.9}
+  .m-brief{font:400 12.5px/1.7 var(--mono);color:var(--tx2);min-height:3.4em}
+  .m-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:10px}
+  .m-tries{font:500 11px var(--mono);color:var(--tx3)}
+  .m-actions{display:flex;gap:8px}
+  .hint-btn{display:inline-flex;align-items:center;gap:6px;font:600 11px var(--disp);letter-spacing:.08em;color:var(--amber);background:none;border:1px solid rgba(255,200,98,.3);border-radius:8px;padding:6px 11px;cursor:pointer}
+  .hint-btn:hover{background:rgba(255,200,98,.08)}
+  .hint-btn svg{width:13px;height:13px}
+  .btn{font:700 12px var(--disp);letter-spacing:.1em;padding:9px 16px;border-radius:8px;border:1px solid var(--green-dim);background:rgba(0,224,112,.1);color:var(--green);cursor:pointer}
+  .btn:hover{background:rgba(0,224,112,.2)}
+  .btn.ghost{color:var(--tx2);border-color:var(--line2);background:none}
+  .btn.ghost:hover{color:var(--tx);background:rgba(255,255,255,.03)}
+  .btn.small{padding:6px 11px;font-size:11px}
+  .btn.danger{color:var(--red);border-color:#6b352e;background:rgba(255,122,107,.07)}
+  .btn.danger:hover{background:rgba(255,122,107,.15)}
+  .hint-box{margin-top:11px;border:1px dashed var(--line2);border-radius:8px;padding:10px 12px;background:var(--panel2)}
+  .hint-head{display:flex;justify-content:space-between;align-items:center;font:700 10px var(--disp);letter-spacing:.16em;color:var(--tx3);margin-bottom:6px}
+  .hint-head .mini{font:600 10px var(--disp);letter-spacing:.06em;color:var(--green);background:none;border:1px solid var(--green-dim);border-radius:6px;padding:3px 8px;cursor:pointer}
+  .hint-head .mini:hover{background:rgba(0,224,112,.1)}
+  .hint-box pre{font:500 12.5px/1.6 var(--mono);color:var(--amber);white-space:pre-wrap;word-break:break-word}
+
+  /* ---------- terminal ---------- */
+  .term{position:relative;display:flex;flex-direction:column;min-height:0;flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .term::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:4;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.09) 0 1px,transparent 1px 3px)}
+  .term-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);font:500 10.5px var(--mono);color:var(--tx3);letter-spacing:.04em;flex:none}
+  .led{width:7px;height:7px;border-radius:50%;background:var(--green);animation:led 2.4s ease infinite}
+  @keyframes led{0%,100%{opacity:1}50%{opacity:.4}}
+  .term-bar .right{margin-left:auto}
+  .term-out{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 16px;font:400 13px/1.6 var(--mono)}
+  .line{white-space:pre-wrap;word-break:break-word;margin-bottom:2px}
+  .line.echo{margin-top:12px}
+  .line.dim{color:var(--tx3)}
+  .line.sys{color:var(--tx2)}
+  .line.err{color:var(--red)}
+  .line.ok{color:var(--green)}
+  .line.vfail{color:#c9a35a}
+  .line.vfail::before{content:'› '}
+  .line.successblock{color:var(--green);font-weight:500;animation:pop .4s ease;margin-top:10px}
+  @keyframes pop{from{transform:scale(.97);opacity:0}to{transform:none;opacity:1}}
+  .prompt-t{color:var(--green);font-weight:700}
+  .tk-key{color:#7fbf9b}
+  .tk-str{color:var(--amber)}
+  .tk-num{color:var(--cyan)}
+  .tk-bool.true{color:var(--green)}
+  .tk-bool.false{color:var(--red)}
+  .tk-kw{color:var(--green);font-weight:700}
+  .tk-fn{color:#a8d8c2;font-weight:500}
+  .tk-op{color:#7fe0a8}
+  .tk-oid{color:var(--tx3);font-style:italic}
+  .tk-punc{color:var(--tx3)}
+  .term-in{display:flex;align-items:flex-start;gap:9px;padding:11px 16px;border-top:1px solid var(--line);flex:none}
+  .term-in .prompt{font:700 13px/1.6 var(--mono);color:var(--green);user-select:none;padding-top:1px}
+  .inputwrap{position:relative;flex:1;font:400 13px/1.6 var(--mono);min-width:0}
+  .inputwrap pre{margin:0;font:inherit;line-height:inherit;white-space:pre-wrap;word-break:break-word;min-height:1.6em;color:var(--tx)}
+  .inputwrap textarea{position:absolute;inset:0;width:100%;height:100%;background:transparent;color:transparent;caret-color:var(--green);border:0;outline:0;resize:none;font:inherit;line-height:inherit;white-space:pre-wrap;word-break:break-word;overflow:hidden}
+
+  /* ---------- painéis da direita ---------- */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+  .p-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);flex:none}
+  .p-title{font:700 11px var(--disp);letter-spacing:.16em;color:var(--tx3)}
+  .p-tools{display:flex;align-items:center;gap:8px}
+  .p-count{font:500 11px var(--mono);color:var(--tx3)}
+  .p-count b{color:var(--green)}
+  .viewbtn{font:600 10px var(--disp);letter-spacing:.08em;color:var(--tx2);background:none;border:1px solid var(--line);border-radius:6px;padding:3px 8px;cursor:pointer}
+  .viewbtn:hover{color:var(--tx);border-color:var(--line2)}
+  .data-panel{flex:1}
+  #docList{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+  .doc{border:1px solid var(--line);border-left:2px solid var(--green-dim);border-radius:8px;padding:8px 11px;background:var(--panel2)}
+  .doc.inativo{border-left-color:#8a6a2f}
+  .doc.new{animation:docIn .4s ease}
+  .doc.flash{animation:docFlash 1.2s ease}
+  .doc.gone{animation:docOut .32s ease forwards}
+  @keyframes docIn{from{opacity:0;transform:translateY(7px)}}
+  @keyframes docFlash{0%,55%{border-color:var(--amber);background:rgba(255,200,98,.07)}}
+  @keyframes docOut{to{opacity:0;transform:translateX(10px)}}
+  .doc-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .doc-name{font:600 13px var(--disp);color:var(--tx)}
+  .badge{font:700 9px var(--mono);letter-spacing:.1em;padding:2px 8px;border-radius:99px;text-transform:uppercase;flex:none}
+  .badge.on{color:var(--green);border:1px solid rgba(0,224,112,.4);background:rgba(0,224,112,.07)}
+  .badge.off{color:var(--amber);border:1px solid rgba(255,200,98,.35);background:rgba(255,200,98,.06)}
+  .doc-curso{font:400 11.5px var(--mono);color:var(--tx2);margin-top:3px}
+  .doc-meta{font:400 10.5px var(--mono);color:var(--tx3);margin-top:5px}
+  .doc-meta .oid-s{opacity:.8}
+  .doc.jsonview{font:400 11px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word}
+  .empty-hint{font:400 12px var(--mono);color:var(--tx3);padding:8px 2px}
+  .trail-panel{flex:none;max-height:34%}
+  #trail{overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:2px}
+  .tr-item{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:7px}
+  .tr-item.done,.tr-item.now{cursor:pointer}
+  .tr-item.done:hover{background:rgba(255,255,255,.03)}
+  .tr-idx{font:700 11px var(--mono);color:var(--tx3);width:20px;flex:none}
+  .tr-name{flex:1;font:500 12px var(--mono);color:var(--tx2);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tr-item.done .tr-name{color:var(--tx3)}
+  .tr-item.now{background:rgba(0,224,112,.06);outline:1px solid rgba(0,224,112,.25)}
+  .tr-item.now .tr-name{color:var(--tx)}
+  .tr-item.lock{opacity:.4}
+  .tr-ic{width:14px;height:14px;flex:none;color:var(--tx3)}
+  .tr-item.done .tr-ic{color:var(--green)}
+  .tr-item.now .tr-ic{color:var(--green);animation:nudge 1.6s ease infinite}
+  @keyframes nudge{0%,100%{transform:translateX(0);opacity:.7}50%{transform:translateX(3px);opacity:1}}
+
+  /* ---------- toasts ---------- */
+  #toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:60}
+  .toast{display:flex;gap:11px;align-items:flex-start;background:#0f1a15;border:1px solid var(--line2);border-left:3px solid var(--green);border-radius:10px;padding:10px 14px;min-width:240px;max-width:330px;animation:toastIn .35s cubic-bezier(.2,.9,.3,1.2)}
+  .toast.warn{border-left-color:var(--amber)}
+  .toast .t-ic{width:16px;height:16px;flex:none;margin-top:1px;color:var(--green)}
+  .toast.warn .t-ic{color:var(--amber)}
+  .toast .t1{font:700 12px var(--disp);letter-spacing:.05em}
+  .toast .t2{font:400 11px var(--mono);color:var(--tx2);margin-top:2px}
+  .toast.out{animation:toastOut .3s forwards}
+  @keyframes toastIn{from{opacity:0;transform:translateX(30px)}}
+  @keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
+
+  /* ---------- modais ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(5,9,7,.74);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;backdrop-filter:blur(3px)}
+  .overlay.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line2);border-radius:14px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:22px 24px;animation:cardIn .3s ease}
+  .modal h3{font:700 15px var(--disp);letter-spacing:.1em;display:flex;align-items:center;gap:10px}
+  .modal h3 .leaf{width:18px;height:18px;color:var(--green)}
+  .modal .sub{font:400 11.5px var(--mono);color:var(--tx3);margin-top:3px}
+  .cheat{width:100%;border-collapse:collapse;font:400 12px/1.55 var(--mono);margin:14px 0 4px}
+  .cheat th{font:700 10px var(--disp);letter-spacing:.16em;color:var(--tx3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line2);text-transform:uppercase}
+  .cheat td{padding:6px 8px;border-bottom:1px solid var(--line);color:var(--tx2);vertical-align:top}
+  .cheat td:first-child{color:var(--amber);white-space:nowrap}
+  .cheat td:last-child{color:var(--green)}
+  .modal .note{font:400 11.5px/1.6 var(--mono);color:var(--tx3);margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+  .modal .note b{color:var(--tx2)}
+  .ops-line{font:400 12px/1.8 var(--mono);color:var(--tx2);margin-top:10px}
+  .ops-line .tk-op{font-family:var(--mono)}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+  .cert-quote{border:1px solid var(--line2);border-radius:10px;padding:16px 18px;margin:16px 0;background:var(--panel2);font:400 13px/1.9 var(--mono);color:var(--tx2)}
+  .cert-quote input{background:transparent;border:0;border-bottom:1px dashed var(--line2);color:var(--green);font:600 13px var(--mono);outline:none;width:210px;text-align:center}
+  .cert-stats{display:flex;flex-wrap:wrap;gap:6px 20px;font:500 12px var(--mono);color:var(--tx3);margin:4px 0 6px}
+  .cert-stats b{color:var(--green)}
+
+  /* ---------- responsivo ---------- */
+  @media (max-width:1020px){
+    body{overflow:auto}
+    main{grid-template-columns:1fr;height:auto;overflow:visible}
+    .term{flex:none;height:62vh}
+    .trail-panel{max-height:none}
+    #docList{max-height:340px}
+    .brand-sub{display:none}
+  }
+  @media (max-width:720px){
+    .inputwrap,.inputwrap pre,.inputwrap textarea,.term-in .prompt,.term-out{font-size:16px;line-height:1.55}
+    .hstats .pill:not(.xp){display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="leaf" id="brandLeaf"></span>
+    <span class="brand-name">MONGO<b>QUEST</b></span>
+    <span class="brand-sub">laboratório de consultas · banco aula · collection aluno</span>
+  </div>
+  <div class="hstats">
+    <span class="pill">db <b>aula</b></span>
+    <span class="pill">collection <b>aluno</b></span>
+    <span class="pill"><b id="docCount">0</b> docs</span>
+    <span class="pill xp"><b id="xpVal">0</b> XP · <span id="rankVal">Estagiário</span></span>
+    <button class="iconbtn" id="btnHelp" title="guia SQL ↔ MongoDB">?</button>
+    <button class="iconbtn" id="btnSound" title="som ligado/desligado"></button>
+    <button class="iconbtn" id="btnReset" title="reiniciar laboratório"></button>
+  </div>
+</header>
+
+<main>
+  <section class="left">
+    <div class="mission" id="missionBox"></div>
+
+    <div class="term" id="term">
+      <div class="term-bar">
+        <span class="led"></span>
+        <span>mongosh — mongodb://127.0.0.1:27017/aula</span>
+        <span class="right">simulador didático</span>
+      </div>
+      <div class="term-out" id="out"></div>
+      <div class="term-in">
+        <span class="prompt">aula&gt;</span>
+        <div class="inputwrap">
+          <pre aria-hidden="true"><span id="mirror"></span></pre>
+          <textarea id="cmd" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="right">
+    <div class="panel data-panel">
+      <div class="p-head">
+        <span class="p-title">COLEÇÃO · ALUNO</span>
+        <span class="p-tools">
+          <span class="p-count"><b id="pdocCount">0</b> documentos</span>
+          <button class="viewbtn" id="viewToggle">ver JSON</button>
+        </span>
+      </div>
+      <div id="docList"></div>
+    </div>
+
+    <div class="panel trail-panel">
+      <div class="p-head">
+        <span class="p-title">TRILHA DE MISSÕES</span>
+        <span class="p-count" id="trailCount"></span>
+      </div>
+      <div id="trail"></div>
+    </div>
+  </aside>
+</main>
+
+<div id="toasts"></div>
+
+<!-- guia SQL ↔ MongoDB -->
+<div class="overlay" id="ovHelp">
+  <div class="modal">
+    <h3><span class="leaf mini-leaf"></span>GUIA RÁPIDO — SQL ↔ MONGODB</h3>
+    <div class="sub">Para quem vem do mundo relacional: aqui não existe tabela — os dados vivem em <b>collections</b> de <b>documents</b> flexíveis.</div>
+    <table class="cheat">
+      <tr><th>Banco relacional</th><th>MongoDB</th></tr>
+      <tr><td>Database</td><td>Database</td></tr>
+      <tr><td>Tabela aluno</td><td>Collection aluno</td></tr>
+      <tr><td>Registro / linha</td><td>Document</td></tr>
+      <tr><td>Coluna</td><td>Field</td></tr>
+    </table>
+    <table class="cheat">
+      <tr><th>SQL</th><th>MongoDB</th></tr>
+      <tr><td>INSERT</td><td>insertOne() / insertMany()</td></tr>
+      <tr><td>SELECT</td><td>find()</td></tr>
+      <tr><td>UPDATE</td><td>updateOne() / updateMany()</td></tr>
+      <tr><td>DELETE</td><td>deleteOne() / deleteMany()</td></tr>
+      <tr><td>WHERE</td><td>find({ campo: valor })</td></tr>
+      <tr><td>ORDER BY</td><td>.sort({ campo: 1 | -1 })</td></tr>
+      <tr><td>LIMIT</td><td>.limit(n)</td></tr>
+      <tr><td>COUNT(*)</td><td>countDocuments(filtro)</td></tr>
+    </table>
+    <div class="ops-line">Filtros: <span class="tk-op">$eq $ne $gt $gte $lt $lte $in $nin $exists</span><br>
+    Updates: <span class="tk-op">$set $inc $unset</span> · Cursor: <span class="tk-fn">.sort() .limit() .skip() .count() .toArray()</span></div>
+    <div class="modal-actions"><button class="btn" data-close>entendi</button></div>
+  </div>
+</div>
+
+<!-- confirmar reinício -->
+<div class="overlay" id="ovReset">
+  <div class="modal" style="max-width:440px">
+    <h3><span class="leaf mini-leaf"></span>REINICIAR LABORATÓRIO</h3>
+    <div class="sub" style="margin-top:10px">Todo o progresso, o XP e a coleção <b style="color:var(--tx2)">aluno</b> voltarão ao estado inicial da aula. Dá para fazer depois?</div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close>cancelar</button>
+      <button class="btn danger" id="btnResetYes">reiniciar tudo</button>
+    </div>
+  </div>
+</div>
+
+<!-- certificado -->
+<div class="overlay" id="ovCert">
+  <div class="modal">
+    <h3><span class="leaf mini-leaf"></span>CERTIFICADO DE OPERADOR</h3>
+    <div class="sub">MongoQuest · banco aula · collection aluno · 11 missões</div>
+    <div class="cert-quote">"Certificamos que <input id="certName" placeholder="seu nome" maxlength="40"> concluiu o treinamento de consultas MongoDB — find, insert, update, delete, sort, limit e count — sobre a coleção aluno."</div>
+    <div class="cert-stats">
+      <span>XP total <b id="cXp">0</b></span>
+      <span>comandos executados <b id="cCmd">0</b></span>
+      <span>acertos na 1ª tentativa <b id="cFirst">0/11</b></span>
+      <span>tempo de laboratório <b id="cTime">00:00</b></span>
+    </div>
+    <table class="cheat">
+      <tr><th>Você dominou</th><th>MongoDB</th></tr>
+      <tr><td>SELECT</td><td>find() com filtros e operadores</td></tr>
+      <tr><td>INSERT</td><td>insertOne() / insertMany()</td></tr>
+      <tr><td>UPDATE</td><td>updateOne() com $set</td></tr>
+      <tr><td>DELETE</td><td>deleteMany()</td></tr>
+      <tr><td>ORDER BY + LIMIT</td><td>.sort() + .limit()</td></tr>
+    </table>
+    <div class="modal-actions">
+      <button class="btn" data-close>continuar no modo livre</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =========================================================
+   MongoQuest — simulador mongosh + jogo de missões
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const ICONS = {
+  leaf:'<svg viewBox="0 0 24 24" fill="none"><path fill="currentColor" d="M12 1.8C7.5 7.1 5.3 11.4 5.3 15.1a6.7 6.7 0 0 0 13.4 0c0-3.7-2.2-8-6.7-13.3z"/><path d="M12 6.8v13" stroke="#0a0f0d" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  lamp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.7 10.7c.7.6 1.2 1.4 1.3 2.3h4.8c.1-.9.6-1.7 1.3-2.3A6 6 0 0 0 12 3z"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  caret:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+  vol:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"/></svg>',
+  volx:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6.5 9H3v6h3.5L11 19V5z"/><path d="M16 9l6 6M22 9l-6 6"/></svg>',
+  reset:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6M20.5 3v5h-5"/></svg>'
+};
+ $('#brandLeaf').innerHTML = ICONS.leaf;
+document.querySelectorAll('.mini-leaf').forEach(e => e.innerHTML = ICONS.leaf);
+ $('#btnReset').innerHTML = ICONS.reset;
+
+/* =========================================================
+   Estado do jogo
+   ========================================================= */
+const CC = 'Ciência da Computação';
+const SEED = [
+  ['Ana Silva',   21, CC, 3, true],
+  ['Carlos Souza',23, 'Sistemas de Informação', 5, true],
+  ['Maria Santos',20, CC, 2, true],
+  ['João Oliveira',27,'Gestão de TI', 6, false],
+  ['Fernanda Lima',22,'Análise e Desenvolvimento de Sistemas', 4, true],
+];
+
+const S = {
+  docs:[], seq:1, xp:0, mission:0, missionBase:[], execs:[], tries:0, hinted:false,
+  doneAll:false, stats:{ commands:0, firstTry:0, errors:0, start:Date.now() }
+};
+
+function makeId(){
+  const n = (S.seq++).toString(16).padStart(6,'0');
+  let rnd=''; for(let i=0;i<6;i++) rnd += Math.floor(Math.random()*16).toString(16);
+  return ('6842a1'+rnd+n).slice(0,24);
+}
+function freshDocs(){
+  S.seq = 1;
+  S.docs = SEED.map(([nome,idade,curso,semestre,ativo]) =>
+    ({ _id:makeId(), nome, idade, curso, semestre, ativo }));
+}
+const clone = o => structuredClone(o);
+const cloneDocs = a => a.map(clone);
+const skey = o => Object.keys(o).sort().map(k => k+'='+JSON.stringify(o[k])).join('|');
+
+/* =========================================================
+   Motor MongoDB (em memória)
+   ========================================================= */
+function eqv(a,b){
+  if(a===b) return true;
+  if(typeof a!=='object'||typeof b!=='object'||a===null||b===null) return false;
+  return JSON.stringify(a)===JSON.stringify(b);
+}
+function matchDoc(doc, filter){
+  for(const k of Object.keys(filter)){
+    const cond = filter[k];
+    const isOp = cond!==null && typeof cond==='object' && !Array.isArray(cond) &&
+                 Object.keys(cond).some(x => x[0]==='$');
+    if(isOp){
+      for(const op of Object.keys(cond)){
+        const v = cond[op], dv = doc[k];
+        switch(op){
+          case '$gt':  if(!(dv>v))  return false; break;
+          case '$gte': if(!(dv>=v)) return false; break;
+          case '$lt':  if(!(dv<v))  return false; break;
+          case '$lte': if(!(dv<=v)) return false; break;
+          case '$ne':  if(eqv(dv,v))  return false; break;
+          case '$eq':  if(!eqv(dv,v)) return false; break;
+          case '$in':  if(!Array.isArray(v)||!v.some(x=>eqv(dv,x))) return false; break;
+          case '$nin': if(!Array.isArray(v)||v.some(x=>eqv(dv,x))) return false; break;
+          case '$exists': if((k in doc)!==!!v) return false; break;
+          default: throw new Error('o operador "'+op+'" ainda não é suportado neste simulador');
+        }
+      }
+    } else if(!eqv(doc[k], cond)) return false;
+  }
+  return true;
+}
+function applyUpdate(doc, u){
+  if(typeof u!=='object'||u===null) throw new TypeError('o update deve ser um documento, ex.: { $set: { ativo: true } }');
+  const keys = Object.keys(u);
+  if(!keys.some(k=>k[0]==='$')){        // sem operador = replace, mantendo _id
+    const id = doc._id;
+    for(const k of Object.keys(doc)) delete doc[k];
+    Object.assign(doc, u); doc._id = id; return;
+  }
+  for(const k of keys){
+    if(k==='$set'){
+      const t=u[k]; if(typeof t!=='object'||t===null) throw new TypeError('$set espera um documento');
+      Object.assign(doc,t);
+    } else if(k==='$inc'){
+      for(const f in u[k]){
+        const cur = Number(doc[f]||0);
+        if(!Number.isFinite(cur)) throw new TypeError('$inc: o campo "'+f+'" não é numérico');
+        doc[f] = cur + Number(u[k][f]);
+      }
+    } else if(k==='$unset'){
+      for(const f in u[k]) delete doc[f];
+    } else throw new Error('o operador de update "'+k+'" não é suportado — use $set, $inc ou $unset');
+  }
+}
+function makeCursor(docs){
+  return {
+    __cursor:true,
+    sort(spec){
+      if(!spec||typeof spec!=='object') throw new TypeError('sort espera um documento, ex.: { idade: -1 }');
+      const ent = Object.entries(spec);
+      const d = docs.map(x=>structuredClone(x));
+      d.sort((a,b)=>{
+        for(const [k,v] of ent){
+          if(a[k]===b[k]) continue;
+          const r = a[k]<b[k] ? -1 : 1;
+          return v<0 ? -r : r;
+        }
+        return 0;
+      });
+      return makeCursor(d);
+    },
+    limit(n){ return makeCursor(docs.slice(0,n)); },
+    skip(n){ return makeCursor(docs.slice(n)); },
+    count(){ return docs.length; },
+    size(){ return docs.length; },
+    toArray(){ return docs.map(x=>structuredClone(x)); },
+    pretty(){ return this.toArray(); },
+    forEach(fn){ docs.forEach(fn); },
+    map(fn){ return docs.map(fn); },
+    [Symbol.iterator](){ return docs[Symbol.iterator](); }
+  };
+}
+function q(filter){
+  if(filter===undefined||filter===null) return S.docs.map(clone);
+  if(typeof filter!=='object'||Array.isArray(filter)) throw new TypeError('o filtro deve ser um documento, ex.: { ativo: true }');
+  return S.docs.filter(d=>matchDoc(d,filter)).map(clone);
+}
+function needFilter(f, nome){
+  if(f===undefined) throw new TypeError(nome+' espera um filtro — use { } para considerar todos os documentos');
+  if(typeof f!=='object'||f===null) throw new TypeError(nome+' espera um documento de filtro');
+}
+const Sandbox = {
+  aluno:{
+    find(f){ return makeCursor(q(f)); },
+    findOne(f){ const r=q(f); return r.length ? r[0] : null; },
+    insertOne(doc){
+      if(typeof doc!=='object'||doc===null||Array.isArray(doc)) throw new TypeError('insertOne espera um documento, ex.: { nome: "..." }');
+      const d = clone(doc); if(!d._id) d._id = makeId();
+      S.docs.push(d);
+      return { acknowledged:true, insertedId:String(d._id) };
+    },
+    insertMany(arr){
+      if(!Array.isArray(arr)) throw new TypeError('insertMany espera um array de documentos');
+      const ids = arr.map(raw=>{
+        if(typeof raw!=='object'||raw===null||Array.isArray(raw)) throw new TypeError('insertMany espera um array de documentos');
+        const d = clone(raw); if(!d._id) d._id = makeId();
+        S.docs.push(d); return String(d._id);
+      });
+      return { acknowledged:true, insertedIds:ids };
+    },
+    updateOne(f,u){
+      needFilter(f,'updateOne');
+      const i = S.docs.findIndex(d=>matchDoc(d,f));
+      if(i<0) return { acknowledged:true, matchedCount:0, modifiedCount:0 };
+      const before = JSON.stringify(S.docs[i]);
+      applyUpdate(S.docs[i],u);
+      return { acknowledged:true, matchedCount:1, modifiedCount: JSON.stringify(S.docs[i])!==before ? 1 : 0 };
+    },
+    updateMany(f,u){
+      needFilter(f,'updateMany');
+      let m=0, mod=0;
+      S.docs.forEach(d=>{
+        if(matchDoc(d,f)){ m++; const b=JSON.stringify(d); applyUpdate(d,u); if(JSON.stringify(d)!==b) mod++; }
+      });
+      return { acknowledged:true, matchedCount:m, modifiedCount:mod };
+    },
+    deleteOne(f){
+      needFilter(f,'deleteOne');
+      const i = S.docs.findIndex(d=>matchDoc(d,f));
+      if(i<0) return { acknowledged:true, deletedCount:0 };
+      S.docs.splice(i,1);
+      return { acknowledged:true, deletedCount:1 };
+    },
+    deleteMany(f){
+      needFilter(f,'deleteMany');
+      const before = S.docs.length;
+      S.docs = S.docs.filter(d=>!matchDoc(d,f));
+      return { acknowledged:true, deletedCount: before - S.docs.length };
+    },
+    countDocuments(f){ return q(f).length; },
+    count(f){ return q(f).length; }
+  }
+};
+
+/* =========================================================
+   Parser / REPL
+   ========================================================= */
+function splitTop(src){
+  const parts=[]; let cur=''; let depth=0; let str=null;
+  for(let i=0;i<src.length;i++){
+    const ch=src[i], prev=src[i-1];
+    if(str){ cur+=ch; if(ch===str && prev!=='\\') str=null; continue; }
+    if(ch==='"'||ch==="'"||ch==='`'){ str=ch; cur+=ch; continue; }
+    if(ch==='('||ch==='['||ch==='{') depth++;
+    if(ch===')'||ch===']'||ch==='}') depth--;
+    if(depth===0 && (ch===';'||ch==='\n')){ parts.push(cur); cur=''; continue; }
+    cur+=ch;
+  }
+  if(cur.trim()) parts.push(cur);
+  return parts;
+}
+const DBM_RE = /^db\s*\.\s*aluno\s*\.\s*([A-Za-z_$][\w$]*)/;
+
+function runLine(code){
+  const events=[], results=[];
+  for(let t of splitTop(code)){
+    t = t.trim(); if(!t) continue;
+    if(/^use\s+[A-Za-z0-9_]+$/.test(t)){ events.push({k:'sys',text:'switched to db '+t.split(/\s+/)[1]}); continue; }
+    if(/^show\s+(dbs|databases)$/.test(t)){ events.push({k:'ok',text:'aula'}); continue; }
+    if(/^show\s+collections$/.test(t)){ events.push({k:'ok',text:'aluno'}); continue; }
+    if(t==='clear'){ $('#out').innerHTML=''; continue; }
+    if(t==='db'){ events.push({k:'ok',text:'aula'}); continue; }
+    if(t==='help'){ printHelp(); continue; }
+    let val=null, err=null;
+    try{ val = (new Function('db','"use strict";\nreturn(\n'+t+'\n);\n'))(Sandbox); }
+    catch(e){
+      if(e instanceof SyntaxError){
+        try{ (new Function('db','"use strict";\n'+t+'\n'))(Sandbox); val = undefined; }
+        catch(e2){ err = e2; }
+      } else err = e;
+    }
+    if(err){
+      events.push({k:'err', text: err instanceof SyntaxError
+        ? 'SyntaxError: confira parênteses, chaves e vírgulas da sua query'
+        : (err.name+': '+err.message)});
+      S.stats.errors++; continue;
+    }
+    S.stats.commands++;
+    if(val!==undefined){
+      const root = (t.match(DBM_RE)||[])[1]||null;
+      const value = (val && val.__cursor) ? val.toArray() : val;
+      events.push({k:'val', value});
+      results.push({ code:t, root, value });
+    }
+  }
+  return { events, results };
+}
+
+/* ---------- destaque de sintaxe ---------- */
+function hl(src){
+  const re=/('(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*")|(\$\w+)|(\b\d+(?:\.\d+)?\b)|(\btrue\b|\bfalse\b|\bnull\b)|(\bdb\b)|(\.[A-Za-z_$][\w$]*(?=\s*\())/g;
+  let out='', last=0, m;
+  while((m=re.exec(src))){
+    out += esc(src.slice(last,m.index));
+    const s = esc(m[0]);
+    if(m[1]) out+='<span class="tk-str">'+s+'</span>';
+    else if(m[2]) out+='<span class="tk-op">'+s+'</span>';
+    else if(m[3]) out+='<span class="tk-num">'+s+'</span>';
+    else if(m[4]) out+='<span class="tk-bool '+m[0]+'">'+s+'</span>';
+    else if(m[5]) out+='<span class="tk-kw">'+s+'</span>';
+    else out+='<span class="tk-fn">'+s+'</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+/* ---------- impressão no terminal ---------- */
+const out = $('#out');
+const scrollOut = () => { out.scrollTop = out.scrollHeight; };
+function addLine(cls, html){
+  const d = document.createElement('div');
+  d.className = 'line'+(cls?' '+cls:'');
+  d.innerHTML = html;
+  out.appendChild(d); scrollOut();
+}
+const pad2 = n => '  '.repeat(n);
+function fmtValue(v, ind){
+  if(v===null) return '<span class="tk-num">null</span>';
+  const t = typeof v;
+  if(t==='string')  return `<span class="tk-str">'${esc(v)}'</span>`;
+  if(t==='number')  return `<span class="tk-num">${v}</span>`;
+  if(t==='boolean') return `<span class="tk-bool ${v}">${v}</span>`;
+  if(Array.isArray(v)) return v.map(x=>fmtValue(x,ind)).join(', ');
+  const ks = Object.keys(v);
+  if(ks.length===0) return '<span class="tk-punc">{ }</span>';
+  const lines = ks.map(k=>{
+    let vs;
+    if(k==='_id' && typeof v[k]==='string')
+      vs = `<span class="tk-oid">ObjectId</span><span class="tk-punc">(</span><span class="tk-str">'${esc(v[k])}'</span><span class="tk-punc">)</span>`;
+    else vs = fmtValue(v[k], ind+1);
+    return pad2(ind+1)+'<span class="tk-key">'+esc(k)+'</span><span class="tk-punc">: </span>'+vs;
+  });
+  return '<span class="tk-punc">{</span>\n'+lines.join(',\n')+'\n'+pad2(ind)+'<span class="tk-punc">}</span>';
+}
+function printValue(v){
+  if(v===null){ addLine('', '<span class="tk-num">null</span>'); return; }
+  if(Array.isArray(v)){
+    if(v.length===0){ addLine('dim','[ ]   — nenhum documento correspondeu ao filtro'); return; }
+    addLine('', '<span class="tk-punc">[</span>\n'+v.map(d=>fmtValue(d,1)).join(',\n')+'\n<span class="tk-punc">]</span>');
+    return;
+  }
+  if(typeof v==='object'){ addLine('', fmtValue(v,0)); return; }
+  if(typeof v==='string'){ addLine('', `<span class="tk-str">'${esc(v)}'</span>`); return; }
+  addLine('', '<span class="tk-num">'+String(v)+'</span>');
+}
+function echoCommand(code){
+  addLine('echo','<span class="prompt-t">aula&gt; </span>'+hl(code));
+}
+const HELP = [
+'Comandos suportados neste simulador:',
+'  db.aluno.find(filtro)             busca (SELECT)',
+'  db.aluno.findOne(filtro)          primeiro resultado',
+'  db.aluno.insertOne(doc)           INSERT de um documento',
+'  db.aluno.insertMany([docs])       INSERT de vários',
+'  db.aluno.updateOne(filtro, upd)   UPDATE com $set / $inc',
+'  db.aluno.updateMany(filtro, upd)',
+'  db.aluno.deleteOne(filtro)        DELETE de um documento',
+'  db.aluno.deleteMany(filtro)       DELETE em lote',
+'  db.aluno.countDocuments(filtro)   COUNT(*)',
+'Cursores:  .sort({campo: 1 ou -1})   .limit(n)   .skip(n)   .count()   .size()   .toArray()',
+'Filtros:   $eq $ne $gt $gte $lt $lte $in $nin $exists',
+'Updates:   $set $inc $unset',
+'Diversos:  help   clear   show collections   show dbs   use aula',
+'Atalhos:   Enter executa · Shift+Enter quebra linha · ↑/↓ histórico · Ctrl+L limpa'
+].join('\n');
+function printHelp(){ addLine('', hl(HELP)); }
+
+/* =========================================================
+   Missões
+   ========================================================= */
+const asDocs = v => Array.isArray(v) ? v : (v && typeof v==='object' && ('_id' in v) ? [v] : null);
+const ids = a => a.map(d=>String(d._id)).sort();
+const sameSet = (a,b) => !!a && !!b && a.length===b.length && a.every((v,i)=>v===b[i]);
+const isValidAluno = d =>
+  typeof d.nome==='string' && d.nome.trim().length>0 &&
+  Number.isFinite(d.idade) && d.idade>0 && d.idade<=120 &&
+  typeof d.curso==='string' && d.curso.trim().length>0 &&
+  Number.isInteger(d.semestre) && d.semestre>0 &&
+  typeof d.ativo==='boolean';
+
+const findByResult = (pred,msg) => ctx =>
+  ctx.execs.some(e => { const a=asDocs(e.value); return a && sameSet(ids(a), ids(ctx.base.filter(pred))); })
+  || msg;
+
+const MISSIONS = [
+{ t:'Consulta total', xp:100, sql:"SELECT * FROM aluno",
+  brief:'A turma inteira já está cadastrada na coleção aluno. Recupere todos os documentos, sem aplicar nenhum filtro.',
+  hint:'db.aluno.find()',
+  check: findByResult(()=>true,'a consulta deve retornar todos os documentos da coleção') },
+
+{ t:'Filtro booleano', xp:120, sql:'SELECT * FROM aluno WHERE ativo = true',
+  brief:'A coordenação quer a lista de presença: mostre apenas os alunos com ativo igual a true.',
+  hint:'db.aluno.find({ ativo: true })',
+  check: findByResult(d=>d.ativo===true,'o resultado deve conter apenas — e todos — os alunos ativos') },
+
+{ t:'Igualdade em texto', xp:140, sql:"SELECT * FROM aluno WHERE curso = 'Ciência da Computação'",
+  brief:'Trabalho em grupo: encontre todos os alunos matriculados no curso "Ciência da Computação".',
+  hint:'db.aluno.find({ curso: "Ciência da Computação" })',
+  check: findByResult(d=>d.curso===CC,'devem vir apenas os alunos de "Ciência da Computação"') },
+
+{ t:'Operadores de comparação', xp:150, sql:'SELECT * FROM aluno WHERE idade > 21',
+  brief:'A festa é só para os mais velhos: liste os alunos com idade MAIOR que 21. O MongoDB resolve isso com operadores dentro do filtro — comece com $.',
+  hint:'db.aluno.find({ idade: { $gt: 21 } })',
+  check: findByResult(d=>d.idade>21,'devem vir apenas os alunos com idade maior que 21 — pesquise o operador $gt') },
+
+{ t:'Inserção de documentos', xp:180, sql:'INSERT INTO aluno VALUES (...)',
+  brief:'Chegou aluno novo! Insira um documento com os campos nome, idade, curso, semestre e ativo — todos preenchidos, cada um com o tipo certo.',
+  hint:'db.aluno.insertOne({\n  nome: "Lucas Pereira",\n  idade: 24,\n  curso: "Redes de Computadores",\n  semestre: 1,\n  ativo: true\n})',
+  check(ctx){
+    const now=ctx.now, base=ctx.base;
+    if(!base.every(b => now.some(n => n._id===b._id && skey(n)===skey(b))))
+      return 'os alunos originais não podem ser alterados nem removidos nesta missão';
+    const novos = now.filter(n => !base.some(b=>b._id===n._id));
+    if(novos.length===0) return 'nenhum documento novo foi inserido — use insertOne() ou insertMany()';
+    if(!novos.some(isValidAluno))
+      return 'o novo documento precisa de: nome (texto), idade (número), curso (texto), semestre (número inteiro) e ativo (booleano)';
+    return true;
+  } },
+
+{ t:'Atualização com $set', xp:180, sql:"UPDATE aluno SET ... WHERE nome = 'João Oliveira'",
+  brief:'João Oliveira largou Gestão de TI: transferiu-se para "Engenharia de Software" e agora está no 7º semestre. Atualize o documento dele sem mexer em mais nada.',
+  hint:'db.aluno.updateOne(\n  { nome: "João Oliveira" },\n  { $set: { curso: "Engenharia de Software", semestre: 7 } }\n)',
+  check(ctx){
+    const now=ctx.now, base=ctx.base;
+    if(!sameSet(ids(now), ids(base))) return 'a coleção deve continuar com os mesmos documentos — atualize, não insira nem remova';
+    const j = now.filter(d=>d.nome==='João Oliveira');
+    if(j.length===0) return 'o documento de João Oliveira sumiu — nenhuma missão pediu para removê-lo';
+    if(j.length>1) return 'existe mais de um "João Oliveira" na coleção — remova as duplicatas';
+    if(j[0].curso!=='Engenharia de Software' || j[0].semestre!==7)
+      return 'João precisa ficar com curso "Engenharia de Software" e semestre 7';
+    const outrosOk = base.every(b => b.nome==='João Oliveira' || now.some(n => n._id===b._id && skey(n)===skey(b)));
+    return outrosOk || 'apenas o documento do João pode mudar nesta missão';
+  } },
+
+{ t:'Exclusão condicional', xp:180, sql:'DELETE FROM aluno WHERE ativo = false',
+  brief:'Limpeza de base: remova da coleção todos os alunos inativos (ativo igual a false) de uma vez só.',
+  hint:'db.aluno.deleteMany({ ativo: false })',
+  check(ctx){
+    if(ctx.now.some(d=>d.ativo===false)) return 'ainda existe aluno inativo na coleção';
+    const ativos = ctx.base.filter(d=>d.ativo);
+    if(!ativos.every(b => ctx.now.some(n=>n._id===b._id)))
+      return 'cuidado: você removeu alunos que estavam ativos';
+    return true;
+  } },
+
+{ t:'Ordenação', xp:200, sql:'SELECT * FROM aluno ORDER BY idade DESC',
+  brief:'Para o mural da coordenação: liste todos os alunos do mais velho para o mais novo. Dica: o find() devolve um cursor — e cursores sabem se organizar.',
+  hint:'db.aluno.find().sort({ idade: -1 })',
+  check(ctx){
+    const hit = ctx.execs.some(e=>{
+      const a = asDocs(e.value);
+      if(!a || a.length!==ctx.now.length || !sameSet(ids(a), ids(ctx.now))) return false;
+      for(let i=1;i<a.length;i++) if(a[i-1].idade < a[i].idade) return false;
+      return true;
+    });
+    return hit || 'o resultado deve conter todos os alunos em ordem decrescente de idade — experimente .sort({ idade: -1 })';
+  } },
+
+{ t:'LIMIT', xp:200, sql:'SELECT * FROM aluno ORDER BY idade DESC LIMIT 1',
+  brief:'Quem é o aluno mais velho da turma? Mostre apenas esse documento — nenhum outro.',
+  hint:'db.aluno.find().sort({ idade: -1 }).limit(1)',
+  check(ctx){
+    const maxAge = Math.max(...ctx.now.map(d=>d.idade));
+    const hit = ctx.execs.some(e=>{
+      const a = asDocs(e.value);
+      return a && a.length===1 && a[0].idade===maxAge;
+    });
+    return hit || 'retorne exatamente 1 documento: o de maior idade (combine .sort() com .limit(), ou use findOne())';
+  } },
+
+{ t:'Contagem', xp:200, sql:'SELECT COUNT(*) FROM aluno WHERE ativo = true',
+  brief:'O relatório precisa de um número: quantos alunos estão ativos neste momento? Devolva apenas a contagem.',
+  hint:'db.aluno.countDocuments({ ativo: true })',
+  check(ctx){
+    const n = ctx.now.filter(d=>d.ativo===true).length;
+    for(const e of ctx.execs){
+      if(typeof e.value==='number')
+        return e.value===n || 'a contagem retornada ('+e.value+') não bate com o número atual de ativos ('+n+')';
+    }
+    return 'devolva um número — use .count(), .size() ou countDocuments(...)';
+  } },
+
+{ t:'Relatório final', xp:320, sql:"SELECT * FROM aluno WHERE ativo = true AND curso = 'CC' ORDER BY semestre",
+  brief:'Desafio final: combine tudo — liste os alunos ATIVOS do curso "Ciência da Computação", em ordem CRESCENTE de semestre.',
+  hint:'db.aluno.find({\n  ativo: true,\n  curso: "Ciência da Computação"\n}).sort({ semestre: 1 })',
+  check(ctx){
+    const expected = ctx.now.filter(d=>d.ativo===true && d.curso===CC);
+    if(!expected.length) return 'não há alunos ativos de Ciência da Computação na base — algo saiu do trilho nas missões anteriores';
+    const hit = ctx.execs.some(e=>{
+      const a = asDocs(e.value);
+      if(!a || !sameSet(ids(a), ids(expected))) return false;
+      for(let i=1;i<a.length;i++) if(a[i-1].semestre > a[i].semestre) return false;
+      return true;
+    });
+    return hit || 'o resultado precisa conter exatamente os ativos de "Ciência da Computação", em ordem crescente de semestre';
+  } },
+];
+
+/* =========================================================
+   Som (WebAudio, discreto)
+   ========================================================= */
+let actx=null, muted=false;
+function ensureAudio(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx&&actx.state==='suspended') actx.resume(); }
+function tone(f,t0,dur,type='triangle',vol=.07){
+  if(muted||!actx) return;
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type=type; o.frequency.value=f;
+  const t=actx.currentTime+t0;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+.012);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(actx.destination);
+  o.start(t); o.stop(t+dur+.05);
+}
+const sndOk   = ()=>{ tone(620,0,.12); tone(930,.10,.20); };
+const sndErr  = ()=>{ tone(160,0,.18,'square',.045); };
+const sndRank = ()=>{ tone(520,0,.1); tone(660,.09,.1); tone(880,.18,.24); };
+
+/* =========================================================
+   Header / ranks / persistência
+   ========================================================= */
+const RANKS=[[0,'Estagiário'],[400,'Júnior'],[900,'Pleno'],[1400,'Sênior'],[1900,'DBA']];
+const rankOf = x => { let r=RANKS[0][1]; for(const [t,n] of RANKS) if(x>=t) r=n; return r; };
+function animXP(to){
+  const el=$('#xpVal'), from=+el.dataset.v||0; el.dataset.v=to;
+  const t0=performance.now();
+  (function f(t){
+    const k=Math.min(1,(t-t0)/600);
+    el.textContent=Math.round(from+(to-from)*k).toLocaleString('pt-BR');
+    if(k<1) requestAnimationFrame(f);
+  })(t0);
+}
+function updateHeaderStats(){
+  $('#rankVal').textContent = rankOf(S.xp);
+  animXP(S.xp);
+}
+function saveGame(){
+  try{ localStorage.setItem('mongoquest', JSON.stringify({
+    docs:S.docs, seq:S.seq, xp:S.xp, mission:S.mission, tries:S.tries,
+    hinted:S.hinted, doneAll:S.doneAll, stats:S.stats
+  })); }catch(e){}
+}
+function loadGame(){
+  try{
+    const raw = localStorage.getItem('mongoquest'); if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(!d || !Array.isArray(d.docs) || !d.docs.length) return false;
+    S.docs=d.docs; S.seq=d.seq||d.docs.length+1; S.xp=d.xp||0;
+    S.mission=Math.min(d.mission||0, MISSIONS.length);
+    S.tries=d.tries||0; S.hinted=!!d.hinted; S.doneAll=!!d.doneAll;
+    S.stats = Object.assign({commands:0,firstTry:0,errors:0,start:Date.now()}, d.stats||{});
+    return true;
+  }catch(e){ return false; }
+}
+
+/* =========================================================
+   Painel de documentos (coleção viva)
+   ========================================================= */
+let docView='card';
+function docCardHTML(d){
+  const ativo = d.ativo===true;
+  const badge = ativo ? '<span class="badge on">ativo</span>' : '<span class="badge off">inativo</span>';
+  if(docView==='json')
+    return '<div style="white-space:pre-wrap">'+fmtValue(d,0)+'</div>';
+  const nome = d.nome!=null ? String(d.nome) : '(sem nome)';
+  const curso = d.curso!=null ? String(d.curso) : '—';
+  const meta = [
+    d.semestre!=null ? d.semestre+'º sem' : null,
+    d.idade!=null ? d.idade+' anos' : null,
+    '_id '+esc(String(d._id||'').slice(-6))
+  ].filter(Boolean).join(' · ');
+  return `<div class="doc-top"><span class="doc-name">${esc(nome)}</span>${badge}</div>
+    <div class="doc-curso">${esc(curso)}</div>
+    <div class="doc-meta"><span class="oid-s">${meta}</span></div>`;
+}
+function renderDocs(){
+  const wrap=$('#docList');
+  const prev = new Map([...wrap.querySelectorAll('.doc')].map(c=>[String(c.dataset.oid), c]));
+  if(!S.docs.length){
+    wrap.innerHTML='<div class="empty-hint">coleção vazia — 0 documentos</div>';
+  } else {
+    wrap.querySelectorAll('.empty-hint').forEach(e=>e.remove());
+    S.docs.forEach(d=>{
+      const oid=String(d._id), sig=JSON.stringify(d);
+      let eld = prev.get(oid);
+      if(!eld){
+        eld=document.createElement('div');
+        eld.className='doc new'; eld.dataset.oid=oid; eld.dataset.sig=sig;
+        wrap.appendChild(eld);
+      } else {
+        if(eld.dataset.sig!==sig){ eld.classList.remove('flash'); void eld.offsetWidth; eld.classList.add('flash'); }
+        eld.dataset.sig=sig; prev.delete(oid);
+      }
+      eld.classList.toggle('inativo', d.ativo===false);
+      eld.innerHTML = docCardHTML(d);
+      wrap.appendChild(eld);
+      eld.classList.remove('new');
+    });
+    prev.forEach(c=>{ c.classList.add('gone'); setTimeout(()=>c.remove(),340); });
+  }
+  $('#docCount').textContent=S.docs.length;
+  $('#pdocCount').textContent=S.docs.length;
+}
+ $('#viewToggle').addEventListener('click',()=>{
+  docView = docView==='card' ? 'json' : 'card';
+  $('#viewToggle').textContent = docView==='card' ? 'ver JSON' : 'ver cartões';
+  renderDocs();
+});
+
+/* =========================================================
+   Trilha de missões
+   ========================================================= */
+let reviewing=false, reviewIdx=0;
+function renderTrail(){
+  const t=$('#trail'); t.innerHTML='';
+  MISSIONS.forEach((m,i)=>{
+    const st = i<S.mission ? 'done' : (i===S.mission ? 'now' : 'lock');
+    const it=document.createElement('div');
+    it.className='tr-item '+st;
+    const ic = st==='done' ? ICONS.check : st==='lock' ? ICONS.lock : ICONS.caret;
+    it.innerHTML=`<span class="tr-idx">${String(i+1).padStart(2,'0')}</span><span class="tr-name">${esc(m.t)}</span><span class="tr-ic">${ic}</span>`;
+    if(st==='done') it.addEventListener('click',()=>{ reviewing=true; reviewIdx=i; renderMissionCard(); });
+    if(st==='now')  it.addEventListener('click',()=>{ reviewing=false; renderMissionCard(); });
+    t.appendChild(it);
+  });
+  $('#trailCount').innerHTML=`<b>${Math.min(S.mission,MISSIONS.length)}</b>/${MISSIONS.length} concluídas`;
+}
+
+/* =========================================================
+   Cartão de missão
+   ========================================================= */
+let typeToken=0;
+function typeText(elm, text){
+  elm.textContent=''; let i=0; const token=++typeToken;
+  (function step(){
+    if(token!==typeToken) return;
+    if(i<=text.length){ elm.textContent=text.slice(0,i); i++; setTimeout(step, text.charAt(i-1)===' '?9:13); }
+  })();
+}
+function renderMissionCard(){
+  const box=$('#missionBox');
+  const idx = reviewing ? reviewIdx : S.mission;
+  const m = MISSIONS[idx];
+  box.innerHTML=`
+    <div class="m-top">
+      <span class="m-num">MISSÃO ${String(idx+1).padStart(2,'0')} / ${MISSIONS.length}${reviewing?'<span class="m-tag">REVISÃO</span>':''}</span>
+      <span class="m-xp">+${m.xp} XP</span>
+    </div>
+    <h2 class="m-title">${esc(m.t)}</h2>
+    <div class="m-sql">equivale a&nbsp; <span>${esc(m.sql)}</span></div>
+    <p class="m-brief" id="mBrief"></p>
+    <div class="m-foot">
+      <span class="m-tries" id="mTries">comandos nesta missão: ${S.tries}</span>
+      <span class="m-actions">
+        ${reviewing
+          ? '<button class="btn ghost small" id="btnBack">voltar à missão atual</button>'
+          : '<button class="hint-btn" id="btnHint">'+ICONS.lamp+'dica</button>'}
+      </span>
+    </div>
+    <div class="hint-box" id="hintBox" style="display:none">
+      <div class="hint-head"><span>SINTAXE</span><button class="mini" id="btnUse">inserir no prompt</button></div>
+      <pre>${esc(m.hint)}</pre>
+    </div>`;
+  typeText($('#mBrief'), m.brief);
+  if(reviewing){
+    $('#btnBack').addEventListener('click',()=>{ reviewing=false; renderMissionCard(); });
+  } else {
+    let open=false;
+    $('#btnHint').addEventListener('click',()=>{
+      open=!open;
+      $('#hintBox').style.display = open ? 'block' : 'none';
+      if(open && !S.hinted){
+        S.hinted=true;
+        addLine('dim','dica consultada — o prêmio desta missão cai 30 XP');
+        toast('Dica revelada','−30 XP no prêmio desta missão','warn');
+        saveGame();
+      }
+    });
+    $('#btnUse').addEventListener('click',()=>{
+      cmd.value = MISSIONS[reviewing?reviewIdx:S.mission].hint;
+      syncMirror(); cmd.focus();
+    });
+  }
+  box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap');
+}
+function updateTriesUI(){
+  const el=$('#mTries'); if(el) el.textContent='comandos nesta missão: '+S.tries;
+}
+function setMission(i, animate=true){
+  S.mission=i; S.missionBase=cloneDocs(S.docs);
+  S.execs=[]; S.tries=0; S.hinted=false; reviewing=false;
+  renderMissionCard(animate); renderTrail(); saveGame();
+}
+function renderMissionFree(){
+  reviewing=false;
+  const box=$('#missionBox');
+  box.innerHTML=`
+    <div class="m-top">
+      <span class="m-num">MODO LIVRE</span>
+      <button class="btn small" id="btnCert">ver certificado</button>
+    </div>
+    <h2 class="m-title">Laboratório concluído</h2>
+    <div class="m-sql">equivale a&nbsp; <span>você já sabe o básico de CRUD em MongoDB</span></div>
+    <p class="m-brief">As ${MISSIONS.length} missões foram cumpridas e o terminal continua aberto: experimente consultas suas, estrague a base à vontade (o botão de reiniciar conserta) e compare cada query com o SQL no guia do cabeçalho.</p>`;
+  $('#btnCert').addEventListener('click', showCertificate);
+  box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap');
+  renderTrail();
+}
+
+/* =========================================================
+   Fluxo de comando + validação
+   ========================================================= */
+function handleCommand(code){
+  echoCommand(code);
+  const { events, results } = runLine(code);
+  for(const ev of events){
+    if(ev.k==='val') printValue(ev.value);
+    else if(ev.k==='err'){ addLine('err', esc(ev.text)); sndErr(); }
+    else if(ev.k==='sys') addLine('sys', esc(ev.text));
+    else if(ev.k==='ok') addLine('ok', esc(ev.text));
+  }
+  if(results.length){
+    results.forEach(r=>S.execs.push(r));
+    S.tries++;
+    updateTriesUI();
+  }
+  renderDocs(); saveGame();
+
+  if(S.mission < MISSIONS.length && !reviewing && results.length){
+    let verdict=null;
+    try{ verdict = MISSIONS[S.mission].check({ execs:S.execs, now:S.docs, base:S.missionBase }); }
+    catch(e){ verdict=null; }
+    if(verdict===true) missionComplete();
+    else if(typeof verdict==='string') addLine('vfail', esc(verdict));
+  }
+}
+function missionComplete(){
+  const m=MISSIONS[S.mission];
+  const first = S.tries===1;
+  const gain = Math.max(40, m.xp + (first?40:0) - (S.hinted?30:0));
+  if(first) S.stats.firstTry++;
+  const beforeRank = rankOf(S.xp);
+  S.xp += gain;
+
+  addLine('successblock',
+    '─'.repeat(44)+'\n'+
+    '   ✓  MISSÃO '+String(S.mission+1).padStart(2,'0')+' CUMPRIDA — '+esc(m.t.toUpperCase())+'\n'+
+    '      +'+gain+' XP'+(first?'  ·  acertou de primeira':'')+(S.hinted?'  ·  dica usada −30':'')+'\n'+
+    '─'.repeat(44));
+  sndOk();
+  toast('Missão '+(S.mission+1)+' concluída', '+'+gain+' XP'+(first?' · bônus de 1ª tentativa':''), 'ok');
+  if(rankOf(S.xp)!==beforeRank){
+    setTimeout(()=>{ toast('Novo cargo: '+rankOf(S.xp),'progressão de carreira desbloqueada','ok',ICONS.up); sndRank();
+      addLine('ok','promoção: agora você é '+rankOf(S.xp)+' em MongoDB'); },700);
+  }
+  updateHeaderStats();
+
+  S.mission++;
+  S.execs=[]; S.tries=0; S.hinted=false;
+  if(S.mission>=MISSIONS.length){
+    S.doneAll=true; renderTrail(); renderMissionFree(); saveGame();
+    setTimeout(showCertificate,1400);
+  } else {
+    renderTrail(); saveGame();
+    setTimeout(()=>{ if(S.mission<MISSIONS.length && !reviewing) setMission(S.mission); }, 1000);
+  }
+  saveGame();
+}
+
+/* =========================================================
+   Terminal: entrada
+   ========================================================= */
+const cmd=$('#cmd'), mirror=$('#mirror');
+const hist=[]; let hIdx=0;
+function syncMirror(){ mirror.innerHTML = hl(cmd.value)+'\u200b'; }
+cmd.addEventListener('input', syncMirror);
+cmd.addEventListener('keydown', e=>{
+  const single = !cmd.value.includes('\n');
+  if(e.key==='Enter' && !e.shiftKey){
+    e.preventDefault();
+    const code = cmd.value.trim();
+    cmd.value=''; syncMirror();
+    if(!code) return;
+    hist.push(code); hIdx=hist.length;
+    ensureAudio();
+    handleCommand(code);
+  } else if(e.key==='ArrowUp' && !e.shiftKey && single && hIdx>0){
+    e.preventDefault(); hIdx--; cmd.value=hist[hIdx]; syncMirror();
+    cmd.setSelectionRange(cmd.value.length,cmd.value.length);
+  } else if(e.key==='ArrowDown' && !e.shiftKey && single && hIdx<hist.length){
+    e.preventDefault(); hIdx++; cmd.value=hist[hIdx]||''; syncMirror();
+    cmd.setSelectionRange(cmd.value.length,cmd.value.length);
+  }
+});
+ $('#term').addEventListener('click',()=>{
+  if(!window.getSelection().toString()) cmd.focus();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='/' && document.activeElement!==cmd &&
+     !e.target.closest('input,textarea') && !$('.overlay.open')){
+    e.preventDefault(); cmd.focus();
+  }
+  if(e.ctrlKey && e.key.toLowerCase()==='l'){ e.preventDefault(); out.innerHTML=''; }
+  if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));
+});
+
+/* =========================================================
+   Toasts + modais
+   ========================================================= */
+function toast(t1,t2,kind='ok',icon){
+  const box=$('#toasts');
+  const d=document.createElement('div');
+  d.className='toast'+(kind==='warn'?' warn':'');
+  d.innerHTML=`<span class="t-ic">${icon||ICONS.check}</span><div><div class="t1">${esc(t1)}</div><div class="t2">${esc(t2)}</div></div>`;
+  box.appendChild(d);
+  setTimeout(()=>{ d.classList.add('out'); setTimeout(()=>d.remove(),320); }, 3400);
+}
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
+  o.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>o.classList.remove('open')));
+});
+ $('#btnHelp').addEventListener('click',()=>$('#ovHelp').classList.add('open'));
+ $('#btnReset').addEventListener('click',()=>$('#ovReset').classList.add('open'));
+ $('#btnResetYes').addEventListener('click',()=>{
+  try{ localStorage.removeItem('mongoquest'); }catch(e){}
+  location.reload();
+});
+
+/* som */
+const btnSound=$('#btnSound');
+function drawSound(){ btnSound.innerHTML = muted ? ICONS.volx : ICONS.vol; }
+btnSound.addEventListener('click',()=>{ muted=!muted; drawSound(); if(!muted) ensureAudio(); });
+drawSound();
+
+/* =========================================================
+   Certificado
+   ========================================================= */
+function clockFmt(ms){
+  const t=Math.floor(ms/1000);
+  return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+}
+function showCertificate(){
+  $('#cXp').textContent=S.xp.toLocaleString('pt-BR');
+  $('#cCmd').textContent=S.stats.commands;
+  $('#cFirst').textContent=S.stats.firstTry+'/'+MISSIONS.length;
+  $('#cTime').textContent=clockFmt(Date.now()-S.stats.start);
+  try{ $('#certName').value=localStorage.getItem('mq_name')||''; }catch(e){}
+  $('#ovCert').classList.add('open');
+}
+ $('#certName').addEventListener('input',e=>{
+  try{ localStorage.setItem('mq_name', e.target.value); }catch(err){}
+});
+
+/* =========================================================
+   Boot
+   ========================================================= */
+function boot(){
+  const restored = loadGame();
+  if(!restored) freshDocs();
+  renderDocs(); updateHeaderStats(); renderTrail();
+
+  const lines=[
+    ['sys','mongosh 2.4 — MongoQuest Edition (simulador didático, tudo roda no seu navegador)'],
+    ['sys','conectado a mongodb://127.0.0.1:27017'],
+    ['ok','db atual: aula   ·   collection: aluno   ·   '+S.docs.length+' documentos carregados'],
+    ['dim','este mongosh executa queries de verdade — explore à vontade. digite help para os comandos.'],
+  ];
+  if(restored) lines.push(['dim','sessão anterior restaurada — '+S.xp+' XP'+(S.doneAll?' · todas as missões concluídas':' · missão '+(Math.min(S.mission,MISSIONS.length-1)+1)+' de '+MISSIONS.length)]);
+  lines.push(['dim','a missão atual está no cartão acima do terminal. boa sorte, operador.']);
+
+  let i=0;
+  (function next(){
+    if(i<lines.length){ const [c,t]=lines[i++]; addLine(c, esc(t)); setTimeout(next, 170); }
+    else{
+      if(S.doneAll || S.mission>=MISSIONS.length){ S.doneAll=true; renderMissionFree(); }
+      else setMission(S.mission);
+    }
+  })();
+  cmd.focus();
+}
+boot();
+</script>
+</body>
+</html>
