@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação Portaria — Blue Team · Cybersecurity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d09; --panel:#12150e; --panel2:#171b12; --inset:#0d100a;
+  --line:#282e1f; --line2:#3a4230;
+  --ink:#ece9db; --dim:#a8ad97; --faint:#6d7460;
+  --acc:#ffb454; --acc2:#ff8a3d;
+  --netA:#ffb454; --netB:#5fd4d0; --netF:#57d97a;
+  --ok:#57d97a; --bad:#ff6b5e; --warn:#ffd166;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:14px;line-height:1.55;
+  background-image:linear-gradient(rgba(255,180,84,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,180,84,.025) 1px,transparent 1px);
+  background-size:34px 34px;overflow:hidden}
+::selection{background:var(--acc);color:#141005}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2c331f;border:2px solid var(--bg);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+button{font-family:inherit;cursor:pointer;color:inherit;background:none;border:none}
+.ic{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;flex:none}
+.brief code,.hint code,.steps code{background:var(--inset);border:1px solid var(--line);padding:1px 6px;font-size:11.5px;color:var(--netB)}
+
+#boot{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#bootInner{width:min(680px,92vw)}
+#bootLines{font-size:14px;color:var(--dim);min-height:230px;white-space:pre-wrap}
+#bootLines .bl{display:block;opacity:0;animation:blin .25s forwards}
+@keyframes blin{to{opacity:1}}
+#bootLines .em{color:var(--acc)} #bootLines .gd{color:var(--ok)} #bootLines .rd{color:var(--bad)}
+#bootTitle{font-family:var(--disp);font-weight:700;font-size:clamp(30px,5vw,52px);letter-spacing:.04em;color:var(--ink);margin:6px 0 2px}
+#bootTitle span{color:var(--acc)}
+#bootSub{color:var(--faint);font-size:12px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:26px}
+#bootForm{display:none;gap:12px;align-items:stretch;flex-wrap:wrap}
+#bootForm.on{display:flex}
+#techName{flex:1;min-width:240px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:15px;padding:13px 14px;outline:none}
+#techName:focus{border-color:var(--acc)}
+.btn-acc{background:var(--acc);color:#171004;font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.08em;padding:13px 22px;text-transform:uppercase;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+.btn-acc:hover{background:var(--acc2)}
+#bootSkip{margin-top:26px;color:var(--faint);font-size:12px;text-decoration:underline dotted}
+#bootSkip:hover{color:var(--dim)}
+
+#app{display:grid;grid-template-columns:252px minmax(0,1fr) 392px;grid-template-rows:56px minmax(0,1fr);height:100vh;gap:1px;background:var(--line);opacity:0;transition:opacity .5s}
+#app.on{opacity:1}
+header,nav,main,#rightCol{background:var(--bg)}
+
+#topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 18px;background:var(--panel)}
+.brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+.brand b{font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.05em}
+.brand b::before{content:"";display:inline-block;width:10px;height:10px;background:var(--acc);margin-right:9px;vertical-align:0}
+.brand small{color:var(--faint);font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+#hudName{color:var(--dim);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+#hudName b{color:var(--ink)}
+#hudRank{font-size:11px;color:var(--acc);border:1px solid var(--line2);padding:2px 8px;letter-spacing:.08em;white-space:nowrap;text-transform:uppercase}
+#hudPen{font-size:11px;color:var(--bad);border:1px solid var(--bad);padding:2px 8px;display:none;white-space:nowrap}
+.xpwrap{display:flex;align-items:center;gap:8px;min-width:130px}
+.xpbar{flex:1;height:6px;background:var(--inset);border:1px solid var(--line2)}
+.xpbar i{display:block;height:100%;background:var(--acc);width:0;transition:width .6s}
+#xpTxt{font-size:11px;color:var(--dim);white-space:nowrap}
+#hudClock{font-size:13px;color:var(--ink);letter-spacing:.06em;display:flex;gap:6px;align-items:center}
+.tbtns{margin-left:auto;display:flex;gap:6px}
+.tbtn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line2);color:var(--dim)}
+.tbtn:hover{border-color:var(--acc);color:var(--acc)}
+
+nav{overflow-y:auto;padding:14px 10px 30px}
+.navprog{height:4px;background:var(--inset);border:1px solid var(--line2);margin:2px 4px 16px}
+.navprog i{display:block;height:100%;background:var(--acc);transition:width .6s}
+.ph{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);padding:14px 10px 6px}
+.mnav{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:9px 10px;border:1px solid transparent;border-left:2px solid var(--line);color:var(--dim);font-size:12.5px;margin-bottom:2px}
+.mnav .num{font-size:10px;color:var(--faint);width:32px;flex:none;letter-spacing:.05em}
+.mnav .ti{flex:1;min-width:0}
+.mnav .ti b{display:block;font-weight:500;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mnav .ti small{display:block;font-size:9.5px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+.mnav .st{color:var(--faint)}
+.mnav:hover{border-color:var(--line2);color:var(--ink)}
+.mnav.active{background:var(--panel2);border-color:var(--line2);border-left-color:var(--acc);color:var(--ink)}
+.mnav.done .st{color:var(--ok)} .mnav.done .num{color:var(--ok)}
+.mnav.locked{opacity:.42;cursor:not-allowed}
+
+main{overflow-y:auto;padding:26px 34px 60px;scroll-behavior:smooth}
+.mwrap{max-width:780px}
+.m-head{display:flex;align-items:flex-start;gap:18px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
+.m-code{font-family:var(--disp);font-weight:700;font-size:30px;color:var(--acc);letter-spacing:.04em;line-height:1;border:1px solid var(--line2);padding:10px 12px 8px;background:var(--panel)}
+.m-tt{flex:1;min-width:0}
+.m-tt h2{font-family:var(--disp);font-weight:700;font-size:24px;letter-spacing:.02em}
+.m-sub{color:var(--faint);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.m-xp{font-family:var(--disp);font-weight:600;color:var(--ok);border:1px solid var(--line2);padding:8px 12px;font-size:14px;white-space:nowrap}
+.done-badge{display:inline-flex;gap:7px;align-items:center;color:var(--ok);border:1px solid var(--ok);padding:7px 12px;font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.1em}
+
+.sec{margin-bottom:26px}
+.sec-h{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--acc);margin-bottom:10px}
+.sec-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.brief{background:var(--panel);border:1px solid var(--line);padding:16px 18px;color:var(--dim)}
+.brief p+p{margin-top:9px}
+.brief b,.steps b{color:var(--ink)}
+.steps{counter-reset:st;list-style:none}
+.steps li{counter-increment:st;position:relative;padding:9px 0 9px 44px;color:var(--dim);border-bottom:1px dashed var(--line)}
+.steps li:last-child{border-bottom:none}
+.steps li::before{content:counter(st,decimal-leading-zero);position:absolute;left:0;top:10px;font-family:var(--disp);font-weight:700;color:var(--acc);font-size:15px}
+.hint{display:flex;gap:12px;background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--acc);padding:13px 15px;color:var(--dim);font-size:13px}
+.hint .ic{color:var(--acc);margin-top:2px}
+.hint b{color:var(--ink)}
+
+.iptab{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0}
+.iptab th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line2)}
+.iptab td{padding:7px 10px;border-bottom:1px dashed var(--line);color:var(--dim)}
+.iptab td:first-child{color:var(--ink);font-weight:500}
+.iptab td.num{color:var(--netA)}
+.mx td.yes{color:var(--ok);font-weight:600} .mx td.no{color:var(--bad);font-weight:600}
+
+.cli{background:var(--inset);border:1px solid var(--line2);margin:10px 0}
+.cli-h{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--line2);background:var(--panel2)}
+.cli-h span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+.copy{font-size:10px;letter-spacing:.1em;color:var(--dim);border:1px solid var(--line2);padding:3px 9px;display:flex;gap:5px;align-items:center;text-transform:uppercase}
+.copy:hover{color:var(--acc);border-color:var(--acc)}
+.cli pre{padding:13px 15px;font-size:12.5px;line-height:1.65;color:#d8dcc8;overflow-x:auto;white-space:pre}
+
+.q{border:1px solid var(--line);background:var(--panel);margin-bottom:14px}
+.q-q{padding:13px 16px;border-bottom:1px solid var(--line);color:var(--ink)}
+.q-q::before{content:"? ";color:var(--acc);font-weight:600}
+.opts{padding:10px;display:grid;gap:7px}
+.opt{text-align:left;border:1px solid var(--line2);background:var(--panel2);padding:9px 13px;color:var(--dim);font-size:13px;display:flex;gap:10px;align-items:center;transition:border-color .15s}
+.opt::before{content:"";width:8px;height:8px;border:1px solid var(--faint);flex:none}
+.opt:hover:not(:disabled){border-color:var(--acc);color:var(--ink)}
+.opt:disabled{cursor:default;opacity:.55}
+.opt.ok{border-color:var(--ok);color:var(--ok);opacity:1}
+.opt.ok::before{background:var(--ok);border-color:var(--ok)}
+.opt.bad{border-color:var(--bad);color:var(--bad);animation:shake .4s}
+.opt.bad::before{background:var(--bad);border-color:var(--bad)}
+@keyframes shake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.q-ex{display:none;padding:11px 16px;border-top:1px solid var(--line);color:var(--ok);font-size:12.5px;background:var(--panel2)}
+.q.solved .q-ex{display:block}
+
+.pair{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.pair:last-child{border-bottom:none}
+.pair .term{width:150px;font-family:var(--disp);font-weight:600;color:var(--netB);font-size:13px}
+.pair select{flex:1;min-width:220px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:8px 10px;outline:none}
+.pair select:focus{border-color:var(--acc)}
+.pair.right select{border-color:var(--ok)}
+
+.tsk{display:flex;gap:11px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);background:var(--panel);margin-bottom:7px;text-align:left;color:var(--dim);font-size:13px;width:100%}
+.tsk:hover{border-color:var(--line2)}
+.tsk .bx{width:18px;height:18px;border:1px solid var(--line2);display:grid;place-items:center;flex:none;margin-top:1px;color:transparent}
+.tsk.on{color:var(--ink)} .tsk.on .bx{background:var(--ok);border-color:var(--ok);color:#0c1409}
+
+.valbar{display:flex;gap:14px;align-items:center;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+#valBtn{display:flex;gap:10px;align-items:center;background:var(--acc);color:#171004;font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.09em;text-transform:uppercase;padding:14px 26px;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+#valBtn:disabled{background:var(--panel2);color:var(--faint);cursor:not-allowed}
+#valHint{color:var(--faint);font-size:12px}
+textarea#diagText{width:100%;min-height:90px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:13px;padding:12px;outline:none;resize:vertical}
+textarea#diagText:focus{border-color:var(--acc)}
+
+.sim{border:1px solid var(--line2);background:var(--panel)}
+.sim-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line2);background:var(--panel2);flex-wrap:wrap}
+.sim-top .sab{color:var(--warn);font-size:12.5px;display:flex;gap:8px;align-items:center}
+.sim-top button{margin-left:auto;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line2);padding:5px 10px;display:flex;gap:6px;align-items:center}
+.sim-top button:hover{color:var(--acc);border-color:var(--acc)}
+.sim-top select{background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:5px 8px;outline:none}
+.sim-grid{display:grid;grid-template-columns:230px minmax(0,1fr);gap:1px;background:var(--line2)}
+.sim-l{background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:8px}
+.sim-l label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.sim-l input{background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:8px;outline:none}
+.sim-l input:focus{border-color:var(--acc)}
+.scmd{text-align:left;border:1px solid var(--line2);background:var(--inset);padding:7px 10px;color:var(--dim);font-size:12px}
+.scmd:hover{border-color:var(--acc);color:var(--acc)}
+.sim-c{background:#080a06;min-height:260px;max-height:330px;overflow-y:auto;padding:12px 14px;font-size:12.5px;line-height:1.6}
+.sim-c .ln{white-space:pre-wrap;word-break:break-word}
+.sim-c .cmd{color:var(--acc)} .sim-c .ok{color:var(--ok)} .sim-c .err{color:var(--bad)} .sim-c .wrn{color:var(--warn)} .sim-c .dim{color:var(--faint)} .sim-c .cy{color:var(--netB)}
+
+.suite{border:1px solid var(--line2);background:var(--panel)}
+.srow{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px dashed var(--line);font-size:12.5px;color:var(--dim);flex-wrap:wrap}
+.srow:last-child{border-bottom:none}
+.srow .sl{flex:1;min-width:190px;color:var(--ink)}
+.srow .sx{width:190px;color:var(--faint);font-size:11px}
+.chip{font-size:10px;letter-spacing:.08em;padding:3px 8px;border:1px solid var(--line2);text-transform:uppercase;white-space:nowrap}
+.chip.pass{color:var(--ok);border-color:var(--ok)}
+.chip.vio{color:var(--bad);border-color:var(--bad)}
+.chip.blk{color:var(--warn);border-color:var(--warn)}
+.chip.wait{color:var(--faint)}
+
+.incident{border:1px solid var(--bad);background:#160d0b;padding:14px 16px}
+.incident h5{color:var(--bad);font-family:var(--disp);letter-spacing:.08em;font-size:14px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.incident p{color:var(--dim);font-size:12.5px}
+
+.socline{font-size:11.5px;line-height:1.75;color:var(--dim)}
+.socline .t{color:var(--faint);margin-right:7px}
+.socline.perm{color:var(--ok)} .socline.deny{color:var(--warn)} .socline.alert{color:var(--bad)} .socline.crit{color:var(--bad);font-weight:600} .socline.info{color:var(--dim)}
+.socline.crit::before{content:"◆ "}
+
+.discf{display:grid;gap:10px}
+.drow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.drow label{width:270px;color:var(--dim);font-size:12.5px}
+.drow input{flex:1;min-width:160px;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:13px;padding:8px 10px;outline:none}
+.drow input:focus{border-color:var(--acc)}
+.drow input.ok{border-color:var(--ok);color:var(--ok)}
+.drow .chk{font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line2);padding:7px 12px;color:var(--dim)}
+.drow .chk:hover{border-color:var(--acc);color:var(--acc)}
+.drow .st{width:20px;color:var(--faint)}
+.drow.right .st{color:var(--ok)}
+
+.penlist{font-size:12.5px;color:var(--dim)}
+.penlist div{padding:5px 0;border-bottom:1px dashed var(--line)}
+.penlist b{color:var(--bad)}
+
+#rightCol{display:flex;flex-direction:column;min-height:0}
+#topoWrap{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:relative}
+#topoWrap::before,#topoWrap::after,#rightCol .corner::before,#rightCol .corner::after{content:"";position:absolute;width:12px;height:12px;border-color:var(--acc);border-style:solid}
+#topoWrap::before{top:6px;left:6px;border-width:1px 0 0 1px}
+#topoWrap::after{top:6px;right:6px;border-width:1px 1px 0 0}
+#rightCol .corner::before{bottom:6px;left:6px;border-width:0 0 1px 1px}
+#rightCol .corner::after{bottom:6px;right:6px;border-width:0 1px 1px 0}
+.panel-t{display:flex;gap:8px;align-items:center;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.panel-t .ic{color:var(--acc)}
+#topoSvg{width:100%;display:block;background:var(--inset);border:1px solid var(--line)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--faint);letter-spacing:.05em}
+.legend i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+#socWrap{flex:1;min-height:130px;display:flex;flex-direction:column;padding:12px 16px 14px;position:relative}
+#socHead{display:flex;align-items:center;gap:8px}
+#socHead .panel-t{flex:1;margin-bottom:0}
+#socList{flex:1;overflow-y:auto;margin-top:8px}
+#socList::-webkit-scrollbar{width:8px}
+
+.dev{opacity:0;transform:translateY(6px);transition:opacity .5s,transform .5s}
+.dev.show{opacity:1;transform:none}
+.ghost{opacity:.45}
+.tlink{stroke:#3a4230;stroke-width:1.6;fill:none;transition:stroke .5s}
+.tlink.up{stroke-width:2;opacity:.8}
+.tlink.netA{stroke:var(--netA)} .tlink.netB{stroke:var(--netB)} .tlink.netF{stroke:var(--netF)}
+.tlink.tr{stroke-dasharray:5 5;animation:dashmove 1.2s linear infinite;stroke:var(--ink)}
+@keyframes dashmove{to{stroke-dashoffset:-20}}
+.dlbl{font-family:var(--mono);font-size:10.5px;fill:var(--ink)}
+.dip{font-family:var(--mono);font-size:8.5px}
+.led{animation:ledpulse 1.6s infinite}
+@keyframes ledpulse{50%{opacity:.25}}
+
+#stamp{position:fixed;inset:0;display:none;place-items:center;z-index:120;pointer-events:none}
+#stamp.on{display:grid}
+#stampIn{font-family:var(--disp);font-weight:700;font-size:clamp(28px,4vw,46px);letter-spacing:.14em;color:var(--ok);border:4px solid var(--ok);padding:16px 34px;transform:rotate(-7deg) scale(2.6);opacity:0;background:rgba(11,13,9,.85);animation:stampin .55s cubic-bezier(.2,1.6,.4,1) forwards;text-transform:uppercase}
+@keyframes stampin{to{transform:rotate(-7deg) scale(1);opacity:1}}
+
+#toastHost{position:fixed;top:66px;right:16px;z-index:150;display:flex;flex-direction:column;gap:8px}
+.toast{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--acc);padding:11px 14px;font-size:12.5px;color:var(--ink);max-width:340px;animation:tin .3s}
+.toast.ok{border-left-color:var(--ok)} .toast.err{border-left-color:var(--bad)} .toast.warn{border-left-color:var(--warn)}
+.toast .ic{margin-top:1px;color:var(--acc)} .toast.ok .ic{color:var(--ok)} .toast.err .ic{color:var(--bad)} .toast.warn .ic{color:var(--warn)}
+@keyframes tin{from{transform:translateX(30px);opacity:0}}
+.toast.out{transition:.3s;opacity:0;transform:translateX(30px)}
+
+#modalHost{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;background:rgba(5,6,4,.78)}
+#modalHost.on{display:flex}
+.modal{width:min(740px,92vw);max-height:84vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line2);padding:24px 26px}
+.modal h3{font-family:var(--disp);font-size:19px;letter-spacing:.05em;color:var(--acc);display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.modal h4{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin:18px 0 8px}
+.modal p,.modal li{color:var(--dim);font-size:13px}
+.modal ul{padding-left:18px} .modal li{margin:4px 0}
+.modal b{color:var(--ink)}
+.modal .mclose{margin-top:20px;border:1px solid var(--line2);color:var(--dim);padding:9px 18px;font-family:var(--disp);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+.modal .mclose:hover{border-color:var(--acc);color:var(--acc)}
+.modal table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+.modal td{padding:6px 8px;border-bottom:1px dashed var(--line);color:var(--dim)}
+.modal td:first-child{color:var(--ink);white-space:nowrap}
+.modal code{background:var(--inset);border:1px solid var(--line);padding:1px 6px;font-size:11.5px;color:var(--netB)}
+
+#certWrap{position:fixed;inset:0;z-index:190;display:none;align-items:center;justify-content:center;background:rgba(5,6,4,.9);overflow-y:auto;padding:30px 14px}
+#certWrap.on{display:flex}
+.cert{width:min(760px,94vw);background:var(--panel);border:1px solid var(--acc);position:relative;padding:6px}
+.cert-in{border:1px dashed var(--line2);padding:44px 46px;text-align:center}
+.cert .top{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--faint)}
+.cert h1{font-family:var(--disp);font-weight:700;font-size:32px;letter-spacing:.1em;margin:14px 0 4px;color:var(--acc)}
+.cert .rl{color:var(--dim);font-size:13px;max-width:540px;margin:10px auto 0}
+.cert .nm{font-family:var(--disp);font-weight:700;font-size:26px;margin:22px 0 2px;border-bottom:1px solid var(--line2);display:inline-block;padding:0 26px 8px}
+.cert .meta{display:flex;justify-content:center;gap:30px;margin:26px 0;flex-wrap:wrap}
+.cert .meta div{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.14em}
+.cert .meta b{display:block;font-family:var(--disp);font-size:16px;color:var(--ink);letter-spacing:.05em;margin-top:3px}
+.cert .sign{display:flex;justify-content:space-between;margin-top:40px;color:var(--faint);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.cert .sign span{border-top:1px solid var(--line2);padding-top:8px;width:200px}
+.certbtns{display:flex;gap:10px;justify-content:center;margin-top:18px}
+@media print{body>*:not(#certWrap){display:none!important}body{overflow:visible;background:#fff}#certWrap{display:flex!important;position:static;background:#fff;padding:0}.cert{border-color:#000}.cert-in{border-color:#999}.certbtns{display:none}}
+@media (max-width:1240px){#app{grid-template-columns:220px minmax(0,1fr) 330px}}
+@media (max-width:1000px){body{overflow:auto}#app{display:flex;flex-direction:column;height:auto;min-height:100vh}nav{display:flex;overflow-x:auto;padding:10px}.ph,.navprog{display:none}.mnav{width:auto;white-space:nowrap;border:1px solid var(--line)}main{overflow:visible}#rightCol{flex:none}#topbar{flex-wrap:wrap;height:auto;padding:10px 14px;gap:10px}}
+</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="i-volx" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-rot" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2-9.4L1 10"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-net" viewBox="0 0 24 24"><rect x="2" y="9" width="20" height="6" rx="1"/><circle cx="6.5" cy="12" r="1"/><circle cx="17.5" cy="12" r="1"/><path d="M12 2v7M12 15v7"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+</svg>
+
+<div id="boot">
+  <div id="bootInner">
+    <div id="bootLines"></div>
+    <div id="bootTitle" style="display:none">OPERAÇÃO <span>PORTARIA</span> · BLUE TEAM</div>
+    <div id="bootSub" style="display:none">Descoberta → Análise → Proteção → Monitoramento → Correção</div>
+    <form id="bootForm">
+      <input id="techName" maxlength="28" placeholder="Identifique-se, analista…" autocomplete="off">
+      <button class="btn-acc" type="submit">Assinar termo</button>
+    </form>
+    <button id="bootSkip" style="display:none">pular introdução</button>
+  </div>
+</div>
+
+<div id="app">
+  <header id="topbar">
+    <div class="brand"><b>PORTARIA</b><small>blue team · soc</small></div>
+    <span id="hudName"></span>
+    <span id="hudRank">Estagiário SOC</span>
+    <span id="hudPen"></span>
+    <div class="xpwrap"><div class="xpbar"><i id="xpFill"></i></div><span id="xpTxt">0 XP</span></div>
+    <span id="hudClock"><svg class="ic"><use href="#i-clock"/></svg><span id="clock">00:00</span></span>
+    <div class="tbtns">
+      <button class="tbtn" id="sndBtn" title="Som"><svg class="ic"><use href="#i-vol"/></svg></button>
+      <button class="tbtn" id="tutBtn" title="Guia do instrutor"><svg class="ic"><use href="#i-book"/></svg></button>
+      <button class="tbtn" id="rstBtn" title="Reiniciar operação"><svg class="ic"><use href="#i-rot"/></svg></button>
+    </div>
+  </header>
+
+  <nav id="nav"><div class="navprog"><i id="navFill"></i></div><div id="navList"></div></nav>
+  <main id="main"><div class="mwrap" id="mwrap"></div></main>
+
+  <aside id="rightCol">
+    <section id="topoWrap">
+      <div class="panel-t"><svg class="ic"><use href="#i-net"/></svg> Mapa de ativos · descoberta ativa</div>
+      <svg id="topoSvg" viewBox="0 0 660 560"></svg>
+      <div class="legend">
+        <span><i style="background:var(--netA)"></i>REDE A · /27</span>
+        <span><i style="background:var(--netB)"></i>REDE B · /28</span>
+        <span><i style="background:var(--netF)"></i>SRV · /26</span>
+        <span><i style="background:var(--faint)"></i>NÃO MAPEADO</span>
+      </div>
+    </section>
+    <section id="socWrap" class="corner">
+      <div id="socHead">
+        <div class="panel-t"><svg class="ic"><use href="#i-eye"/></svg> Log SOC · monitoramento</div>
+        <button class="copy" id="socClear" style="margin-bottom:8px">limpar</button>
+      </div>
+      <div id="socList"></div>
+    </section>
+  </aside>
+</div>
+
+<div id="stamp"><div id="stampIn"></div></div>
+<div id="toastHost"></div>
+<div id="modalHost"><div class="modal" id="modalBox"></div></div>
+<div id="certWrap"></div>
+
+<script>
+/* ============================================================
+   OPERAÇÃO PORTARIA — BLUE TEAM (v2.1 · correções)
+   ============================================================ */
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ic=n=>`<svg class="ic"><use href="#i-${n}"/></svg>`;
+
+/* ---------- estado ---------- */
+const DEF={name:'',xp:0,pens:[],penKeys:[],done:[],cur:'m1',qs:{},tk:{},pr:{},sr:{},diag:'',
+  disc:{net:false,mask:false,gw:false,srv:false},
+  rev:{pc1:false,pc2:false,admin:false,cam:false,srv:false,r1:false},
+  arp:{},inc70:false,inc71:false,teln:false,finPlanted:null,finSolved:false,
+  pcSel:'PC1',t0:null,tEnd:null,muted:false,
+  rtr:null,cliLog:[],pcLog:{}};
+let save;
+try{save=Object.assign({},DEF,JSON.parse(localStorage.getItem('portaria-bt-save')||'{}'));}catch(e){save=Object.assign({},DEF);}
+save.pens=save.pens||[];save.penKeys=save.penKeys||[];
+save.disc=save.disc||DEF.disc;save.rev=save.rev||DEF.rev;save.arp=save.arp||{};
+save.pcLog=save.pcLog||{};save.cliLog=save.cliLog||[];save.sr=save.sr||{};
+const persist=()=>localStorage.setItem('portaria-bt-save',JSON.stringify(save));
+
+/* ---------- áudio ---------- */
+let AC=null;
+function tone(f,d,type,v,delay){
+  if(save.muted)return;
+  type=type||'square';v=v||.05;delay=delay||0;
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+delay;
+    o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,t);
+    g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);}catch(e){}
+}
+const snd={
+  click:()=>tone(660,.05,'square',.03,0),
+  type:()=>tone(1100+Math.random()*300,.02,'square',.012,0),
+  ok:()=>{tone(740,.09,'square',.05,0);tone(1108,.14,'square',.05,.09);},
+  err:()=>tone(160,.22,'sawtooth',.06,0),
+  alarm:()=>{tone(880,.14,'square',.06,0);tone(660,.14,'square',.06,.16);tone(880,.14,'square',.06,.32);},
+  done:()=>{tone(660,.1,'square',.05,0);tone(880,.1,'square',.05,.1);tone(1320,.2,'square',.05,.2);},
+  stamp:()=>tone(140,.18,'sawtooth',.08,0)
+};
+
+/* ---------- toast / tempo / patentes ---------- */
+function toast(msg,type){
+  type=type||'';
+  const d=document.createElement('div');d.className='toast '+type;
+  d.innerHTML=ic(type==='err'?'alert':type==='ok'?'check':'zap')+'<span>'+msg+'</span>';
+  $('#toastHost').appendChild(d);
+  setTimeout(()=>{d.classList.add('out');setTimeout(()=>d.remove(),350);},4200);
+}
+function fmtTime(ms){const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60,p=n=>String(n).padStart(2,'0');
+  return h?p(h)+':'+p(m)+':'+p(ss):p(m)+':'+p(ss);}
+function nowStamp(){return new Date().toLocaleTimeString('pt-BR',{hour12:false});}
+const RANKS=[[0,'Estagiário SOC'],[200,'Analista Jr.'],[500,'Analista de Redes'],[800,'Analista de Segurança'],[1100,'Defensor de Perímetro'],[1350,'Respondente de Incidentes'],[1500,'Arquiteto Blue Team']];
+const penTotal=()=>save.pens.reduce((a,p)=>a+p.x,0);
+const xpNet=()=>Math.max(0,save.xp-penTotal());
+const rankFor=n=>{let r=RANKS[0][1];RANKS.forEach(kv=>{if(n>=kv[0])r=kv[1];});return r;};
+function pushPen(reason,xp){
+  save.pens.push({r:reason,x:xp});persist();
+  toast('Penalidade: '+reason+' ('+xp+' XP)','err');snd.err();updateHud();
+}
+
+/* ============================================================
+   MOTOR DE REDE
+   ============================================================ */
+const PORTS={ftp:21,'ftp-data':20,ssh:22,telnet:23,smtp:25,domain:53,www:80,http:80,https:443,pop3:110};
+const RTRIPS={'g0/0':'172.22.34.65','g0/1':'172.22.34.97','g0/2':'172.22.34.1'};
+const HOSTS={
+  PC1:{ip:'172.22.34.66',mask:'255.255.255.224',gw:'172.22.34.65',lbl:'PC1'},
+  PC2:{ip:'172.22.34.98',mask:'255.255.255.240',gw:'172.22.34.97',lbl:'PC2'},
+  ADMIN:{ip:'172.22.34.100',mask:'255.255.255.240',gw:'172.22.34.97',lbl:'ADMIN'},
+  CAM:{ip:'172.22.34.70',mask:'255.255.255.224',gw:'172.22.34.65',lbl:'CAM'}
+};
+const SRVIP='172.22.34.62';
+const SRVSVC={21:'ftp',22:'ssh',53:'dns',80:'http',443:'https'};
+const DNSNAMES={'filesrv.orion.local':SRVIP,'www.orion.local':SRVIP};
+
+function newRtr(){return{hostname:'R1',vty:{acl:null,trans:null},
+  ifaces:{'g0/0':{ip:'172.22.34.65',mask:'255.255.255.224',up:true,aclIn:null,aclOut:null},
+          'g0/1':{ip:'172.22.34.97',mask:'255.255.255.240',up:true,aclIn:null,aclOut:null},
+          'g0/2':{ip:'172.22.34.1',mask:'255.255.255.192',up:true,aclIn:null,aclOut:null}},
+  num:{},named:{}};}
+if(!save.rtr)save.rtr=newRtr();
+['g0/0','g0/1','g0/2'].forEach(k=>{if(!save.rtr.ifaces[k])save.rtr.ifaces[k]=newRtr().ifaces[k];});
+if(!save.rtr.vty)save.rtr.vty={acl:null,trans:null};
+
+const isIp=s=>/^(\d{1,3}\.){3}\d{1,3}$/.test(s||'')&&String(s).split('.').every(o=>+o<=255);
+const ipN=s=>{const p=String(s).split('.').map(Number);return((p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3])>>>0;};
+const inNet=(ip,net,wc)=>((ipN(ip)^ipN(net))&~ipN(wc))===0;
+const maskCidr=m=>String(m).split('.').reduce((a,o)=>a+((+o).toString(2).match(/1/g)||[]).length,0);
+const pad=(s,n)=>(String(s)+' '.repeat(n)).slice(0,n);
+function normIf(s){s=String(s||'').toLowerCase().replace(/\s+/g,'');s=s.replace(/^(gigabitethernet|gigabit|gig|gi|g)/,'g');return /^g0\/[0-2]$/.test(s)?s:null;}
+function normPort(p){
+  p=String(p||'').toLowerCase();
+  if(PORTS[p])return p;
+  if(/^\d+$/.test(p)&&+p>0&&+p<65536){const k=Object.keys(PORTS).find(k=>PORTS[k]===+p);return k||String(+p);}
+  return null;
+}
+const portNum=p=>/^\d+$/.test(String(p))?+p:PORTS[p];
+function getList(id){return save.rtr.num[id]||save.rtr.named[id]||null;}
+
+function readSpec(t,i){
+  if(!t[i])return{err:'endereço de origem ausente'};
+  if(t[i].toLowerCase()==='any')return{addr:'0.0.0.0',wc:'255.255.255.255',next:i+1};
+  if(t[i].toLowerCase()==='host'){if(!isIp(t[i+1]))return{err:'endereço inválido após "host"'};
+    return{addr:t[i+1],wc:'0.0.0.0',next:i+2};}
+  if(!isIp(t[i]))return{err:'IP inválido: '+t[i]};
+  if(!isIp(t[i+1]))return{err:'falta a máscara curinga após '+t[i]+' (ex.: 0.0.0.31)'};
+  return{addr:t[i],wc:t[i+1],next:i+2};
+}
+function parseExtLine(rest){
+  const proto=(rest[0]||'').toLowerCase();
+  if(!['ip','tcp','udp','icmp'].includes(proto))return{err:'protocolo inválido — use ip, tcp, udp ou icmp'};
+  let i=1;const s=readSpec(rest,i);if(s.err)return s;i=s.next;
+  let d=null;
+  if(i<rest.length){d=readSpec(rest,i);if(d.err)return d;i=d.next;}
+  if(!d)return{err:'falta o destino (ex.: host 172.22.34.62)'};
+  let port=null;
+  if(rest[i]){
+    if(rest[i].toLowerCase()==='eq'){port=normPort(rest[i+1]);if(!port)return{err:'porta/serviço inválido após "eq"'};i+=2;}
+    else return{err:'parâmetro inesperado: '+rest[i]};
+  }
+  return{line:{proto:proto,src:s.addr,swc:s.wc,dst:d.addr,swd:d.wc,port:port}};
+}
+function matchLine(l,pkt){
+  if(l.proto!=='ip'&&l.proto!==pkt.proto)return false;
+  if(!inNet(pkt.src,l.src,l.swc))return false;
+  if(!inNet(pkt.dst,l.dst,l.swd))return false;
+  if(l.port!=null){
+    if(pkt.proto!=='tcp'&&pkt.proto!=='udp')return false;
+    if(pkt.dport!==portNum(l.port))return false;
+  }
+  return true;
+}
+function aclCheck(id,pkt){
+  const list=getList(id);if(!list)return null;
+  for(const ln of list){if(matchLine(ln,pkt)){ln.hits++;return{acl:id,action:ln.action,implicit:false};}}
+  return{acl:id,action:'deny',implicit:true};
+}
+function ifaceOf(ip){
+  const keys=['g0/0','g0/1','g0/2'];
+  for(const k of keys){const IF=save.rtr.ifaces[k];
+    if(IF.up&&IF.ip&&inNet(ip,IF.ip,IF.mask))return k;}
+  return null;
+}
+function flow(src,dst,proto,dport){
+  const rtrIps=Object.values(RTRIPS);
+  const inIf=ifaceOf(src);
+  if(!inIf)return{out:'bad-src'};
+  if(rtrIps.includes(dst)){
+    const pkt={src:src,dst:dst,proto:proto,dport:dport};
+    const b=save.rtr.ifaces[inIf].aclIn?aclCheck(save.rtr.ifaces[inIf].aclIn,pkt):null;
+    if(b&&b.action==='deny')return{out:'acl-deny',acl:b.acl,implicit:b.implicit};
+    if(proto==='tcp'&&(dport===22||dport===23)){
+      if(dport===23&&save.rtr.vty.trans==='ssh')
+        return{out:'acl-deny',acl:'vty',implicit:true,why:'transport input ssh'};
+      if(save.rtr.vty.acl){
+        const v=aclCheck(save.rtr.vty.acl,pkt);
+        if(v&&v.action==='deny')return{out:'acl-deny',acl:v.acl,implicit:v.implicit};
+      }
+    }
+    persist();return{out:'self-ok'};
+  }
+  const outIf=ifaceOf(dst);
+  if(!outIf)return{out:'no-route'};
+  if(inIf===outIf){persist();return{out:'ok'};}
+  const pkt={src:src,dst:dst,proto:proto,dport:dport};
+  let b=save.rtr.ifaces[inIf].aclIn?aclCheck(save.rtr.ifaces[inIf].aclIn,pkt):null;
+  if(b&&b.action==='deny')return{out:'acl-deny',stage:'req',acl:b.acl,implicit:b.implicit};
+  b=save.rtr.ifaces[outIf].aclOut?aclCheck(save.rtr.ifaces[outIf].aclOut,pkt):null;
+  if(b&&b.action==='deny')return{out:'acl-deny',stage:'req',acl:b.acl,implicit:b.implicit};
+  const rp={src:dst,dst:src,proto:proto,dport:(proto==='tcp'||proto==='udp')?61234:null};
+  b=save.rtr.ifaces[outIf].aclIn?aclCheck(save.rtr.ifaces[outIf].aclIn,rp):null;
+  if(b&&b.action==='deny')return{out:'acl-deny',stage:'rep',acl:b.acl,implicit:b.implicit};
+  b=save.rtr.ifaces[inIf].aclOut?aclCheck(save.rtr.ifaces[inIf].aclOut,rp):null;
+  if(b&&b.action==='deny')return{out:'acl-deny',stage:'rep',acl:b.acl,implicit:b.implicit};
+  persist();return{out:'ok'};
+}
+function probe(src,dst,kind){
+  const map={http:['tcp',80],https:['tcp',443],dns:['udp',53],ftp:['tcp',21],ssh:['tcp',22],telnet:['tcp',23],icmp:['icmp',null]};
+  const pr=map[kind];const r=flow(src,dst,pr[0],pr[1]);
+  if(r.out==='ok'||r.out==='self-ok'){
+    const isRtr=Object.values(RTRIPS).includes(dst);
+    const svc=isRtr?{22:1,23:1}:SRVSVC;
+    const dp=pr[1];
+    if(dp!==null&&!svc[dp])return{st:'refused',r:r};
+    return{st:'ok',r:r};
+  }
+  if(r.out==='acl-deny')return{st:'filtered',r:r};
+  return{st:'no-route',r:r};
+}
+
+/* ---------- log SOC ---------- */
+const SOC=[];
+function soc(sev,txt){
+  SOC.push({t:nowStamp(),sev:sev,txt:txt});
+  if(SOC.length>120)SOC.shift();
+  renderSoc();
+}
+function renderSoc(){
+  const box=$('#socList');if(!box)return;
+  box.innerHTML=SOC.map(e=>`<div class="socline ${e.sev}"><span class="t">${e.t}</span>${esc(e.txt)}</div>`).join('');
+  box.scrollTop=box.scrollHeight;
+}
+function socProbe(srcIp,srcLbl,dst,dport,proto){
+  const r=flow(srcIp,dst,proto,dport);
+  const st=r.out==='ok'||r.out==='self-ok'?'ok':r.out==='acl-deny'?'filtered':'no-route';
+  const sev=st==='ok'?'perm':st==='filtered'?'deny':'info';
+  const tag=st==='ok'?'PERMIT':st==='filtered'?'DENY (ACL)':'—';
+  const isRtr=Object.values(RTRIPS).includes(dst);
+  const svc=isRtr?{22:'ssh',23:'telnet'}:SRVSVC;
+  const nm=svc[dport]||dport;
+  soc(sev,srcLbl+'('+srcIp+') → '+(isRtr?'R1':'SRV')+'('+dst+'):'+dport+' '+String(proto).toUpperCase()+' · '+tag);
+  return st;
+}
+
+/* ---------- CLI do R1 ---------- */
+const cli={mode:'user',curIf:null,curNacl:null,hist:[],hi:null};
+function promptStr(){const h=save.rtr.hostname;
+  if(cli.mode==='user')return h+'>';
+  if(cli.mode==='priv')return h+'#';
+  if(cli.mode==='conf')return h+'(config)#';
+  if(cli.mode==='conf-if')return h+'(config-if)#';
+  if(cli.mode==='conf-line')return h+'(config-line)#';
+  return h+'(config-ext-nacl)#';}
+function specTxt(a,w){if(w==='0.0.0.0')return 'host '+a;if(a==='0.0.0.0'&&w==='255.255.255.255')return 'any';return a+' '+w;}
+function lineText(l){let s=l.action+' '+l.proto+' '+specTxt(l.src,l.swc);
+  s+=' '+specTxt(l.dst,l.swd);
+  if(l.port)s+=' eq '+l.port;return s;}
+function helpFor(line,out){
+  const t=line.replace('?','').trim().toLowerCase();const first=t.split(/\s+/)[0];
+  if(first==='access-list'&&cli.mode==='conf'){
+    out.push(['<1-99>      IP standard access list','dim']);
+    out.push(['<100-199>   IP extended access list','dim']);return;}
+  const ctx={
+    user:['enable','ping <ip>','exit'],
+    priv:['configure terminal','show access-lists','show ip interface brief','show running-config','show ip interface g0/x','ping <ip>','write memory','disable'],
+    conf:['hostname <nome>','interface g0/0|g0/1|g0/2','access-list 100-199 permit|deny ...','ip access-list extended <NOME>','no access-list <num>','line vty 0 4','do show ...','end'],
+    'conf-if':['ip address <ip> <máscara>','no shutdown','shutdown','ip access-group <num|nome> <in|out>','no ip access-group ...','do show ...','end'],
+    'conf-line':['access-class <num|nome> in','transport input ssh|telnet|all','do show ...','end'],
+    nacl:['permit|deny <ip|tcp|udp|icmp> <origem> <destino> [eq porta]','no <sequência>','exit','end']
+  }[cli.mode];
+  out.push(['Comandos neste modo:','dim']);
+  (ctx||[]).forEach(c=>out.push(['  '+c,'dim']));
+}
+function doShow(a,P){
+  const c=(a[0]||'').toLowerCase();
+  if(c==='access-lists'||c==='access-list'){
+    let any=false;
+    const dump=(title,list)=>{if(!list||!list.length)return;any=true;
+      P('Extended IP access list '+title,'ok');
+      list.forEach(l=>P('    '+l.seq+' '+lineText(l)+(l.hits?' ('+l.hits+' match'+(l.hits>1?'es':'')+')':'')));};
+    Object.keys(save.rtr.num).forEach(k=>dump(k,save.rtr.num[k]));
+    Object.keys(save.rtr.named).forEach(k=>dump(k,save.rtr.named[k]));
+    if(!any)P('(nenhuma ACL configurada)','wrn');return;}
+  if(c==='ip'&&a[1]==='brief'){
+    P('Interface              IP-Address      OK? Method Status                Protocol');
+    ['g0/0','g0/1','g0/2'].forEach(n=>{const IF=save.rtr.ifaces[n];
+      P(pad(n.toUpperCase().replace('G','GigabitEthernet'),22)+pad(IF.ip||'unassigned',16)+'YES manual '+
+        pad(IF.up?'up':'administratively down',22)+(IF.up?'up':'down'));});return;}
+  if(c==='ip'&&a[1]==='interface'){
+    const list=a[2]?[normIf(a[2])]:['g0/0','g0/1','g0/2'];
+    if(a[2]&&!list[0]){P('% Invalid interface','err');return;}
+    list.forEach(n=>{const IF=save.rtr.ifaces[n];
+      P(n.toUpperCase().replace('G','GigabitEthernet')+' is '+(IF.up?'up':'administratively down')+', line protocol is '+(IF.up?'up':'down'));
+      P('  Internet address is '+(IF.ip?IF.ip+'/'+maskCidr(IF.mask):'não configurada'));
+      P('  Outgoing access list is '+(IF.aclOut||'not set'));
+      P('  Inbound access list is '+(IF.aclIn||'not set'));});return;}
+  if(c==='run'||c==='running-config'){
+    P('Building configuration...');P('!');P('hostname '+save.rtr.hostname);P('!');
+    ['g0/0','g0/1','g0/2'].forEach(n=>{const IF=save.rtr.ifaces[n];
+      P('interface '+n.toUpperCase().replace('G','GigabitEthernet'));
+      if(IF.ip)P(' ip address '+IF.ip+' '+IF.mask);
+      P(' '+(IF.up?'no shutdown':'shutdown'));
+      if(IF.aclIn)P(' ip access-group '+IF.aclIn+' in');
+      if(IF.aclOut)P(' ip access-group '+IF.aclOut+' out');P('!');});
+    Object.keys(save.rtr.num).forEach(k=>save.rtr.num[k].forEach(l=>P('access-list '+k+' '+lineText(l))));
+    Object.keys(save.rtr.named).forEach(k=>{P('ip access-list extended '+k);
+      save.rtr.named[k].forEach(l=>P(' '+lineText(l)));});
+    P('line vty 0 4');
+    if(save.rtr.vty.acl)P(' access-class '+save.rtr.vty.acl+' in');
+    if(save.rtr.vty.trans)P(' transport input '+save.rtr.vty.trans);
+    P('!');P('end');return;}
+  if(c==='version'){P('Cisco IOS Software, ISR Software (Operação Portaria BT), Version 15.1','dim');return;}
+  P('% Uso: show access-lists · show ip interface brief · show ip interface [g0/x] · show running-config','dim');
+}
+function routerPingCmd(ip){const out=[];const P=(t,c)=>out.push([t,c||'']);
+  if(!ip||!isIp(ip)){P('% Uso: ping <endereço IP>','wrn');return out;}
+  P('Type escape sequence to abort.');
+  P('Sending 5, 100-byte ICMP Echos to '+ip+', timeout is 2 seconds:');
+  const eg=ifaceOf(ip);
+  let r='no-route';
+  if(eg){const src=save.rtr.ifaces[eg].ip;
+    const b=save.rtr.ifaces[eg].aclOut?aclCheck(save.rtr.ifaces[eg].aclOut,{src:src,dst:ip,proto:'icmp',dport:null}):null;
+    r=(b&&b.action==='deny')?'acl-deny':'ok';}
+  if(r==='ok'){P('!!!!!','ok');P('Success rate is 100 percent (5/5)','ok');}
+  else{P('.....','err');P('Success rate is 0 percent (0/5)'+(r==='acl-deny'?' — filtrado por ACL':''),'err');}
+  persist();return out;}
+function cmdNumberedAcl(t,P){
+  const n=t[1];
+  if(!n||isNaN(+n)){P('% Uso: access-list <100-199> permit|deny <ip|tcp|udp|icmp> <origem> <destino> [eq porta]','err');return;}
+  if(+n<100){P('% ACL PADRÃO (1-99) filtra apenas a origem. Esta política exige ACL ESTENDIDA: use 100-199.','wrn');return;}
+  const action=(t[2]||'').toLowerCase();
+  if(!['permit','deny'].includes(action)){P('% Uso: access-list <num> permit|deny <ip|tcp|udp|icmp> <origem> <destino> [eq porta]','err');return;}
+  const r=parseExtLine(t.slice(3));if(r.err){P('% '+r.err,'err');return;}
+  const list=save.rtr.num[n]=save.rtr.num[n]||[];
+  const line=r.line;line.seq=list.length?list[list.length-1].seq+10:10;line.action=action;line.hits=0;
+  list.push(line);persist();
+}
+function execCli(raw){
+  const out=[];const P=(t,c)=>out.push([t,c||'']);
+  const line=raw.trim();if(!line)return out;
+  const t=line.split(/\s+/);const c0=t[0].toLowerCase();
+  if(line.endsWith('?')){helpFor(line,out);return out;}
+  if(cli.mode==='user'){
+    if(c0==='enable'){cli.mode='priv';return out;}
+    if(c0==='ping')return routerPingCmd(t[1]);
+    if(c0==='exit'||c0==='logout')return out;
+    P('% Invalid input. Digite "enable".','wrn');return out;}
+  if(cli.mode==='priv'){
+    if(c0==='enable')return out;
+    if(['conf','config','configure'].includes(c0)&&(!t[1]||['terminal','t'].includes((t[1]||'').toLowerCase()))){cli.mode='conf';return out;}
+    if(c0==='disable'){cli.mode='user';return out;}
+    if(c0==='show'){doShow(t.slice(1),P);return out;}
+    if(c0==='ping')return routerPingCmd(t[1]);
+    if(c0==='write'||c0==='wr'){P('Building configuration...');P('[OK]','ok');return out;}
+    P('% Invalid input. Digite "?" para ajuda.','err');return out;}
+  if(cli.mode==='conf'){
+    if(c0==='hostname'){if(!t[1]){P('% Informe o nome','err');return out;}save.rtr.hostname=t[1];persist();return out;}
+    if(c0==='interface'||c0==='int'){const n=normIf(t.slice(1).join(' '));
+      if(!n){P('% Invalid interface — use g0/0, g0/1 ou g0/2','err');return out;}
+      cli.mode='conf-if';cli.curIf=n;return out;}
+    if(c0==='access-list'){cmdNumberedAcl(t,P);return out;}
+    if(c0==='no'&&t[1]==='access-list'){delete save.rtr.num[t[2]];persist();return out;}
+    if(c0==='ip'&&t[1]==='access-list'&&t[2]==='extended'){
+      const nm=t[3];if(!nm){P('% Informe o nome da ACL','err');return out;}
+      save.rtr.named[nm]=save.rtr.named[nm]||[];cli.mode='nacl';cli.curNacl=nm;persist();return out;}
+    if(c0==='no'&&t[1]==='ip'&&t[2]==='access-list'&&t[3]==='extended'){delete save.rtr.named[t[4]];persist();return out;}
+    if(c0==='line'&&t[1]==='vty'){cli.mode='conf-line';return out;}
+    if(c0==='do'){doShow(t.slice(2),P);return out;}
+    if(c0==='end'||c0==='exit'){cli.mode='priv';return out;}
+    if(c0==='write'||c0==='wr'){P('Building configuration...');P('[OK]','ok');return out;}
+    P('% Invalid input. Digite "?" para ajuda.','err');return out;}
+  if(cli.mode==='conf-if'){
+    const IF=save.rtr.ifaces[cli.curIf];
+    if(c0==='ip'&&t[1]==='address'){
+      if(!isIp(t[2])||!isIp(t[3])){P('% IP/máscara inválidos (máscara dotted, ex.: 255.255.255.224)','err');return out;}
+      IF.ip=t[2];IF.mask=t[3];persist();return out;}
+    if(c0==='no'&&t[1]==='shutdown'){IF.up=true;persist();return out;}
+    if(c0==='shutdown'){IF.up=false;persist();return out;}
+    if(c0==='ip'&&t[1]==='access-group'){
+      const id=t[2],dir=(t[3]||'out').toLowerCase();
+      if(!id||(dir!=='in'&&dir!=='out')){P('% Uso: ip access-group <número|nome> <in|out>','err');return out;}
+      IF[dir==='in'?'aclIn':'aclOut']=id;
+      if(!getList(id))P('% Aviso: a ACL "'+id+'" ainda não existe — será efetiva quando criada.','wrn');
+      persist();return out;}
+    if(c0==='no'&&t[1]==='ip'&&t[2]==='access-group'){
+      if(t[3]==='in')IF.aclIn=null;else if(t[3]==='out')IF.aclOut=null;else{IF.aclIn=null;IF.aclOut=null;}
+      persist();return out;}
+    if(c0==='description')return out;
+    if(c0==='exit'){cli.mode='conf';return out;}
+    if(c0==='end'){cli.mode='priv';return out;}
+    if(c0==='do'){doShow(t.slice(2),P);return out;}
+    P('% Invalid input. Digite "?" para ajuda.','err');return out;}
+  if(cli.mode==='conf-line'){
+    if(c0==='access-class'&&t[1]&&(t[2]||'in')==='in'){
+      save.rtr.vty.acl=t[1];
+      if(!getList(t[1]))P('% Aviso: a ACL "'+t[1]+'" ainda não existe.','wrn');
+      persist();return out;}
+    if(c0==='transport'&&t[1]==='input'){
+      const v=(t[2]||'').toLowerCase();
+      if(['ssh','telnet','all'].includes(v)){save.rtr.vty.trans=v==='all'?null:v;persist();return out;}
+      P('% Uso: transport input ssh | telnet | all','err');return out;}
+    if(c0==='exit'){cli.mode='conf';return out;}
+    if(c0==='end'){cli.mode='priv';return out;}
+    if(c0==='do'){doShow(t.slice(2),P);return out;}
+    P('% Invalid input. Digite "?" para ajuda.','err');return out;}
+  if(cli.mode==='nacl'){
+    if((c0==='permit'||c0==='deny')&&t[1]){
+      const r=parseExtLine(t.slice(1));if(r.err){P('% '+r.err,'err');return out;}
+      const list=save.rtr.named[cli.curNacl];
+      const line=r.line;line.seq=list.length?list[list.length-1].seq+10:10;line.action=c0;line.hits=0;
+      list.push(line);persist();return out;}
+    if(c0==='no'){
+      const n=parseInt(t[1]);
+      if(!isNaN(n)&&t.length===2){save.rtr.named[cli.curNacl]=save.rtr.named[cli.curNacl].filter(l=>l.seq!==n);persist();return out;}}
+    if(c0==='exit'){cli.mode='conf';return out;}
+    if(c0==='end'){cli.mode='priv';return out;}
+    if(c0==='do'){doShow(t.slice(2),P);return out;}
+    P('% Invalid input. Digite "?" para ajuda.','err');return out;}
+  return out;
+}
+function cliRun(raw){
+  const line=raw.trim();
+  const entry=[[promptStr()+(line?' ':'')+(line||''),'cmd']];
+  if(line)execCli(line).forEach(l=>entry.push(l));
+  save.cliLog=save.cliLog||[];
+  save.cliLog.push.apply(save.cliLog,entry);
+  if(save.cliLog.length>180)save.cliLog=save.cliLog.slice(-180);
+  persist();
+  const out=$('#cliOut');
+  if(out){out.innerHTML=save.cliLog.map(l=>`<div class="ln ${l[1]||''}">${esc(l[0])}</div>`).join('');out.scrollTop=out.scrollHeight;}
+  const p=$('#cliPrompt');if(p)p.textContent=promptStr();
+}
+
+/* ---------- terminais das estações ---------- */
+function macOf(ip){const o=ip.split('.').slice(2).map(x=>(+x).toString(16).padStart(2,'0')).join('');return '0001.42'+o.slice(0,6);}
+function arpAdd(dev,ip){save.arp[dev]=save.arp[dev]||{};save.arp[dev][ip]=macOf(ip);}
+function pingOut(dev,ip){
+  const me=HOSTS[dev];const out=[];
+  const r=flow(me.ip,ip,'icmp',null);
+  if(r.out==='ok'||r.out==='self-ok'){
+    for(let i=0;i<4;i++)out.push(['Resposta de '+ip+': bytes=32 tempo<1ms TTL=127','ok']);
+    out.push(['(4/4 recebidos)','dim']);
+    if(ip===me.gw){arpAdd(dev,ip);reveal('r1');}
+  }else if(r.out==='acl-deny'&&r.stage==='req'){
+    for(let i=0;i<4;i++)out.push(['Resposta de '+me.gw+': Host de destino inacessível.','err']);
+    out.push(['(0/4 — pacote FILTRADO pela ACL do R1)','err']);
+    soc('deny',me.lbl+'('+me.ip+') → '+ip+' ICMP · DENY (ACL)');
+  }else if(r.out==='acl-deny'){
+    for(let i=0;i<4;i++)out.push(['Esgotado o tempo limite da solicitação.','err']);
+    out.push(['(0/4 — a requisição saiu, mas a RESPOSTA foi descartada no caminho de volta)','wrn']);
+  }else{
+    out.push(['Host inacessível (sem rota — verifique o gateway).','err']);
+  }
+  return out;
+}
+function scanPortsFor(ip){
+  if(Object.values(RTRIPS).includes(ip))return[[22,'ssh'],[23,'telnet']];
+  if(ip===SRVIP)return[[21,'ftp'],[22,'ssh'],[23,'telnet'],[25,'smtp'],[53,'domain'],[80,'http'],[110,'pop3'],[443,'https']];
+  return[];
+}
+function scanOut(dev,arg){
+  const me=HOSTS[dev];const out=[];
+  if(!arg){out.push(['Uso: scan <ip>  |  scan <rede/cidr>  (ex.: scan 172.22.34.62 · scan 172.22.34.64/27)','wrn']);return out;}
+  const cidr=arg.match(/^(\d+\.\d+\.\d+\.\d+)\/(\d+)$/);
+  let targets=[];
+  if(cidr){
+    const base=cidr[1];let found=[];
+    if(base==='172.22.34.0'&&+cidr[2]===26){found=[['172.22.34.1','gateway'],['172.22.34.62','servidor']];reveal('srv');}
+    else if(base==='172.22.34.64'&&+cidr[2]===27){found=[['172.22.34.65','gateway'],['172.22.34.66','estação'],['172.22.34.70','câmera IP · firmware desatualizado']];reveal('pc1');reveal('cam');}
+    else if(base==='172.22.34.96'&&+cidr[2]===28){found=[['172.22.34.97','gateway'],['172.22.34.98','estação'],['172.22.34.100','estação admin']];reveal('pc2');reveal('admin');}
+    if(!found.length){out.push(['Nenhum host respondeu na rede '+arg+'.','err']);return out;}
+    out.push(['Varredura de '+arg+' — '+found.length+' host(s) responderam ao ICMP:','dim']);
+    targets=found;
+  }else{
+    if(!isIp(arg)){out.push(['Endereço inválido.','err']);return out;}
+    targets=[[arg,'']];
+  }
+  targets.forEach(tg=>{
+    const ip=tg[0],note=tg[1];
+    const alive=flow(me.ip,ip,'icmp',null).out==='ok';
+    if(!alive){out.push([' '+ip+'  — sem resposta (filtrado ou inativo)','err']);return;}
+    out.push([' '+ip+(note?'  '+note:''),'ok']);
+    const ports=scanPortsFor(ip);
+    if(!ports.length){out.push(['   nenhuma porta de serviço conhecida (estação de trabalho)','dim']);return;}
+    ports.forEach(pt=>{
+      const num=pt[0],nm=pt[1];
+      const r=flow(me.ip,ip,'tcp',num);
+      const open=r.out==='ok'||r.out==='self-ok';
+      const isRtr=Object.values(RTRIPS).includes(ip);
+      const svc=isRtr?{22:1,23:1}:SRVSVC;
+      const state=!open?'FILTRADO':svc[num]?'ABERTO':'fechado';
+      const cls=!open?'err':svc[num]?'ok':'dim';
+      out.push(['   '+String(num).padStart(3)+'/tcp  '+nm.padEnd(9)+'  '+state,cls]);
+      soc(!open?'deny':svc[num]?'perm':'info',me.lbl+'('+me.ip+') → '+ip+':'+num+' '+nm.toUpperCase()+' · '+(!open?'DENY (ACL)':svc[num]?'PERMIT':'closed'));
+    });
+  });
+  return out;
+}
+function pcExec(dev,raw){
+  const out=[];const P=(t,c)=>out.push([t,c||'']);
+  const line=raw.trim();
+  if(!line){pushPc(dev,out);return;}
+  P(dev+'> '+line,'cmd');
+  const t=line.split(/\s+/);const c=t[0].toLowerCase();const a=(t[1]||'').toLowerCase();
+  const me=HOSTS[dev];
+  if(dev==='CAM')reveal('cam');
+  if(c==='help'){
+    P('Comandos: ipconfig · arp -a · ping <ip> · tracert <ip> · scan <ip|rede/cidr>','dim');
+    P('          ssh <ip> · telnet <ip> · ftp <ip> · browser <ip|nome> · nslookup <nome> · clear','dim');
+  }
+  else if(c==='clear'){save.pcLog[dev]=[];persist();pushPc(dev,out);return;}
+  else if(c==='ipconfig'){
+    P('Configuração IP de '+me.lbl+':','dim');
+    P('   IPv4 . . . . . . . : '+me.ip);P('   Máscara  . . . . . : '+me.mask);
+    P('   Gateway  . . . . . : '+me.gw);
+    reveal(dev==='PC1'?'pc1':dev==='PC2'?'pc2':dev==='ADMIN'?'admin':'cam');
+  }
+  else if(c==='arp'){
+    if(a==='-a'){
+      const en=Object.entries(save.arp[dev]||{});
+      if(!en.length)P('Tabela ARP vazia — faça ping nos vizinhos primeiro.','dim');
+      else{P('  Internet Address      Physical Address','dim');
+        en.forEach(e=>P('  '+pad(e[0],22)+e[1]+'  (dinâmico)'));}
+    }else P('Uso: arp -a','wrn');
+  }
+  else if(c==='ping'){
+    if(!isIp(a))P('Uso: ping <endereço IP>','wrn');
+    else{P('Executando ping '+a+' com 32 bytes de dados:');
+      pingOut(dev,a).forEach(x=>out.push(x));}
+  }
+  else if(c==='tracert'){
+    if(!isIp(a))P('Uso: tracert <endereço IP>','wrn');
+    else{
+      P('Traçando rota para '+a+' — 30 saltos no máximo:');
+      if(a===me.ip){P('  1    <1 ms   '+a+'  (este host)','ok');pushPc(dev,out);return;}
+      const gwAlive=flow(me.ip,me.gw,'icmp',null).out==='ok';
+      if(!gwAlive){P('  1     *        *        *     Solicitação esgotada.','err');pushPc(dev,out);return;}
+      P('  1    <1 ms   '+me.gw+'  (gateway)','ok');
+      arpAdd(dev,me.gw);reveal('r1');
+      if(Object.values(RTRIPS).includes(a)){P('  2    <1 ms   '+a+'  (R1 — destino é o próprio roteador)','ok');pushPc(dev,out);return;}
+      if(ifaceOf(a)&&ifaceOf(a)===ifaceOf(me.ip)){P('  2    <1 ms   '+a+'  (mesma rede local)','ok');pushPc(dev,out);return;}
+      const r=flow(me.ip,a,'icmp',null);
+      if(r.out==='ok'){P('  2    <1 ms   '+a+'  (destino)','ok');if(a===SRVIP)reveal('srv');}
+      else P('  2     *        *        *     Solicitação esgotada.'+(r.out==='acl-deny'?'  [pacote filtrado pela ACL]':''),'err');
+    }
+  }
+  else if(c==='scan'){scanOut(dev,t.slice(1).join(' ')).forEach(x=>out.push(x));}
+  else if(c==='nslookup'){
+    const nm=t[1];
+    if(!nm)P('Uso: nslookup <nome>','wrn');
+    else{P('Servidor padrão: filesrv.orion.local ('+SRVIP+')','dim');
+      const st=probe(me.ip,SRVIP,'dns');
+      if(st.st!=='ok')P('*** A consulta DNS foi FILTRADA pela ACL (udp/53).','err');
+      else if(!DNSNAMES[nm])P('*** '+nm+': não existe registro.','err');
+      else{P('Nome:    '+nm);P('Address: '+DNSNAMES[nm],'cy');
+        soc('perm',me.lbl+'('+me.ip+') → SRV:'+SRVIP+':53 DNS · PERMIT');}}
+  }
+  else if(c==='browser'){
+    const host=(t[1]||'').replace(/^https?:\/\//,'');
+    let ip=isIp(host)?host:DNSNAMES[host];
+    if(host&&!isIp(host)&&!ip){
+      const st=probe(me.ip,SRVIP,'dns');
+      if(st.st!=='ok'){P('Erro: DNS não responde (udp/53 filtrado).','err');pushPc(dev,out);return;}
+      ip=DNSNAMES[host];
+      if(!ip){P('Erro: nome desconhecido.','err');pushPc(dev,out);return;}
+    }
+    if(!ip)P('Uso: browser <ip|nome>','wrn');
+    else{
+      const st=probe(me.ip,ip,'http');
+      if(st.st==='ok'){P('Carregando http://'+host+' ...','dim');
+        P('<h1> Intranet Orion — acesso liberado pela portaria.</h1>','ok');
+        soc('perm',me.lbl+'('+me.ip+') → '+ip+':80 HTTP · PERMIT');}
+      else if(st.st==='filtered'){P('Erro: requisição HTTP FILTRADA pela ACL do R1.','err');
+        soc('deny',me.lbl+'('+me.ip+') → '+ip+':80 HTTP · DENY (ACL)');}
+      else if(st.st==='refused')P('% O host respondeu, mas não publica páginas web nessa porta.','wrn');
+      else P('Erro: tempo esgotado (sem rota ou resposta bloqueada).','err');
+    }
+  }
+  else if(c==='ssh'||c==='telnet'){
+    if(!isIp(a))P('Uso: '+c+' <endereço IP>','wrn');
+    else{
+      const st=probe(me.ip,a,c);
+      if(st.st==='ok'){
+        P(c==='ssh'?'SSH-2.0 banner recebido. Conectado a '+a:'Conectado a '+a+' — sessão aberta.','ok');
+        if(c==='ssh')P('Login: admin · Senha: ********  →  Acesso administrativo concedido.','ok');
+        else{P('ATENÇÃO: sessão em TEXTO CLARO — credenciais expostas na rede.','err');
+          if(Object.values(RTRIPS).includes(a)&&!save.teln){save.teln=true;pushPen('Administração do roteador via TELNET (texto claro)',-50);}
+          soc('crit',me.lbl+'('+me.ip+') → '+a+':23 TELNET · PERMIT — ADMINISTRAÇÃO EM TEXTO CLARO!');}
+      }else if(st.st==='filtered'){
+        P('% Conexão recusada: pacote descartado pela ACL do R1'+(st.r.why?' ('+st.r.why+')':'')+'.','err');
+        soc('deny',me.lbl+'('+me.ip+') → '+a+':'+(c==='ssh'?22:23)+' '+c.toUpperCase()+' · DENY (ACL)');
+      }else if(st.st==='refused'){
+        P('% Conexão recusada pela aplicação — o destino não executa '+c+'.','wrn');
+      }else P('% Tempo esgotado (sem rota).','err');
+    }
+  }
+  else if(c==='ftp'){
+    if(!isIp(a))P('Uso: ftp <endereço IP>','wrn');
+    else{
+      const st=probe(me.ip,a,'ftp');
+      if(st.st==='ok'){P('220 FTP Orion pronto em '+a,'ok');
+        P('Usuário: admin  Senha: **** → 230 login OK','dim');
+        P('ftp> dir → backups/ · inventario.csv  (sessão de transferência aberta)','ok');
+        soc('perm',me.lbl+'('+me.ip+') → '+a+':21 FTP · PERMIT');}
+      else if(st.st==='filtered'){P('> ftp: connect — FILTRADO pela ACL do R1 (tcp/21).','err');
+        soc('deny',me.lbl+'('+me.ip+') → '+a+':21 FTP · DENY (ACL)');}
+      else if(st.st==='refused')P('% Conexão recusada — sem serviço FTP no destino.','wrn');
+      else P('> ftp: connect — tempo esgotado.','err');
+    }
+  }
+  else P('Comando desconhecido: '+c+' (digite help)','err');
+  pushPc(dev,out);
+}
+function pushPc(dev,out){
+  save.pcLog[dev]=save.pcLog[dev]||[];
+  save.pcLog[dev].push.apply(save.pcLog[dev],out);
+  if(save.pcLog[dev].length>140)save.pcLog[dev]=save.pcLog[dev].slice(-140);
+  persist();
+  if(save.pcSel===dev){const box=$('#pcOut');
+    if(box){box.innerHTML=save.pcLog[dev].map(l=>`<div class="ln ${l[1]||''}">${esc(l[0])}</div>`).join('');box.scrollTop=box.scrollHeight;}}
+}
+function reveal(k){if(!save.rev[k]){save.rev[k]=true;persist();updateTopo();}}
+
+/* ---------- baterias ---------- */
+const ROWS={
+ s5:[
+  ['p1http','PC1 → SRV :80 (HTTP)','PC1','ok'],['p1https','PC1 → SRV :443 (HTTPS)','PC1','ok'],
+  ['p1dns','PC1 → SRV :53 (DNS)','PC1','ok'],['p1ftp','PC1 → SRV :21 (FTP)','PC1','filtered'],
+  ['p1ssh','PC1 → SRV :22 (SSH)','PC1','filtered'],
+  ['p2http','PC2 → SRV :80 (HTTP)','PC2','ok'],['p2dns','PC2 → SRV :53 (DNS)','PC2','ok'],
+  ['p2ftp','PC2 → SRV :21 (FTP)','PC2','filtered'],
+  ['aftp','ADMIN → SRV :21 (FTP)','ADMIN','ok'],['assh','ADMIN → SRV :22 (SSH)','ADMIN','ok']],
+ s6:[
+  ['asR','ADMIN → R1 :22 (SSH)','ADMIN','ok'],
+  ['p1sR','PC1 → R1 :22 (SSH)','PC1','filtered'],['p2sR','PC2 → R1 :22 (SSH)','PC2','filtered'],
+  ['p1tR','PC1 → R1 :23 (TELNET)','PC1','filtered'],['p2tR','PC2 → R1 :23 (TELNET)','PC2','filtered'],
+  ['atR','ADMIN → R1 :23 (TELNET)','ADMIN','filtered']]
+};
+const SUITES={
+  s5:{name:'Controles de serviço (rede A e B)',rows:ROWS.s5},
+  s6:{name:'Management plane (vty)',rows:ROWS.s6},
+  s7:{name:'GREEN BOARD · matriz completa',rows:ROWS.s5.concat(ROWS.s6)},
+  s9:{name:'Contenção do atacante',rows:[
+    ['c70h','CAM .70 → SRV :80','CAM70','filtered'],['c70f','CAM .70 → SRV :21','CAM70','filtered'],
+    ['c70s','CAM .70 → R1 :22','CAM70','filtered'],['c70t','CAM .70 → R1 :23','CAM70','filtered'],
+    ['c71h','CAM .71 (novo IP) → SRV :80','CAM71','ok'],['c71f','CAM .71 → SRV :21','CAM71','filtered'],
+    ['c71t','CAM .71 → R1 :23','CAM71','filtered']]},
+  sf:{name:'PROVA DE FOGO · matriz + contenção',rows:ROWS.s5.concat(ROWS.s6,[
+    ['c70h','CAM .70 → SRV :80','CAM70','filtered'],['c70f','CAM .70 → SRV :21','CAM70','filtered'],
+    ['c70s','CAM .70 → R1 :22','CAM70','filtered'],['c70t','CAM .70 → R1 :23','CAM70','filtered']])}
+};
+const SRCIP={PC1:HOSTS.PC1.ip,PC2:HOSTS.PC2.ip,ADMIN:HOSTS.ADMIN.ip,CAM70:'172.22.34.70',CAM71:'172.22.34.71'};
+function runRow(suiteKey,row){
+  const id=row[0],lbl=row[1],src=row[2],exp=row[3];
+  const kind=lbl.includes(':80')?'http':lbl.includes(':443')?'https':lbl.includes(':53')?'dns':lbl.includes(':21')?'ftp':
+    lbl.includes(':22')?'ssh':'telnet';
+  const dst=lbl.includes('R1')?RTRIPS[ifaceOf(SRCIP[src])]:SRVIP;
+  const st=probe(SRCIP[src],dst,kind).st;
+  const pass=(exp==='ok'&&st==='ok')||(exp==='filtered'&&(st==='filtered'||st==='refused'));
+  save.sr[suiteKey]=save.sr[suiteKey]||{};
+  const first=!save.sr[suiteKey][id];
+  save.sr[suiteKey][id]={st:st,pass:pass};
+  if(!pass&&first&&(suiteKey==='s7'||suiteKey==='sf')){
+    const key=suiteKey+':'+id;
+    if(save.penKeys.indexOf(key)<0){
+      save.penKeys.push(key);
+      pushPen((exp==='ok'?'Serviço legítimo bloqueado: ':'Acesso indevido permitido: ')+lbl,-25);
+    }
+  }
+  soc(pass?'perm':'alert','TESTE '+(pass?'✓':'✗')+' '+lbl+' · esperado '+(exp==='ok'?'PERMITIR':'BLOQUEAR')+' · observado '+st);
+  return pass;
+}
+function suiteAllPass(k){return SUITES[k].rows.every(r=>save.sr[k]&&save.sr[k][r[0]]&&save.sr[k][r[0]].pass);}
+
+/* ---------- incidentes ---------- */
+function playIncident70(cb){
+  const ports=[21,22,23,25,53,80,110,443];
+  soc('alert','■ ALERTA · varredura de portas detectada — origem 172.22.34.70 (câmera do estacionamento)');
+  let i=0;
+  const step=()=>{
+    if(i<ports.length){
+      const pt=ports[i];
+      socProbe('172.22.34.70','CAM?',SRVIP,pt,pt===53?'udp':'tcp');
+      i++;setTimeout(step,420);
+    }else{
+      soc('crit','■ CRÍTICO · origem 172.22.34.70 tentou TELNET no gateway 172.22.34.65 (porta 23)');
+      socProbe('172.22.34.70','CAM?',RTRIPS[ifaceOf('172.22.34.70')],23,'tcp');
+      save.inc70=true;persist();snd.alarm();
+      if(cb)cb();
+    }
+  };
+  step();
+}
+function playIncident71(cb){
+  const ports=[21,22,23,25,53,80,110,443];
+  soc('alert','■ ALERTA · nova varredura — origem 172.22.34.71 (IP DIFERENTE da rede A)');
+  let i=0;
+  const step=()=>{
+    if(i<ports.length){
+      socProbe('172.22.34.71','CAM?',SRVIP,ports[i],ports[i]===53?'udp':'tcp');
+      i++;setTimeout(step,380);
+    }else{save.inc71=true;persist();snd.alarm();if(cb)cb();}
+  };
+  step();
+}
+
+/* ---------- anomalias da prova de fogo ---------- */
+function allListRefs(){
+  const arr=[];
+  Object.keys(save.rtr.num).forEach(k=>arr.push({get:()=>save.rtr.num[k],set:v=>{save.rtr.num[k]=v;}}));
+  Object.keys(save.rtr.named).forEach(k=>arr.push({get:()=>save.rtr.named[k],set:v=>{save.rtr.named[k]=v;}}));
+  return arr;
+}
+function rmLines(pred){allListRefs().forEach(o=>{const l=o.get();if(l)o.set(l.filter(x=>!pred(x)));});}
+const FINF=[
+ {id:'f1',desc:'linha de HTTP da rede A',hint:'Um serviço legítimo deixou de responder para a rede A.',
+  plant(){rmLines(x=>x.proto==='tcp'&&x.port&&portNum(x.port)===80&&inNet('172.22.34.66',x.src,x.swc));persist();}},
+ {id:'f2',desc:'permit indevido no topo',hint:'Um acesso que a matriz nega passou a funcionar.',
+  plant(){
+    let ref=allListRefs().find(o=>{const l=o.get();return l&&l.some(x=>inNet('172.22.34.98',x.src,x.swc));});
+    if(!ref)ref=allListRefs()[0];
+    if(ref){const l=ref.get()||[];
+      l.unshift({seq:5,action:'permit',proto:'tcp',src:'0.0.0.0',swc:'255.255.255.255',dst:SRVIP,swd:'0.0.0.0',port:'ftp',hits:0});
+      ref.set(l);}
+    persist();}},
+ {id:'f3',desc:'access-group removido',hint:'A política inteira de uma das redes parou de valer.',
+  plant(){save.rtr.ifaces['g0/1'].aclIn=null;save.rtr.ifaces['g0/1'].aclOut=null;persist();}},
+ {id:'f4',desc:'FTP do administrador',hint:'O administrador perdeu um direito garantido pela matriz.',
+  plant(){rmLines(x=>x.proto==='tcp'&&x.port&&portNum(x.port)===21&&x.src==='172.22.34.100');persist();}},
+ {id:'f5',desc:'access-class vty removido',hint:'Estações de usuário voltaram a alcançar o plano de administração.',
+  plant(){save.rtr.vty.acl=null;persist();}},
+ {id:'f6',desc:'DNS da rede B',hint:'Um serviço legítimo deixou de responder para a rede B.',
+  plant(){rmLines(x=>x.proto==='udp'&&x.port==='domain'&&inNet('172.22.34.98',x.src,x.swc));persist();}}
+];
+
+/* ============================================================
+   MISSÕES
+   ============================================================ */
+const PHASES={
+ n1:'NÍVEL 1 · Analista de Redes',n2:'NÍVEL 2 · Analista de Segurança',n3:'NÍVEL 3 · Blue Team'};
+const MISSIONS=[
+/* M1 */
+{ id:'m1',code:'M-01',phase:'n1',title:'Você entrou para o Blue Team',sub:'Incidente · contexto · ~15 min',xp:100,
+  brief:`<p>A <b>Orion Distribuidora S.A.</b> recebeu uma auditoria externa. Conclusão: <i>"a rede está operacional, mas usuários possuem acesso a serviços que não deveriam estar disponíveis"</i>. Você foi contratado para <b>investigar os fluxos, identificar a exposição e implementar controles sem interromper os serviços legítimos</b>.</p>
+  <p>Sua estação de trabalho é este console SOC. O laboratório no <b>Cisco Packet Tracer</b> é o campo: nele você montará a topologia, reproduzirá os comandos e aplicará as correções.</p>`,
+  steps:[
+    `No Packet Tracer, monte a infraestrutura: <b>1 roteador 2911</b>, <b>3 switches 2960</b>, <b>3 PCs</b> (PC1, PC2, ADMIN), <b>1 Server-PT</b> e <b>1 dispositivo representando a câmera IP</b> (um PC rotulado CAM).`,
+    `Conecte: <b>PC1 e CAM no SW1</b>; <b>PC2 e ADMIN no SW2</b>; <b>Server0 no SW0</b>; cada switch na respectiva interface do R1 (SW1→G0/0, SW2→G0/1, SW0→G0/2).`,
+    `Confira os LEDs verdes de todos os cabos.`],
+  hint:{ic:'shield',t:`<b>Ciclo Blue Team desta operação:</b> <b>IDENTIFICAR</b> (mapear ativos) → <b>ANALISAR</b> (superfície exposta) → <b>PROTEGER</b> (ACL/least privilege) → <b>MONITORAR</b> (log SOC) → <b>TESTAR</b> → <b>CORRIGIR</b> → <b>VALIDAR</b>. Guarde esta sequência: ela é o roteiro de todas as missões.`},
+  quiz:[
+    {q:'"A rede está 100% funcional, todos os serviços respondem." Isto significa que ela está segura?',o:['Sim — rede funcionando é rede segura','Não — funcionalidade mede DISPONIBILIDADE; segurança mede quem NÃO deveria ter acesso e não tem','Sim, se os cabos forem diretos','Depende da marca dos switches'],a:1,ex:'Disponibilidade é um dos pilares da segurança — mas sozinho não diz nada sobre EXPOSIÇÃO. A auditoria encontrou excesso de acesso, não defeito de funcionamento.'},
+    {q:'A auditoria diz "usuários possuem acesso a serviços que não deveriam estar disponíveis". Que princípio foi violado?',o:['Redundância','Least privilege (menor privilégio)','Compressão de cabeçalho','NAT'],a:1,ex:'Least privilege: cada origem só deve alcançar o estritamente necessário. O excesso é a superfície de ataque.'},
+    {q:'Qual cabo liga PC1 ao Switch1?',o:['Cabo direto (straight-through)','Cabo cruzado','Cabo console','Fibra'],a:0,ex:'Dispositivos diferentes: cabo direto.'}],
+  tasks:['Topologia montada no Packet Tracer com LEDs verdes.'],
+  log:'M-01 CONCLUÍDA — Contrato assinado. Papel: Analista Blue Team.'},
+/* M2 */
+{ id:'m2',code:'M-02',phase:'n1',title:'Conheça o terreno',sub:'Asset discovery · ~20 min',xp:100,
+  brief:`<p>Um defensor não filtra o que não conhece. <b>Antes de qualquer ACL</b>, mapeie a rede a partir do PC1 — no terminal abaixo (e depois no Packet Tracer). A auditoria não entregou a tabela de endereçamento: <b>descubra você mesmo</b>.</p>
+  <div class="cli"><pre>PC&gt; ipconfig
+PC&gt; ping 172.22.34.1        ← teste o primeiro endereço útil (prática comum de gateway)
+PC&gt; arp -a                   ← quem você já conhece na sua rede?
+PC&gt; tracert 172.22.34.62     ← o documento da auditoria cita este host
+PC&gt; scan 172.22.34.64/27     ← ferramenta do SOC: varredura autorizada</pre></div>`,
+  steps:[
+    `No terminal do PC1: rode <b>ipconfig</b>, <b>ping</b> no provável gateway, <b>arp -a</b>, <b>tracert</b> ao host citado pela auditoria (172.22.34.62) e o <b>scan</b> da sua rede /27.`,
+    `Preencha o formulário de descoberta abaixo com o que você CONSTATOU (não copie de tabela nenhuma — ela não existe).`,
+    `Confira o mapa de ativos ao lado preenchendo-se conforme você descobre.`],
+  discovery:true,pcs:true,
+  quiz:[
+    {q:'Por que mapear a rede ANTES de escrever a ACL?',o:['Porque a ACL exige','Porque filtrar sem conhecer os ativos legítimos quebra serviços — descoberta vem antes do controle','Para economizar comandos','Porque o IOS exige arp'],a:1,ex:'Asset discovery é o primeiro passo: você precisa saber O QUE proteger e QUEM usa, antes de decidir O QUE bloquear.'},
+    {q:'O que o comando arp -a revela?',o:['Rotas da internet','Endereços MAC dos vizinhos com quem o PC já conversou na própria sub-rede','Senhas da rede','A máscara do servidor'],a:1,ex:'ARP resolve IP→MAC dentro da sub-rede local. É um mapa dos vizinhos imediatos — e uma evidência de quem está ativo.'}],
+  tasks:['ipconfig, ping, arp -a, tracert e scan executados no PC1.','Formulário de descoberta 100% validado.'],
+  log:'M-02 CONCLUÍDA — Rede mapeada: 3 sub-redes, gateway e servidor identificados.'},
+/* M3 */
+{ id:'m3',code:'M-03',phase:'n1',title:'A superfície exposta',sub:'Attack surface · ~20 min',xp:150,
+  brief:`<p>Com o mapa em mãos, meça a <b>superfície de ataque</b>: rode <b>scan 172.22.34.62</b> a partir do <b>PC1</b>, do <b>PC2</b> e do <b>ADMIN</b>, e compare o que cada origem alcança.</p>
+  <p>Depois responda a pergunta que separa operador de defensor: <i>"uma rede em que TUDO funciona é uma rede segura?"</i></p>`,
+  pcs:true,
+  quiz:[
+    {q:'O scan do servidor mostra os mesmos serviços ABERTOS para PC1, PC2 e ADMIN. Do ponto de vista de segurança, isso é:',o:['Ótimo — indica rede íntegra','Um problema: a superfície exposta é IDÊNTICA para usuário comum e administrador — não há segmentação de privilégios','Normal, porque o servidor é rápido','Irrelevante para a auditoria'],a:1,ex:'Attack surface por ORIGEM: quando todos veem tudo, o princípio do menor privilégio não existe. É exatamente o achado da auditoria.'},
+    {q:'No resultado do scan, "FILTRADO", "ABERTO" e "fechado" significam respectivamente:',o:['Lento / rápido / normal','Bloqueado por ACL / acessível e com serviço rodando / acessível mas sem serviço no destino','Bloqueado / vírus / erro','UDP / TCP / ICMP'],a:1,ex:'ABERTO = o pacote passou E há serviço escutando. fechado = passou mas nada escuta. FILTRADO = a portaria negou. Vocabulário essencial do SOC.'},
+    {q:'A varredura da rede /27 revelou um host a mais: 172.22.34.70, uma câmera IP com firmware desatualizado. Por que isso preocupa o SOC?',o:['Porque câmeras não têm IP','Dispositivos IoT sem atualização são alvos clássicos de comprometimento — e estão na rede de usuários','Porque câmeras usam fibra','Porque o IP é muito alto'],a:1,ex:'IoT sem patch + rede plana = vetor de entrada. Guarde este host: ele volta na Fase 3 como incidente real.'}],
+  tasks:['scan do servidor executado de PC1, PC2 e ADMIN.','scan da rede 172.22.34.64/27 executado (câmera identificada no mapa).'],
+  log:'M-03 CONCLUÍDA — Superfície exposta medida: usuários alcançam FTP/SSH do servidor. Auditoria confirmada.'},
+/* M4 */
+{ id:'m4',code:'M-04',phase:'n2',title:'A política de acesso',sub:'Least privilege · matriz · ~20 min',xp:150,
+  brief:`<p>A diretoria formalizou a política. Sua tarefa agora é <b>traduzir negócio em rede</b>: cada linha abaixo vira (ou não) uma linha de ACL.</p>`,
+  matrix:true,
+  pairs:[
+    ['LEAST PRIVILEGE',['Cada origem acessa apenas o estritamente necessário','Uma ACL por origem, aplicada perto dela','A primeira linha que casa decide o destino do pacote','Todo pacote sem linha correspondente é descartado'],0],
+    ['SEGMENTAÇÃO',['Cada origem acessa apenas o estritamente necessário','Uma ACL por origem, aplicada perto dela','A primeira linha que casa decide o destino do pacote','Todo pacote sem linha correspondente é descartado'],1],
+    ['FIRST MATCH',['Cada origem acessa apenas o estritamente necessário','Uma ACL por origem, aplicada perto dela','A primeira linha que casa decide o destino do pacote','Todo pacote sem linha correspondente é descartado'],2],
+    ['NEGAÇÃO IMPLÍCITA',['Cada origem acessa apenas o estritamente necessário','Uma ACL por origem, aplicada perto dela','A primeira linha que casa decide o destino do pacote','Todo pacote sem linha correspondente é descartado'],3]],
+  quiz:[
+    {q:'O ADMIN (172.22.34.100) precisa de FTP, mas a rede B inteira (172.22.34.96/28) deve ter FTP NEGADO. Como as duas linhas devem ficar na ACL?',o:['deny da rede primeiro — ACL não liga para ordem','permit host .100 ANTES do deny da rede /28 — first match decide','duas ACLs diferentes na mesma interface','o FTP do ADMIN é impossível'],a:1,ex:'A linha específica (host) precisa vir ANTES da genérica (rede). Ordem em ACL é política: quem casa primeiro, vence.'},
+    {q:'Se a linha "permit ip any any" estiver no MEIO da ACL, o que acontece com as negações seguintes?',o:['Funcionam normalmente','Nunca são avaliadas — o pacote já casou com o permit e parou','Bloqueiam tudo','Geram erro de sintaxe'],a:1,ex:'permit ip any any no final é boa prática; no meio, é um buraco na muralha.'},
+    {q:'Por que ACLs ESTENDIDAS (e não padrão) para esta política?',o:['Porque são mais baratas','Porque a política depende de protocolo/porta e destino — a padrão só vê origem','Porque são numeradas','Porque funcionam em switches'],a:1,ex:'"FTP bloqueado, HTTP liberado, SSH ao roteador só do ADMIN" exige examinar proto+porta+destino: ACL estendida.'}],
+  tasks:['Matriz analisada com o grupo.'],
+  log:'M-04 CONCLUÍDA — Política formalizada. Próximo passo: traduzi-la em controles.'},
+/* M5 */
+{ id:'m5',code:'M-05',phase:'n2',title:'Implementar os controles',sub:'ACLs estendidas · least privilege · ~30 min',xp:200,
+  brief:`<p>Hora de virar a chave: <b>de tudo aberto para só o necessário</b>. Uma ACL por rede de origem, aplicada <b>na interface de entrada</b> (perto da origem — regra de ouro da estendida).</p>
+  <p><b>Atenção à ordem das linhas:</b> o FTP do ADMIN precisa casar ANTES do bloqueio da rede B.</p>`,
+  cli:[
+    {t:'R1 · ACL 110 — rede A (PC1/CAM) · copiar para o PT',c:`enable
+configure terminal
+access-list 110 permit tcp 172.22.34.64 0.0.0.31 host 172.22.34.62 eq www
+access-list 110 permit tcp 172.22.34.64 0.0.0.31 host 172.22.34.62 eq 443
+access-list 110 permit udp 172.22.34.64 0.0.0.31 host 172.22.34.62 eq domain
+access-list 110 deny tcp 172.22.34.64 0.0.0.31 host 172.22.34.62 eq ftp
+access-list 110 deny tcp 172.22.34.64 0.0.0.31 host 172.22.34.62 eq 22
+access-list 110 permit ip any any
+interface g0/0
+ ip access-group 110 in
+end`},
+    {t:'R1 · ACL 120 — rede B (PC2/ADMIN) · ordem importa!',c:`configure terminal
+access-list 120 permit tcp host 172.22.34.100 host 172.22.34.62 eq ftp
+access-list 120 permit tcp host 172.22.34.100 host 172.22.34.62 eq 22
+access-list 120 deny tcp host 172.22.34.98 host 172.22.34.62 eq ftp
+access-list 120 deny tcp host 172.22.34.98 host 172.22.34.62 eq 22
+access-list 120 permit tcp 172.22.34.96 0.0.0.15 host 172.22.34.62 eq www
+access-list 120 permit tcp 172.22.34.96 0.0.0.15 host 172.22.34.62 eq 443
+access-list 120 permit udp 172.22.34.96 0.0.0.15 host 172.22.34.62 eq domain
+access-list 120 deny tcp 172.22.34.96 0.0.0.15 host 172.22.34.62 eq ftp
+access-list 120 permit ip any any
+interface g0/1
+ ip access-group 120 in
+end
+show access-lists`}],
+  hint:{ic:'zap',t:`<b>Por que "in" na interface de entrada?</b> É onde o tráfego da origem NASCE no roteador — a ACL estendida perto da origem poupa o hardware de carregar pacotes que seriam negados. Se aplicar com a direção errada (ex.: out na G0/0), as linhas examinam o tráfego de RETORNO, nunca casam com a origem e a política morre silenciosamente. Teste o erro: o simulador prova.`},
+  ios:true,pcs:true,suite:'s5',
+  steps:[
+    `Digite as ACLs no CLI do R1 abaixo e no Packet Tracer (blocos "copiar").`,
+    `Valide com <b>show access-lists</b> e <b>show ip interface g0/0 · g0/1</b>.`,
+    `Confirme nos terminais: o <b>scan</b> agora mostra FILTRADO para FTP/SSH dos usuários e ABERTO para HTTP/DNS.`,
+    `Execute a bateria de controles de serviço — 100% verde é a nota desta missão.`],
+  quiz:[
+    {q:'Depois da ACL, o FTP do PC1 aparece FILTRADO. O que produz esse comportamento?',o:['O servidor recusou','A ACL negou o pacote (deny explícito ou negação implícita) antes do encaminhamento','O DNS falhou','O cabo está ruim'],a:1,ex:'FILTRADO é a assinatura da portaria: o pacote nem chega ao servidor. "fechado" seria o servidor acessível sem o serviço.'},
+    {q:'O contador de matches da linha "deny ... eq ftp" sobe a cada tentativa do PC1. Que valor isso tem para o SOC?',o:['Nenhum','É evidência: prova que a regra está ativa e quantifica tentativas — insumo para monitoramento','Significa erro de sintaxe','Indica que a ACL está desativada'],a:1,ex:'Regra sem contador é regra sem uso ou sem tráfego. Contadores transformam ACL em telemetria.'}],
+  tasks:['ACL 110 aplicada in em G0/0 (rede A).','ACL 120 aplicada in em G0/1 — com FTP/SSH do ADMIN antes dos denies da rede.','Bateria de controles de serviço 100% verde.'],
+  cp:'CHECKPOINT 1',log:'CHECKPOINT 1 VALIDADO — Least privilege implementado: usuários só alcançam HTTP/HTTPS/DNS.'},
+/* M6 */
+{ id:'m6',code:'M-06',phase:'n2',title:'O cofre do management',sub:'Management plane · SSH · vty · ~25 min',xp:100,
+  brief:`<p>Proteger o servidor não basta: <b>quem administra a rede?</b> O roteador aceita SSH e — perigo — TELNET. A política: <b>somente ADMIN (172.22.34.100) gerencia, e sempre via SSH</b>. Telnet viaja em texto claro: é proibido.</p>
+  <p>Duas camadas possíveis (o IOS real usa as duas): linhas nas ACLs 110/120 <b>ou</b> a <b>access-class</b> nas linhas vty. O gabarito abaixo usa vty — a camada dedicada ao plano de gerência.</p>`,
+  cli:[{t:'R1 · proteção do plano de gerência',c:`configure terminal
+access-list 130 permit tcp host 172.22.34.100 any eq 22
+line vty 0 4
+ access-class 130 in
+ transport input ssh
+end
+show running-config`}],
+  hint:{ic:'alert',t:`<b>Cuidado com o meio-caminho:</b> usar apenas <code>transport input ssh</code> bloqueia o Telnet, mas NÃO restringe a ORIGEM — o PC1 ainda conseguiria SSH no roteador. A restrição de quem pode administrar é a <code>access-class</code>. Defesa em camadas: transporte (SSH) + origem (access-class).`},
+  ios:true,pcs:true,suite:'s6',
+  steps:[
+    `Aplique a proteção da vty no CLI do R1 (e no Packet Tracer).`,
+    `Teste nos terminais: <b>ADMIN → ssh 172.22.34.97</b> deve conectar; <b>PC2 → ssh</b> e <b>qualquer → telnet</b> devem ser FILTRADOS.`,
+    `⚠️ Experimente conscientemente: se um telnet PASSAR, o console registra penalidade de −50 XP — administração em texto claro é incidente, não detalhe.`,
+    `Bateria do management plane: 100% verde.`],
+  quiz:[
+    {q:'Por que Telnet é proibido para administração?',o:['É lento','Transmite tudo — inclusive usuário e senha — em texto claro, visível a qualquer sniffing na rede','Não funciona em Gigabit','Consume muitas portas'],a:1,ex:'SSH criptografa a sessão inteira. Telnet entrega as credenciais de administrador de bandeja a quem estiver ouvindo.'},
+    {q:'A access-class 130 na vty permite apenas host .100 na porta 22. Todo o RESTO (incluindo telnet do próprio ADMIN) é:',o:['Permitido por padrão','Negado pela negação implícita no final da ACL 130','Negado pelo switch','Permitido só de dia'],a:1,ex:'A mesma regra de sempre: toda ACL termina no deny invisible. Uma linha de permit + implicit deny = whitelist completa.'}],
+  tasks:['access-class 130 in aplicada na vty (e/ou denies nas ACLs de rede).','ADMIN conecta via SSH ao R1; PC1/PC2 negados; telnet negado para todos.'],
+  cp:'CHECKPOINT 2',log:'CHECKPOINT 2 VALIDADO — Management plane blindado: só ADMIN, só SSH.'},
+/* M7 */
+{ id:'m7',code:'M-07',phase:'n2',title:'Green board',sub:'Validação da matriz completa · ~20 min',xp:150,
+  brief:`<p>Auditoria interna de <b>POLÍTICA</b>: a bateria abaixo testa <b>cada linha da matriz</b> contra o seu R1 simulado. Verde em tudo significa: controles implementados sem quebrar nenhum serviço legítimo.</p>
+  <p><b>Penalidades ativas:</b> cada linha divergente registra −25 XP ("serviço indevido liberado" ou "serviço legítimo bloqueado") — porque segurança que bloqueia demais também é falha.</p>`,
+  ios:true,pcs:true,suite:'s7',
+  steps:[
+    `Execute a bateria completa. Investigue qualquer ✗ com <b>show running-config</b> e <b>show access-lists</b> antes de alterar.`,
+    `Corrija via CLI até 100% verde.`,
+    `Repita os mesmos testes no Packet Tracer real (ping/ftp/ssh/telnet/browser de cada estação).`],
+  quiz:[
+    {q:'Um colega sugeriu resolver tudo com "access-list 100 permit ip any any" numa interface só. O que está errado?',o:['Nada — é mais simples','A política morre: sem negações por serviço/origem, toda a exposição apontada pela auditoria permanece','É lento','Só funciona em IPv6'],a:1,ex:'permit any any como ÚNICA regra é a ausência de portaria. Bloqueio que não bloqueia — e a bateria cobra cada violação.'},
+    {q:'O ADMIN perdeu o FTP após a sua ACL (linha dele abaixo do deny da rede). Qual princípio foi esquecido?',o:['Segmentação','First match — a linha específica do ADMIN precisa vir antes da genérica','NAT','Redundância'],a:1,ex:'Ordem é política. O simulador (e o IOS) avaliam de cima para baixo e param na primeira correspondência.'}],
+  tasks:['Bateria da matriz completa (s7) 100% verde.','Zero penalidades registradas nesta fase (ou justificadas).'],
+  cp:'CHECKPOINT 3',log:'CHECKPOINT 3 VALIDADO — GREEN BOARD: matriz 100% refletida na rede.'},
+/* M8 */
+{ id:'m8',code:'M-08',phase:'n3',title:'O olho na parede',sub:'Monitoring · análise de logs · ~20 min',xp:150,
+  brief:`<p>Controles no ar — agora, <b>olhos neles</b>. O log SOC (painel ao lado) registra cada PERMIT/DENY. Um alerta acabou de disparar: <b>reproduza o incidente</b> e leia o log como um analista.</p>
+  <p>O console da <b>câmera IP</b> (terminal CAM no seletor) foi liberado para você — a visão do atacante também se investiga.</p>`,
+  incident70:true,pcs:true,
+  quiz:[
+    {q:'O log mostra 8 portas diferentes testadas em ~6 segundos contra o servidor. Esse padrão é compatível com:',o:['Usuário navegando','Reconhecimento/enumeração de serviços (port scan) — sondagem prévia a um ataque','Falha de cabo','Backup automático'],a:1,ex:'Varredura de portas é a impressão digital do reconhecimento: o atacante medindo a superfície ANTES de atacar. Volume alto + portas administrativas (21/22/23) + tempo curto = varredura.'},
+    {q:'A segunda fase do incidente: TELNET contra o GATEWAY (porta 23). O objetivo provável é:',o:['Assistir vídeo','Obter acesso administrativo à infraestrutura (movimento lateral/escalada)','Atualizar firmware','Testar velocidade'],a:1,ex:'Porta 23 no roteador = tentativa de assumir o controle da rede inteira. É o alvo de maior valor após o reconhecimento.'},
+    {q:'Qual a PRIMEIRA ação de contenção correta diante deste incidente?',o:['Desligar o roteador','Bloquear a ORIGEM na ACL (deny ip host 172.22.34.70) mantendo os serviços legítimos','Aumentar a banda','Desligar a câmera e nada mais'],a:1,ex:'Contenção cirúrgica: interromper o agressor sem interromper o negócio. Desligar tudo converte incidente em indisponibilidade.'}],
+  tasks:['Incidente reproduzido no log SOC.','Console da câmera inspecionado (visão do atacante).'],
+  log:'M-08 CONCLUÍDA — Incidente classificado: reconhecimento + tentativa de acesso administrativo.'},
+/* M9 */
+{ id:'m9',code:'M-09',phase:'n3',title:'Contenção',sub:'Bloqueio do atacante · defesa em profundidade · ~25 min',xp:150,
+  brief:`<p>Execute a contenção: <b>deny ip host 172.22.34.70 any</b> na ACL da rede A (topo da lista, para casar antes de tudo). Depois valide com a bateria.</p>
+  <p>Mas o SOC avisou: <b>espere contramedida do adversário</b>. Rode o botão de nova varredura quando estiver pronto.</p>`,
+  cli:[{t:'R1 · contenção (topo da ACL 110)',c:`configure terminal
+access-list 110 deny ip host 172.22.34.70 any
+end
+show access-lists`}],
+  incident71:true,ios:true,pcs:true,suite:'s9',
+  steps:[
+    `Adicione o deny do host .70 no TOPO da ACL 110 (antes de qualquer permit) e valide com a bateria de contenção.`,
+    `Acione "nova varredura" e leia o log: a origem .71 (IP novo) ainda alcança HTTP/DNS — mas nada administrativo.`,
+    `Analise: a exposição RESIDUAL são exatamente os serviços que a matriz AUTORIZA. Isso é defesa em profundidade funcionando.`,
+    `Bateria de contenção 100% verde (bloqueio do .70 + limitação do .71 aos serviços legítimos).`],
+  quiz:[
+    {q:'A varredura voltou de um IP NOVO (.71) e ainda alcançou HTTP/DNS. Por que isso é aceitável (e melhor que antes)?',o:['Não é aceitável — a rede falhou','Porque a exposição residual é exatamente a política: só serviços autorizados. O dano do atacante ficou CONTIDO pelo least privilege','Porque o firewall desligou','Porque .71 é interno'],a:1,ex:'Bloquear por IP é perseguir sintomas; limitar por SERVIÇO é reduzir a superfície permanente. O atacante mudou de endereço e ganhou muito menos.'},
+    {q:'Por que NÃO bloquear a rede inteira (deny ip 172.22.34.64 0.0.0.31 any)?',o:['Porque é lento','Porque interromperia o PC1 e todos os serviços legítimos da rede A — trocaríamos segurança por indisponibilidade','Porque o IOS não aceita','Porque a máscara está errada'],a:1,ex:'Segurança que quebra o negócio não é aceita. Contenção cirúrgica: host ofensor, não população inteira.'},
+    {q:'Além do bloqueio na ACL, qual medida ataca a CAUSA do incidente?',o:['Aumentar a banda','Gestão de vulnerabilidade da câmera: atualizar/isolar o firmware do IoT','Trocar o servidor de lugar','Liberar telnet para diagnosticar'],a:1,ex:'ACL contém o sintoma; patch/isolamento do IoT elimina a origem. Blue team cuida dos dois planos.'}],
+  tasks:['deny ip host 172.22.34.70 any no topo da ACL da rede A.','Nova varredura (.71) reproduzida e analisada no log.'],
+  cp:'CHECKPOINT 4',log:'CHECKPOINT 4 VALIDADO — Atacante contido; exposição residual limitada aos serviços da política.'},
+/* M10 */
+{ id:'m10',code:'M-10',phase:'n3',title:'Prova de fogo',sub:'Validação final · troubleshooting às cegas · ~30 min',xp:250,
+  brief:`<p>Última etapa do contrato: <b>prova de fogo</b>. Ao iniciá-la, <b>uma anomalia será plantada na sua configuração</b> (algo que um "estagiário do turno anterior" mexeu). O relatório mostra APENAS o sintoma — <b>nunca qual linha está errada</b>.</p>
+  <p>Diagnostique com <b>show running-config</b>, <b>show access-lists</b>, <b>show ip interface</b> e a bateria; corrija <b>via CLI</b>; re-teste até o verde.</p>`,
+  finfire:true,ios:true,pcs:true,suite:'sf',diag:true,
+  hint:{ic:'alert',t:`<b>Método de diagnóstico:</b> 1) classifique o sintoma (VIOLAÇÃO = algo indevido passou; INDISPONÍVEL = algo legítimo parou); 2) localize a rede afetada (A, B ou gerência); 3) leia a ACL correspondente com <code>show access-lists</code> procurando linha removida, linha a mais no topo, origem trocada ou <code>access-group/access-class</code> sumido. Corrija o MÍNIMO necessário — mexer no resto cria novas falhas.`},
+  tasks:[
+    'Prova de fogo iniciada (anomalia plantada).',
+    'Anomalia corrigida via CLI — sem recriar a topologia nem alterar endereçamento.',
+    'Bateria FINAL 100% verde.',
+    'Relatório de campo preenchido.'],
+  log:'CONTRATO ENCERRADO — Operação Portaria Blue Team cumprida.'}
+];
+const byId=id=>MISSIONS.find(m=>m.id===id);
+const idxOf=id=>MISSIONS.findIndex(m=>m.id===id);
+const TOTAL_XP=MISSIONS.reduce((a,m)=>a+m.xp,0);
+
+/* ============================================================
+   NAVEGAÇÃO / RENDER
+   ============================================================ */
+function unlocked(i){return i===0||save.done.includes(MISSIONS[i-1].id);}
+function renderNav(){
+  let h='',lastPhase='';
+  MISSIONS.forEach((m,i)=>{
+    const un=unlocked(i),done=save.done.includes(m.id),active=save.cur===m.id;
+    if(m.phase!==lastPhase){h+=`<div class="ph">${PHASES[m.phase]}</div>`;lastPhase=m.phase;}
+    h+=`<button class="mnav${active?' active':''}${done?' done':''}${un?'':' locked'}" data-id="${m.id}" ${un?'':'disabled'}>
+      <span class="num">${done?'✓':m.code}</span>
+      <span class="ti"><b>${m.title}</b><small>${done?'concluída':un?m.sub:'bloqueada'}</small></span>
+      <span class="st">${done?ic('check'):un?ic('chev'):ic('lock')}</span></button>`;
+  });
+  $('#navList').innerHTML=h;
+  $('#navFill').style.width=Math.round(save.done.length/MISSIONS.length*100)+'%';
+  document.querySelectorAll('.mnav').forEach(b=>b.onclick=()=>{save.cur=b.dataset.id;persist();snd.click();renderNav();renderMission();updateTopo();$('#main').scrollTop=0;});
+}
+function goTo(id){save.cur=id;persist();renderNav();renderMission();updateTopo();$('#main').scrollTop=0;}
+function nextId(id){return MISSIONS[Math.min(idxOf(id)+1,MISSIONS.length-1)].id;}
+
+const quizSolved=m=>!(m.quiz||[]).length||m.quiz.every((q,i)=>save.qs[m.id]&&save.qs[m.id][i]===q.a);
+const pairsSolved=m=>!(m.pairs||[]).length||m.pairs.every((p,i)=>save.pr[m.id]&&save.pr[m.id][i]===p[2]);
+const tasksDone=m=>!(m.tasks||[]).length||(save.tk[m.id]||[]).filter(Boolean).length===m.tasks.length;
+function discDone(){return save.disc.net&&save.disc.mask&&save.disc.gw&&save.disc.srv;}
+const canValidate=m=>quizSolved(m)&&pairsSolved(m)&&tasksDone(m)&&(!m.suite||suiteAllPass(m.suite))
+  &&(!m.discovery||discDone())&&(m.code!=='M-10'||save.finSolved);
+const DISC_FIELDS=[
+  ['net','Endereço de REDE do PC1 (você descobre com ipconfig):',v=>v.split('/')[0].trim()==='172.22.34.64'],
+  ['mask','Máscara do PC1 (decimal ponto):',v=>v.trim()==='255.255.255.224'],
+  ['gw','Gateway do PC1 (confirme com ping/tracert):',v=>v.trim()==='172.22.34.65'],
+  ['srv','IP do servidor citado pela auditoria (confirme com scan):',v=>v.trim()==='172.22.34.62']];
+
+function matrixHTML(){
+  const rows=[
+    ['PC1 (.66)','SERVIDOR','HTTP/HTTPS','yes','PERMITIR'],['PC1 (.66)','SERVIDOR','DNS','yes','PERMITIR'],
+    ['PC1 (.66)','SERVIDOR','FTP','no','BLOQUEAR'],['PC1 (.66)','SERVIDOR','SSH','no','BLOQUEAR'],
+    ['PC2 (.98)','SERVIDOR','HTTP/HTTPS','yes','PERMITIR'],['PC2 (.98)','SERVIDOR','DNS','yes','PERMITIR'],
+    ['PC2 (.98)','SERVIDOR','FTP','no','BLOQUEAR'],['PC2 (.98)','SERVIDOR','SSH','no','BLOQUEAR'],
+    ['ADMIN (.100)','SERVIDOR','FTP/SSH','yes','PERMITIR'],
+    ['ADMIN (.100)','R1 (vty)','SSH :22','yes','PERMITIR'],
+    ['PC1 / PC2','R1 (vty)','SSH/Telnet','no','BLOQUEAR'],
+    ['Qualquer','R1 (vty)','TELNET :23','no','BLOQUEAR'],
+    ['CAM .70 (incidente)','qualquer','qualquer','no','CONTENER']];
+  return `<div class="sec"><div class="sec-h">${ic('shield')} Matriz de acesso · política oficial</div>
+  <table class="iptab mx"><tr><th>Origem</th><th>Destino</th><th>Serviço</th><th>Política</th></tr>
+  ${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="${r[3]}">${r[3]==='yes'?'✓ '+r[4]:'✗ '+r[4]}</td></tr>`).join('')}
+  </table>
+  <div class="hint" style="margin-top:10px">${ic('zap')}<div><b>Traduza, não copie:</b> cada linha da matriz vira uma linha de ACL — e a ORDEM das linhas é parte da política (first match). Servidor = 172.22.34.62 · gateways: .65 (rede A), .97 (rede B).</div></div></div>`;
+}
+function cliHTML(c){
+  return `<div class="cli"><div class="cli-h"><span>${c.t}</span><button class="copy">${ic('copy')} copiar</button></div><pre>${esc(c.c)}</pre></div>`;
+}
+function quizHTML(m){
+  const st=save.qs[m.id]||{};
+  return `<div class="sec"><div class="sec-h">${ic('award')} Verificação de conhecimento</div>`+
+    m.quiz.map((q,qi)=>{
+      const solved=st[qi]===q.a;
+      const opts=q.o.map((o,oi)=>{
+        if(solved&&oi===q.a)return `<button class="opt ok" disabled>${esc(o)}</button>`;
+        return `<button class="opt" data-q="${qi}" data-o="${oi}" ${solved?'disabled':''}>${esc(o)}</button>`;
+      }).join('');
+      return `<div class="q${solved?' solved':''}"><div class="q-q">${esc(q.q)}</div><div class="opts">${opts}</div><div class="q-ex">${esc(q.ex)}</div></div>`;
+    }).join('')+`</div>`;
+}
+function pairsHTML(m){
+  const st=save.pr[m.id]||{};const opts=m.pairs[0][1];
+  return `<div class="sec"><div class="sec-h">${ic('shield')} Quadro de conceitos</div>`+
+  m.pairs.map((p,pi)=>{
+    const right=st[pi]===p[2];
+    return `<div class="pair${right?' right':''}"><span class="term">${esc(p[0])}</span>
+      <select data-p="${pi}" ${right?'disabled':''}><option value="">— selecione —</option>
+      ${opts.map((o,oi)=>`<option value="${oi}" ${st[pi]===oi?'selected':''}>${esc(o)}</option>`).join('')}</select>
+      ${right?`<span style="color:var(--ok)">${ic('check')}</span>`:''}</div>`;
+  }).join('')+`</div>`;
+}
+function tasksHTML(m){
+  const st=save.tk[m.id]||[];
+  return `<div class="sec"><div class="sec-h">${ic('check')} Checklist de entrega</div>`+
+    m.tasks.map((t,ti)=>`<button class="tsk${st[ti]?' on':''}" data-t="${ti}"><span class="bx">${ic('check')}</span><span>${t}</span></button>`).join('')+`</div>`;
+}
+function discHTML(){
+  return `<div class="sec"><div class="sec-h">${ic('net')} Formulário de descoberta · preencha com o que você CONSTATOU</div>
+  <div class="discf">${DISC_FIELDS.map(f=>{
+    const k=f[0],lbl=f[1],ok=save.disc[k];
+    const val=k==='net'?'172.22.34.64/27':k==='mask'?'255.255.255.224':k==='gw'?'172.22.34.65':'172.22.34.62';
+    return `<div class="drow${ok?' right':''}"><label>${lbl}</label>
+    <input data-d="${k}" ${ok?`disabled class="ok" value="${val}"`:'placeholder="…"'}>
+    <button class="chk" data-d="${k}" ${ok?'disabled':''}>verificar</button>
+    <span class="st">${ok?ic('check'):''}</span></div>`;}).join('')}
+  </div>
+  <p style="color:var(--faint);font-size:12px;margin-top:8px">Dica: o comando <code>scan 172.22.34.64/27</code> varre a sua rede — o mapa ao lado se preenche conforme você descobre.</p></div>`;
+}
+function iosHTML(){
+  if(!save.cliLog.length)save.cliLog=[['Console SOC · IOS Simulator — Operação Portaria Blue Team','dim'],['R1 pré-configurado pela equipe anterior (redes operacionais). Digite "enable".','dim']];
+  const QUICK=['enable','configure terminal','show ip interface brief','show access-lists','show running-config','show ip interface g0/0','show ip interface g0/1'];
+  return `<div class="sec"><div class="sec-h">${ic('term')} Terminal do R1 · CLI simulado</div>
+  <div class="sim"><div class="sim-top"><span class="sab">${ic('shield')} Os mesmos comandos valem para o Packet Tracer · configuração persiste</span>
+  <button id="cliClear">${ic('x')} limpar</button><button id="cliReset">${ic('rot')} zerar R1</button></div>
+  <div class="sim-grid"><div class="sim-l"><label>Atalhos</label>
+  ${QUICK.map(c=>`<button class="scmd ccmd" data-c="${esc(c)}">${esc(c)}</button>`).join('')}
+  <label>Linha de comando</label><span id="cliPrompt"></span><input id="cliIn" placeholder="comando IOS… (Enter envia · ↑ histórico)" autocomplete="off"></div>
+  <div class="sim-c" id="cliOut"></div></div></div></div>`;
+}
+function pcsHTML(){
+  const camOk=save.cur==='m8'||save.cur==='m9'||save.cur==='m10'||save.done.includes('m8');
+  return `<div class="sec"><div class="sec-h">${ic('net')} Estações de teste</div>
+  <div class="sim"><div class="sim-top"><span class="sab">${ic('term')} Origem:</span>
+  <select id="pcSel">
+    <option value="PC1">PC1 · estação rede A</option>
+    <option value="PC2">PC2 · estação rede B</option>
+    <option value="ADMIN">ADMIN · estação administrativa</option>
+    <option value="CAM" ${camOk?'':'disabled'}>CAM · console forense da câmera${camOk?'':' (liberado na Fase 3)'}</option>
+  </select></div>
+  <div class="sim-grid"><div class="sim-l"><label>Comandos rápidos</label><div id="pcQuick"></div>
+  <label>Linha de comando</label><input id="pcIn" placeholder="comando…" autocomplete="off"></div>
+  <div class="sim-c" id="pcOut"></div></div></div></div>`;
+}
+function pcQuick(){
+  const sel=$('#pcSel');if(!sel)return;
+  const dev=sel.value;
+  const QUICK={
+    PC1:[['ipconfig','ipconfig'],['arp -a','arp -a'],['ping gateway','ping 172.22.34.65'],['tracert servidor','tracert 172.22.34.62'],['scan servidor','scan 172.22.34.62'],['scan minha rede','scan 172.22.34.64/27']],
+    PC2:[['ipconfig','ipconfig'],['scan servidor','scan 172.22.34.62'],['ping servidor','ping 172.22.34.62'],['ftp servidor','ftp 172.22.34.62'],['ssh gateway','ssh 172.22.34.97'],['telnet gateway','telnet 172.22.34.97']],
+    ADMIN:[['ipconfig','ipconfig'],['scan servidor','scan 172.22.34.62'],['ftp servidor','ftp 172.22.34.62'],['ssh gateway','ssh 172.22.34.97'],['ssh servidor','ssh 172.22.34.62']],
+    CAM:[['ping gateway','ping 172.22.34.65'],['scan servidor','scan 172.22.34.62'],['scan gateway','scan 172.22.34.65']]};
+  const box=$('#pcQuick');
+  if(box)box.innerHTML=(QUICK[dev]||[]).map(q=>`<button class="scmd pcmd" data-c="${esc(q[1])}" style="margin-bottom:6px;width:100%">${esc(q[0])}</button>`).join('');
+  const pin=$('#pcIn');if(pin)pin.placeholder=dev==='CAM'?'console do firmware: ping · scan':'comando…';
+}
+function suiteHTML(key){
+  const res=save.sr[key]||{};
+  return `<div class="sec"><div class="sec-h">${ic('shield')} Bateria · ${SUITES[key].name}</div>
+  <div class="suite">${SUITES[key].rows.map(r=>{
+    const id=r[0],lbl=r[1],exp=r[3];
+    const rc=res[id];
+    let chip='<span class="chip wait">pendente</span>';
+    if(rc)chip=`<span class="chip ${rc.pass?'pass':(exp==='ok'?'blk':'vio')}">${rc.pass?'✓ confere':(exp==='ok'?'✗ INDISPONÍVEL':'✗ VIOLAÇÃO')}</span>`;
+    return `<div class="srow"><span class="sl">${lbl}</span><span class="sx">esperado: ${exp==='ok'?'PERMITIR':'BLOQUEAR'}</span>${chip}</div>`;
+  }).join('')}</div>
+  <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+  <button id="suiteAll" class="btn-acc">executar bateria completa</button>
+  <span style="color:var(--faint);font-size:12px">Cada linha roda contra o seu R1 simulado e grava no log SOC.</span></div></div>`;
+}
+function incident70HTML(){
+  return `<div class="sec"><div class="incident"><h5>${ic('alert')} 🚨 ALERTA DE SEGURANÇA</h5>
+  <p>O SIEM detectou varredura de portas a partir de um host na rede de usuários. Reproduza no log SOC e analise:</p>
+  <div style="margin-top:10px"><button id="inc70" class="btn-acc" style="padding:10px 18px;font-size:12.5px;background:var(--bad);clip-path:none">reproduzir incidente no log SOC</button></div>
+  ${save.inc70?'<p style="color:var(--ok);margin-top:10px">✓ Incidente reproduzido — leia o log SOC ao lado e responda à verificação abaixo.</p>':''}
+  </div></div>`;
+}
+function incident71HTML(){
+  return `<div class="sec"><div class="incident"><h5>${ic('alert')} Contramedida esperada</h5>
+  <p>Depois de conter o host .70, acione a simulação de <b>nova varredura com IP diferente</b> e observe o que o atacante AINDA alcança:</p>
+  <div style="margin-top:10px"><button id="inc71" class="btn-acc" style="padding:10px 18px;font-size:12.5px">simular nova varredura (.71)</button></div>
+  ${save.inc71?'<p style="color:var(--ok);margin-top:10px">✓ Varredura .71 registrada — compare com a anterior no log SOC.</p>':''}
+  </div></div>`;
+}
+function finFireHTML(){
+  const planted=save.finPlanted;
+  return `<div class="sec"><div class="incident"><h5>${ic('flag')} Prova de fogo</h5>
+  ${!planted?`<p>Ao iniciar, uma <b>anomalia</b> será plantada na configuração do simulador. O relatório dirá apenas o SINTOMA.</p>
+  <div style="margin-top:10px"><button id="finStart" class="btn-acc" style="padding:10px 18px;font-size:12.5px;background:var(--bad);clip-path:none">iniciar prova de fogo</button></div>`:
+  `<p><b>Anomalia ativa:</b> ${esc(planted.hint)} Use <code>show running-config</code>, <code>show access-lists</code> e <code>show ip interface</code> para localizar; corrija via CLI; rode a bateria FINAL.</p>
+  ${save.finSolved?'<p style="color:var(--ok);margin-top:10px">✓ Bateria FINAL 100% verde — anomalia neutralizada.</p>':''}`}</div></div>`;
+}
+function penHTML(){
+  if(!save.pens.length)return '';
+  return `<div class="sec"><div class="sec-h">${ic('alert')} Registro de penalidades · ${penTotal()} XP</div>
+  <div class="penlist">${save.pens.map(p=>`<div><b>${p.x} XP</b> — ${esc(p.r)}</div>`).join('')}</div>
+  <p style="color:var(--faint);font-size:12px;margin-top:8px">Segurança não é bloquear tudo: bloquear serviço legítimo e liberar acesso indevido são falhas equivalentes — e administração em texto claro é incidente.</p></div>`;
+}
+
+function renderMission(){
+  const m=byId(save.cur)||MISSIONS[0];
+  const done=save.done.includes(m.id),i=idxOf(m.id),main=$('#main'),sy=main.scrollTop;
+  let h=`<div class="m-head">
+    <div class="m-code">${m.code}</div>
+    <div class="m-tt"><h2>${m.title}</h2><div class="m-sub">${m.sub}</div></div>
+    ${done?`<span class="done-badge">${ic('check')} MISSÃO CUMPRIDA</span>`:`<div class="m-xp">+${m.xp} XP</div>`}</div>
+  <div class="sec"><div class="sec-h">${ic('term')} Briefing</div><div class="brief">${m.brief}</div></div>`;
+  if(m.matrix)h+=matrixHTML();
+  if(m.cli)h+=m.cli.map(cliHTML).join('');
+  if(m.hint)h+=`<div class="sec"><div class="hint">${ic(m.hint.ic||'zap')}<div>${m.hint.t}</div></div></div>`;
+  if(m.steps)h+=`<div class="sec"><div class="sec-h">${ic('chev')} Execução</div><ol class="steps">${m.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>`;
+  if(m.discovery)h+=discHTML();
+  if(m.ios)h+=iosHTML();
+  if(m.pcs)h+=pcsHTML();
+  if(m.suite)h+=suiteHTML(m.suite);
+  if(m.incident70)h+=incident70HTML();
+  if(m.incident71)h+=incident71HTML();
+  if(m.finfire)h+=finFireHTML();
+  if(m.quiz)h+=quizHTML(m);
+  if(m.pairs)h+=pairsHTML(m);
+  if(m.code==='M-07'||m.code==='M-10')h+=penHTML();
+  if(m.tasks&&m.tasks.length)h+=tasksHTML(m);
+  if(m.diag)h+=`<div class="sec"><div class="sec-h">${ic('term')} Relatório de campo</div>
+    <p style="color:var(--dim);font-size:13px;margin-bottom:8px">Descreva a anomalia: sintoma → hipótese → comando de diagnóstico → causa raiz → correção:</p>
+    <textarea id="diagText" placeholder="Sintoma → hipótese → teste → causa raiz → correção…">${esc(save.diag||'')}</textarea></div>`;
+  h+=`<div class="valbar"><button id="valBtn" ${done?'disabled':''}>${ic('flag')} ${done?'Missão concluída':'Validar entrega'}</button>
+    <span id="valHint">${done?'Entrega registrada no log.':'Complete as verificações, tarefas'+(m.suite?' e a bateria':'')+' para validar.'}</span></div>
+  ${done&&i<MISSIONS.length-1?`<div style="margin-top:18px;text-align:right"><button class="btn-acc" onclick="goTo(nextId('${m.id}'))">Próxima missão ${ic('chev')}</button></div>`:''}`;
+  $('#mwrap').innerHTML=h;main.scrollTop=sy;
+  wireMission(m);
+}
+function wireMission(m){
+  document.querySelectorAll('#mwrap .copy').forEach(b=>b.onclick=()=>{
+    const pre=b.closest('.cli').querySelector('pre');
+    try{navigator.clipboard.writeText(pre.textContent);}catch(e){}
+    b.innerHTML=ic('check')+' copiado';snd.ok();setTimeout(()=>b.innerHTML=ic('copy')+' copiar',1600);});
+  document.querySelectorAll('#mwrap .opt').forEach(btn=>{
+    btn.onclick=()=>{
+      const qi=+btn.dataset.q,oi=+btn.dataset.o,q=m.quiz[qi];
+      const st=save.qs[m.id]=save.qs[m.id]||{};
+      if(st[qi]===q.a)return;
+      if(oi===q.a){st[qi]=oi;snd.ok();toast('Correto','ok');persist();renderMission();}
+      else{btn.classList.add('bad');snd.err();setTimeout(()=>btn.classList.remove('bad'),500);}};});
+  document.querySelectorAll('#mwrap .pair select').forEach(sel=>{
+    sel.onchange=()=>{
+      const pi=+sel.dataset.p,v=sel.value===''?null:+sel.value,p=m.pairs[pi];
+      const st=save.pr[m.id]=save.pr[m.id]||{};
+      if(v===p[2]){st[pi]=v;snd.ok();persist();renderMission();}
+      else{sel.style.borderColor='var(--bad)';snd.err();setTimeout(()=>sel.style.borderColor='',600);}};});
+  document.querySelectorAll('#mwrap .tsk').forEach(btn=>{
+    btn.onclick=()=>{
+      const ti=+btn.dataset.t;
+      const st=save.tk[m.id]=save.tk[m.id]||[];
+      st[ti]=!st[ti];snd.click();persist();renderMission();};});
+  const dt=$('#diagText');if(dt)dt.oninput=()=>{save.diag=dt.value;persist();};
+  if(m.discovery){
+    document.querySelectorAll('#mwrap .drow .chk').forEach(b=>b.onclick=()=>{
+      const k=b.dataset.d,inp=document.querySelector('#mwrap input[data-d="'+k+'"]');
+      const fn=DISC_FIELDS.find(f=>f[0]===k)[2];
+      if(fn(inp.value||'')){save.disc[k]=true;persist();snd.ok();toast('Constatação registrada','ok');
+        if(k==='net')reveal('pc1');if(k==='gw')reveal('r1');if(k==='srv')reveal('srv');
+        renderMission();}
+      else{snd.err();inp.style.borderColor='var(--bad)';setTimeout(()=>inp.style.borderColor='',700);
+        toast('Não confere — investigue mais (ipconfig / ping / tracert / scan)','err');}});
+  }
+  if(m.ios){
+    const out=$('#cliOut');
+    out.innerHTML=save.cliLog.map(l=>`<div class="ln ${l[1]||''}">${esc(l[0])}</div>`).join('');out.scrollTop=out.scrollHeight;
+    $('#cliPrompt').textContent=promptStr();
+    document.querySelectorAll('#mwrap .ccmd').forEach(b=>b.onclick=()=>cliRun(b.dataset.c));
+    const inp=$('#cliIn');
+    inp.onkeydown=e=>{
+      if(e.key==='Enter'){const v=inp.value;inp.value='';cli.hi=null;cliRun(v);}
+      else if(e.key==='ArrowUp'){cli.hi=cli.hi==null?cli.hist.length:cli.hi;cli.hi=Math.max(0,cli.hi-1);inp.value=cli.hist[cli.hi]||'';e.preventDefault();}
+      else if(e.key==='ArrowDown'){if(cli.hi!=null){cli.hi=Math.min(cli.hist.length,cli.hi+1);inp.value=cli.hist[cli.hi]||''}}};
+    $('#cliClear').onclick=()=>{save.cliLog=[];persist();renderMission();};
+    $('#cliReset').onclick=()=>{save.rtr=newRtr();save.cliLog=[];save.sr={};persist();renderMission();toast('R1 do simulador zerado (interfaces pré-configuradas)','ok');};
+  }
+  if(m.pcs){
+    const sel=$('#pcSel');
+    const camOpt=sel.querySelector('option[value="CAM"]');
+    if(save.pcSel==='CAM'&&camOpt&&camOpt.disabled)save.pcSel='PC1';
+    sel.value=save.pcSel;
+    const out=$('#pcOut');const dev=sel.value;
+    out.innerHTML=(save.pcLog[dev]||[]).map(l=>`<div class="ln ${l[1]||''}">${esc(l[0])}</div>`).join('');out.scrollTop=out.scrollHeight;
+    pcQuick();
+    sel.onchange=()=>{save.pcSel=sel.value;persist();pcQuick();
+      const o2=$('#pcOut');o2.innerHTML=(save.pcLog[sel.value]||[]).map(l=>`<div class="ln ${l[1]||''}">${esc(l[0])}</div>`).join('');o2.scrollTop=o2.scrollHeight;};
+    document.querySelectorAll('#mwrap .pcmd').forEach(b=>b.onclick=()=>pcExec(save.pcSel,b.dataset.c));
+    const pin=$('#pcIn');
+    pin.onkeydown=e=>{if(e.key==='Enter'){const v=pin.value;pin.value='';pcExec(save.pcSel,v);}};
+  }
+  if(m.suite){
+    $('#suiteAll').onclick=()=>{
+      SUITES[m.suite].rows.forEach(r=>runRow(m.suite,r));
+      if(suiteAllPass(m.suite)){
+        snd.ok();toast('Bateria 100% — política validada','ok');
+        if(m.suite==='sf'&&save.finPlanted&&!save.finSolved){
+          save.finSolved=true;persist();
+          soc('perm','■ PROVA DE FOGO: bateria FINAL 100% — anomalia neutralizada.');
+        }
+      }else{snd.err();toast('Há divergências — investigue com show run / show access-lists','err');}
+      updateHud();renderMission();};
+  }
+  const i70=$('#inc70');
+  if(i70)i70.onclick=()=>{i70.disabled=true;playIncident70(()=>renderMission());};
+  const i71=$('#inc71');
+  if(i71)i71.onclick=()=>{i71.disabled=true;playIncident71(()=>renderMission());};
+  const fs=$('#finStart');
+  if(fs)fs.onclick=()=>{
+    const f=FINF[Math.floor(Math.random()*FINF.length)];
+    f.plant();
+    save.finPlanted={id:f.id,hint:f.hint};save.finSolved=false;
+    save.sr['sf']={};
+    persist();snd.alarm();
+    soc('crit','■ PROVA DE FOGO iniciada · anomalia do turno anterior ativa — bom diagnóstico.');
+    renderMission();};
+  $('#valBtn').onclick=()=>validate(m);
+}
+function validate(m){
+  if(save.done.includes(m.id))return;
+  if(m.code==='M-10'&&!save.finPlanted){toast('Inicie a prova de fogo primeiro','err');snd.err();return;}
+  const miss=[];
+  if(m.discovery&&!discDone())miss.push('formulário de descoberta completo');
+  if(m.quiz&&!quizSolved(m))miss.push('perguntas respondidas corretamente');
+  if(m.pairs&&!pairsSolved(m))miss.push('quadro de conceitos completo');
+  if(m.suite&&!suiteAllPass(m.suite))miss.push('bateria 100% verde');
+  if(m.tasks&&m.tasks.length&&!tasksDone(m))miss.push('checklist completo');
+  if(m.code==='M-10'&&!save.finSolved)miss.push('bateria FINAL verde após correção');
+  if(miss.length){snd.err();toast('Falta: '+miss.join(' · '),'err');return;}
+  save.done.push(m.id);save.xp+=m.xp;
+  if(!save.tEnd)save.tEnd=Date.now();
+  soc('perm','■ '+m.log);
+  toast('+'+m.xp+' XP — '+m.code+' validada','ok');snd.done();
+  if(m.cp){stamp(m.cp);setTimeout(()=>toast(m.cp+' alcançado','ok'),700);}
+  persist();updateHud();renderNav();renderMission();
+  if(m.id==='m10')setTimeout(showCert,1600);
+}
+function stamp(txt){$('#stampIn').textContent=txt;$('#stamp').classList.add('on');snd.stamp();setTimeout(()=>$('#stamp').classList.remove('on'),1500);}
+
+/* ============================================================
+   TOPOLOGIA SVG · mapa de ativos
+   ============================================================ */
+const DEV=[
+  {id:'srv',x:330,y:50,t:'sv',lb:'SRV',ip:SRVIP+'/26',rev:'srv'},
+  {id:'sw0',x:330,y:140,t:'sw',lb:'SW0',rev:'srv'},
+  {id:'r1',x:330,y:255,t:'rt',lb:'R1',ip:'.65 · .97 · .1',rev:'r1'},
+  {id:'sw1',x:120,y:350,t:'sw',lb:'SW1',rev:'pc1'},
+  {id:'pc1',x:52,y:445,t:'pc',lb:'PC1',ip:'172.22.34.66',rev:'pc1'},
+  {id:'cam',x:190,y:452,t:'iot',lb:'CAM',ip:'172.22.34.70',rev:'cam'},
+  {id:'sw2',x:540,y:350,t:'sw',lb:'SW2',rev:'pc2'},
+  {id:'pc2',x:480,y:445,t:'pc',lb:'PC2',ip:'172.22.34.98',rev:'pc2'},
+  {id:'adm',x:600,y:445,t:'pc',lb:'ADMIN',ip:'172.22.34.100',rev:'admin'}];
+const LNK=[['srv','sw0','F'],['sw0','r1','F'],['r1','sw1','A'],['sw1','pc1','A'],['sw1','cam','A'],
+  ['r1','sw2','B'],['sw2','pc2','B'],['sw2','adm','B']];
+const ROUTES={m5:['pc1','sw1','r1','sw0','srv'],m7:['pc1','sw1','r1','sw0','srv'],
+  m8:['cam','sw1','r1','sw0','srv'],m9:['cam','sw1','r1','sw0','srv'],m10:['pc2','sw2','r1','sw0','srv']};
+function devSVG(d){
+  const found=!!save.rev[d.rev];
+  const show=found||save.cur==='m1';
+  const ghost=!found;
+  const yl=d.y+(d.t==='sv'?30:d.t==='rt'?32:30);
+  let body='';
+  const C=ghost?'#3a4230':(d.t==='iot'?'var(--bad)':d.t==='rt'?'var(--acc)':(d.t==='sv'||d.id==='sw0')?'var(--netF)':'var(--netA)');
+  if(d.t==='pc'||d.t==='iot'){
+    body=`<rect x="${d.x-16}" y="${d.y-12}" width="32" height="24" rx="2" fill="#171b12" stroke="${C}" stroke-width="1.4"/>`;
+    if(d.t==='iot')body+=`<circle cx="${d.x}" cy="${d.y}" r="5" fill="none" stroke="${C}" stroke-width="1.3"/><circle cx="${d.x}" cy="${d.y}" r="1.5" fill="${C}"/>`;
+    else body+=`<rect x="${d.x-10}" y="${d.y-7}" width="20" height="13" fill="none" stroke="${C}" stroke-width="1" opacity=".7"/>`;
+  }else if(d.t==='sw'){
+    body=`<rect x="${d.x-24}" y="${d.y-11}" width="48" height="22" rx="2" fill="#171b12" stroke="${C}" stroke-width="1.4"/><line x1="${d.x-13}" y1="${d.y-3}" x2="${d.x+9}" y2="${d.y-3}" stroke="${C}" stroke-width="1.2"/><line x1="${d.x+13}" y1="${d.y+4}" x2="${d.x-9}" y2="${d.y+4}" stroke="${C}" stroke-width="1.2"/>`;
+  }else if(d.t==='rt'){
+    body=`<circle cx="${d.x}" cy="${d.y}" r="15" fill="#171b12" stroke="${C}" stroke-width="1.4"/><path d="M${d.x-9} ${d.y} h18 M${d.x} ${d.y-9} v18 M${d.x-9} ${d.y} l4 -3 m-4 3 l4 3 M${d.x+9} ${d.y} l-4 -3 m4 3 l-4 3 M${d.x} ${d.y-9} l-3 4 m3 -4 l3 4 M${d.x} ${d.y+9} l-3 -4 m3 4 l3 -4" fill="none" stroke="${C}" stroke-width="1.1"/>`;
+  }else{
+    body=`<rect x="${d.x-14}" y="${d.y-16}" width="28" height="32" rx="2" fill="#171b12" stroke="${C}" stroke-width="1.4"/><path d="M${d.x-8} ${d.y-9} h16 M${d.x-8} ${d.y-3} h16 M${d.x-8} ${d.y+3} h16" stroke="${C}" stroke-width="1" opacity=".6"/><circle cx="${d.x}" cy="${d.y+10}" r="2" fill="${C}"/>`;
+  }
+  return `<g class="dev${show?' show':''}${ghost?' ghost':''}" data-dev="${d.id}">${body}
+    <text class="dlbl" x="${d.x}" y="${yl}" text-anchor="middle" fill="${ghost?'#6d7460':'#ece9db'}">${ghost?'???':d.lb}</text>
+    ${(!ghost&&d.ip)?`<text class="dip" x="${d.x}" y="${yl+11}" text-anchor="middle" fill="#6d7460">${d.ip}</text>`:''}
+    ${(d.t==='iot'&&!ghost)?`<text class="dip" x="${d.x}" y="${yl+22}" text-anchor="middle" fill="var(--bad)">⚠ firmware desatualizado</text>`:''}</g>`;
+}
+function buildTopo(){
+  const pos={};DEV.forEach(d=>pos[d.id]=d);
+  let s='';
+  LNK.forEach(e=>{
+    const A=pos[e[0]],B=pos[e[1]];
+    s+=`<line id="lk-${e[0]}-${e[1]}" class="tlink net${e[2]}" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}"/>`;});
+  DEV.forEach(d=>s+=devSVG(d));
+  $('#topoSvg').innerHTML=s;
+}
+function updateTopo(){
+  buildTopo();
+  LNK.forEach(e=>{const el=document.getElementById('lk-'+e[0]+'-'+e[1]);
+    if(el){el.classList.add('up');el.classList.remove('tr');}});
+  const route=ROUTES[save.cur]||[];
+  for(let i=0;i<route.length-1;i++){
+    const el=document.getElementById('lk-'+route[i]+'-'+route[i+1]);if(el)el.classList.add('tr');}
+}
+
+/* ============================================================
+   HUD / BOOT / MODAIS / CERTIFICADO
+   ============================================================ */
+function updateHud(){
+  $('#hudName').innerHTML=save.name?('analista <b>'+esc(save.name)+'</b>'):'';
+  $('#hudRank').textContent=rankFor(xpNet());
+  $('#xpFill').style.width=Math.min(100,Math.round(xpNet()/TOTAL_XP*100))+'%';
+  $('#xpTxt').textContent=xpNet()+' / '+TOTAL_XP+' XP';
+  const p=penTotal();
+  $('#hudPen').style.display=p?'inline-block':'none';
+  $('#hudPen').textContent='penalidades −'+p;
+}
+function clockTick(){$('#clock').textContent=fmtTime((save.tEnd||Date.now())-(save.t0||Date.now()));}
+let started=false;
+function startApp(){
+  if(started)return;started=true;
+  $('#boot').style.display='none';$('#app').classList.add('on');
+  if(!save.t0)save.t0=Date.now();persist();
+  renderNav();renderMission();updateTopo();updateHud();renderSoc();
+  soc('info','Console SOC iniciado por '+save.name+'. Ordem de serviço: auditoria Orion — exposição de serviços.');
+  soc('info','Fase 1: reconhecimento. Comece pelo terminal do PC1 (ipconfig).');
+  setInterval(clockTick,1000);clockTick();
+}
+const BOOT=[
+  'SIEM ORION · CONSOLE DO ANALISTA v2.1',
+  '> carregando caso: AUDITORIA EXTERNA #7734 ..... <span class="gd">OK</span>',
+  '> achado: "usuários acessam serviços indevidos" <span class="rd">CONFIRMADO</span>',
+  '> tabela de endereçamento ...................... <span class="em">NÃO FORNECIDA</span>',
+  '> ferramenta de varredura autorizada ........... <span class="gd">SCAN</span>',
+  '> incidente latente na rede de usuários ........ <span class="rd">PREVISTO</span>',
+  '> aguardando analista responsável…'];
+function boot(){
+  let i=0,aborted=false;const lines=$('#bootLines');
+  const next=()=>{
+    if(aborted)return;
+    if(i<BOOT.length){
+      const d=document.createElement('span');d.className='bl';d.innerHTML=BOOT[i];
+      lines.appendChild(d);snd.type();i++;
+      setTimeout(next,i===BOOT.length?500:240+Math.random()*220);
+    }else{
+      $('#bootTitle').style.display='block';$('#bootSub').style.display='block';
+      if(save.name)startApp();
+      else{$('#bootForm').classList.add('on');$('#techName').focus();}
+      $('#bootSkip').style.display='block';}};
+  next();
+  $('#bootForm').onsubmit=e=>{
+    e.preventDefault();
+    const v=$('#techName').value.trim();
+    if(!v){toast('Identifique-se para assinar o termo','err');return;}
+    save.name=v;save.t0=save.t0||Date.now();persist();snd.ok();startApp();};
+  $('#bootSkip').onclick=()=>{
+    aborted=true;
+    if(!save.name){save.name='Analista';save.t0=save.t0||Date.now();persist();}
+    startApp();};
+}
+function openModal(html){$('#modalBox').innerHTML=html;$('#modalHost').classList.add('on');}
+function closeModal(){$('#modalHost').classList.remove('on');}
+ $('#modalHost').onclick=e=>{if(e.target.id==='modalHost')closeModal();};
+ $('#socClear').onclick=()=>{SOC.length=0;renderSoc();};
+const GUIDE=`<h3>Guia do instrutor</h3>
+<h4>Conceitos por fase</h4>
+<p><b>N1:</b> asset discovery (ipconfig/arp/tracert/scan) · attack surface (aberto/fechado/filtrado) · funcionalidade ≠ segurança.<br>
+<b>N2:</b> matriz de política → ACL estendida · least privilege · first match · direção in/out · management plane (SSH, access-class, transport input).<br>
+<b>N3:</b> monitoramento SOC · port scan · contenção por host · defesa em profundidade · troubleshooting às cegas.</p>
+<h4>Gabarito (aceito qualquer configuração comportamentalmente equivalente)</h4>
+<table>
+<tr><td>ACL 110 (g0/0 in)</td><td><code>permit tcp 172.22.34.64 0.0.0.31 host .62 eq www / eq 443 · permit udp ... eq domain · deny tcp ... eq ftp / eq 22 · [deny ip host .70 any] · permit ip any any</code></td></tr>
+<tr><td>ACL 120 (g0/1 in)</td><td><code>permit tcp host .100 host .62 eq ftp / eq 22 · deny tcp host .98 host .62 eq ftp / eq 22 · permit tcp 172.22.34.96 0.0.0.15 host .62 eq www / 443 · permit udp ... domain · deny ... ftp · permit ip any any</code></td></tr>
+<tr><td>vty</td><td><code>access-list 130 permit tcp host .100 any eq 22</code> → <code>line vty 0 4 · access-class 130 in · transport input ssh</code></td></tr>
+<tr><td>Contenção</td><td><code>access-list 110 deny ip host 172.22.34.70 any</code> (topo)</td></tr>
+</table>
+<h4>Penalidades</h4>
+<table>
+<tr><td>−50 XP</td><td>Telnet usado com sucesso na administração (evento manual)</td></tr>
+<tr><td>−25 XP</td><td>Cada divergência na bateria s7/sf: serviço indevido liberado OU legítimo bloqueado</td></tr>
+</table>
+<h4>Cartela de anomalias (prova de fogo — plantadas automaticamente)</h4>
+<ul>
+<li>Remoção da linha HTTP da rede A (indisponibilidade)</li>
+<li>permit tcp any host .62 eq ftp no TOPO da ACL da rede B (violação)</li>
+<li>access-group removido de G0/1 (política morta)</li>
+<li>Remoção do FTP do ADMIN (indisponibilidade)</li>
+<li>access-class vty removida (violação do management)</li>
+<li>Remoção do DNS da rede B (indisponibilidade)</li>
+</ul>
+<h4>Pedagogia</h4>
+<p>O aluno NÃO recebe IPs: descobre com ipconfig/arp/tracert/scan. O motor avalia ACLs de verdade (curingas, ordem, direção, stateless do retorno, implicit deny, vty) — direção errada = política morta, como no IOS. Incidente: câmera IoT comprometida (.70) faz port scan + tenta telnet no gateway; contenção cirúrgica; retorno de .71 ensina defesa em profundidade. Tempo: 3h–3h30 em duplas.</p>
+<button class="mclose" onclick="closeModal()">fechar</button>`;
+ $('#tutBtn').onclick=()=>{snd.click();openModal(GUIDE);};
+ $('#rstBtn').onclick=()=>{snd.click();openModal(`<h3>Reiniciar operação</h3><p>Apaga progresso, XP, penalidades e o R1 simulado. Continuar?</p><div style="display:flex;gap:10px;margin-top:18px"><button class="mclose" onclick="doReset()">sim, apagar tudo</button><button class="mclose" onclick="closeModal()">cancelar</button></div>`);};
+function doReset(){localStorage.removeItem('portaria-bt-save');location.reload();}
+ $('#sndBtn').onclick=()=>{save.muted=!save.muted;persist();$('#sndBtn').innerHTML=ic(save.muted?'volx':'vol');if(!save.muted)snd.ok();};
+
+function showCert(){
+  const time=fmtTime((save.tEnd||Date.now())-(save.t0||Date.now()));
+  const p=save.pens;
+  $('#certWrap').innerHTML=`<div class="cert"><div class="cert-in">
+    <div class="top">SOC Orion · Operação Portaria — Blue Team</div>
+    <h1>CERTIFICADO DE CONCLUSÃO</h1>
+    <p class="rl">Certificamos que o analista abaixo conduziu o ciclo completo de defesa: descoberta de ativos, medição da superfície de ataque, implementação de ACLs estendidas conforme matriz de política (least privilege), blindagem do plano de gerência (SSH/vty), análise de incidente de reconhecimento, contenção do host comprometido e neutralização de anomalia na prova de fogo.</p>
+    <div class="nm">${esc(save.name||'Analista')}</div>
+    <div class="meta">
+      <div>XP BRUTO<b>${save.xp}</b></div>
+      <div>PENALIDADES<b style="color:${penTotal()?'var(--bad)':'var(--ok)'}">−${penTotal()}</b></div>
+      <div>XP FINAL<b>${xpNet()}</b></div>
+      <div>PATENTE<b>${rankFor(xpNet())}</b></div>
+      <div>MISSÕES<b>${save.done.length}/${MISSIONS.length}</b></div>
+      <div>TEMPO<b>${time}</b></div></div>
+    ${p.length?`<p style="font-size:11px;color:var(--faint);max-width:520px;margin:0 auto">${esc(p.map(x=>x.r).join(' · '))}</p>`:''}
+    <div class="sign"><span>Instrutor / CSO</span><span>CASO #7734</span></div>
+    <div class="certbtns">
+      <button class="btn-acc" onclick="window.print()">imprimir / salvar PDF</button>
+      <button class="btn-acc" onclick="document.getElementById('certWrap').classList.remove('on')">voltar ao console</button>
+    </div></div></div>`;
+  $('#certWrap').classList.add('on');
+}
+
+ $('#sndBtn').innerHTML=ic(save.muted?'volx':'vol');
+buildTopo();
+boot();
+</script>
+</body>
+</html>
