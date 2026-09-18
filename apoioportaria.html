@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Campo — Operação Portaria · ACLs Estendidas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d09; --panel:#12150e; --panel2:#171b12; --inset:#0d100a;
+  --line:#282e1f; --line2:#3a4230;
+  --ink:#ece9db; --dim:#a8ad97; --faint:#6d7460;
+  --acc:#ffb454; --acc2:#ff8a3d;
+  --netA:#ffb454; --netB:#5fd4d0; --netF:#57d97a;
+  --ok:#57d97a; --bad:#ff6b5e; --warn:#ffd166;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --disp:'Chakra Petch',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:14px;line-height:1.6;
+  background-image:linear-gradient(rgba(255,180,84,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,180,84,.025) 1px,transparent 1px);
+  background-size:34px 34px}
+::selection{background:var(--acc);color:#141005}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2c331f;border:2px solid var(--bg);border-radius:6px}
+button{font-family:inherit;cursor:pointer;color:inherit;background:none;border:none}
+a{color:var(--netB);text-decoration:none}
+a:hover{text-decoration:underline}
+.ic{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;flex:none}
+code{background:var(--inset);border:1px solid var(--line);padding:1px 6px;font-size:11.5px;color:var(--netB)}
+
+/* ---------- topbar ---------- */
+#topbar{position:fixed;top:0;left:0;right:0;height:56px;z-index:100;display:flex;align-items:center;gap:16px;
+  padding:0 18px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+.brand b{font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.05em}
+.brand b::before{content:"";display:inline-block;width:10px;height:10px;background:var(--acc);margin-right:9px;vertical-align:0}
+.brand small{color:var(--faint);font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+#topbar .sp{flex:1}
+.tbtn{height:34px;display:flex;gap:7px;align-items:center;padding:0 12px;border:1px solid var(--line2);color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.tbtn:hover{border-color:var(--acc);color:var(--acc)}
+body.teacher #tProfBtn{border-color:var(--bad);color:var(--bad)}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:244px minmax(0,1fr);max-width:1280px;margin:0 auto;padding-top:56px}
+nav#side{position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;padding:14px 10px 30px;border-right:1px solid var(--line)}
+.ph{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);padding:10px 10px 6px}
+.mnav{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:9px 10px;border:1px solid transparent;border-left:2px solid var(--line);color:var(--dim);font-size:12.5px;margin-bottom:2px}
+.mnav .num{font-size:10px;color:var(--faint);width:30px;flex:none}
+.mnav:hover{border-color:var(--line2);color:var(--ink);text-decoration:none}
+.mnav.active{background:var(--panel2);border-color:var(--line2);border-left-color:var(--acc);color:var(--ink)}
+#profNav{opacity:.45}
+body.teacher #profNav{opacity:1}
+main{padding:30px 34px 80px;min-width:0}
+section{max-width:860px;margin:0 auto 54px;scroll-margin-top:70px}
+
+.m-head{display:flex;align-items:flex-start;gap:18px;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+.m-code{font-family:var(--disp);font-weight:700;font-size:26px;color:var(--acc);letter-spacing:.04em;line-height:1;border:1px solid var(--line2);padding:10px 12px 8px;background:var(--panel)}
+.m-tt h2{font-family:var(--disp);font-weight:700;font-size:23px;letter-spacing:.02em}
+.m-sub{color:var(--faint);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+
+.sec-h{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--acc);margin:26px 0 12px}
+.sec-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.card{background:var(--panel);border:1px solid var(--line);padding:16px 18px;color:var(--dim)}
+.card+.card{margin-top:10px}
+.card b,.steps b,.hint b{color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+.hint{display:flex;gap:12px;background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--acc);padding:13px 15px;color:var(--dim);font-size:13px;margin:12px 0}
+.hint .ic{color:var(--acc);margin-top:2px}
+.hint.red{border-left-color:var(--bad)}.hint.red .ic{color:var(--bad)}
+.hint.grn{border-left-color:var(--ok)}.hint.grn .ic{color:var(--ok)}
+.chip{display:inline-block;font-size:10px;letter-spacing:.08em;padding:3px 9px;border:1px solid var(--line2);text-transform:uppercase;color:var(--dim);margin:0 6px 6px 0}
+.chip.a{color:var(--acc);border-color:var(--acc)}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.b{color:var(--netB);border-color:var(--netB)}
+.chip.w{color:var(--warn);border-color:var(--warn)}
+
+/* ---------- hero ---------- */
+#hero{padding-top:14px}
+#hero h1{font-family:var(--disp);font-weight:700;font-size:clamp(28px,4.6vw,44px);letter-spacing:.03em;line-height:1.15}
+#hero h1 span{color:var(--acc)}
+#hero .sub{color:var(--faint);font-size:12px;letter-spacing:.2em;text-transform:uppercase;margin:8px 0 16px}
+#hero p.lead{color:var(--dim);max-width:640px;margin-bottom:16px}
+.btn-acc{display:inline-flex;gap:9px;align-items:center;background:var(--acc);color:#171004;font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:.08em;padding:12px 22px;text-transform:uppercase;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);text-decoration:none}
+.btn-acc:hover{background:var(--acc2);text-decoration:none}
+.btn-ghost{display:inline-flex;gap:9px;align-items:center;border:1px solid var(--line2);color:var(--dim);font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.08em;padding:12px 20px;text-transform:uppercase;text-decoration:none}
+.btn-ghost:hover{border-color:var(--acc);color:var(--acc);text-decoration:none}
+
+/* ---------- cli / código ---------- */
+.cli{background:var(--inset);border:1px solid var(--line2);margin:10px 0}
+.cli-h{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--line2);background:var(--panel2)}
+.cli-h span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+.copy{font-size:10px;letter-spacing:.1em;color:var(--dim);border:1px solid var(--line2);padding:3px 9px;display:flex;gap:5px;align-items:center;text-transform:uppercase}
+.copy:hover{color:var(--acc);border-color:var(--acc)}
+.cli pre{padding:13px 15px;font-size:12.5px;line-height:1.65;color:#d8dcc8;overflow-x:auto;white-space:pre}
+
+/* ---------- steps ---------- */
+.steps{counter-reset:st;list-style:none}
+.steps li{counter-increment:st;position:relative;padding:12px 0 12px 46px;color:var(--dim);border-bottom:1px dashed var(--line)}
+.steps li:last-child{border-bottom:none}
+.steps li::before{content:counter(st,decimal-leading-zero);position:absolute;left:0;top:12px;font-family:var(--disp);font-weight:700;color:var(--acc);font-size:15px}
+
+/* ---------- tabelas ---------- */
+.iptab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+.iptab th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line2)}
+.iptab td{padding:8px 10px;border-bottom:1px dashed var(--line);color:var(--dim);vertical-align:top}
+.iptab td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+.iptab .n{color:var(--netA)} .iptab .t{color:var(--netB)} .iptab .f{color:var(--netF)}
+
+/* ---------- anatomia ---------- */
+.anat{background:var(--inset);border:1px solid var(--line2);padding:16px 14px;font-size:13px;line-height:2.1;word-break:break-word}
+.tok{padding:3px 7px;border:1px solid transparent;cursor:pointer;border-radius:3px;white-space:nowrap}
+.tok:hover{border-color:var(--line2)}
+.tok.sel{outline:1px solid var(--acc)}
+.t-num{color:var(--acc)} .t-act{color:var(--bad)} .t-pro{color:var(--warn)}
+.t-src{color:var(--netA)} .t-dst{color:var(--netF)} .t-port{color:var(--netB)}
+#anatDetail{background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--acc);padding:13px 15px;font-size:13px;color:var(--dim);margin-top:10px;min-height:64px}
+#anatDetail b{color:var(--ink)}
+
+/* ---------- calculadora wildcard ---------- */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.calc{grid-template-columns:1fr}}
+.calc label{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.calc input{width:100%;background:var(--inset);border:1px solid var(--line2);color:var(--ink);font-family:var(--mono);font-size:14px;padding:10px;outline:none}
+.calc input:focus{border-color:var(--acc)}
+.calcOut{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:12px}
+.kv{background:var(--panel2);border:1px solid var(--line);padding:9px 11px}
+.kv small{display:block;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.kv b{font-size:14px;color:var(--netB);word-break:break-all}
+.kv.hl{border-color:var(--acc)} .kv.hl b{color:var(--acc)}
+
+/* ---------- topo svg ---------- */
+#topoSvg{width:100%;display:block;background:var(--inset);border:1px solid var(--line)}
+.tlink{stroke-width:1.8;fill:none}
+.tlink.netA{stroke:var(--netA)} .tlink.netB{stroke:var(--netB)} .tlink.netF{stroke:var(--netF)}
+.dlbl{font-family:var(--mono);font-size:11px;fill:var(--ink)}
+.dip{font-family:var(--mono);font-size:9.5px;fill:var(--dim)}
+.dbox{fill:var(--panel2);stroke:var(--line2)}
+.dsw{fill:var(--panel);stroke:var(--line2)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:10.5px;color:var(--faint)}
+.legend i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:-1px}
+
+/* ---------- solução blur ---------- */
+.reveal{position:relative}
+.reveal .cli{margin-top:0}
+.reveal pre{transition:filter .4s}
+.reveal:not(.open) pre{filter:blur(7px);user-select:none;pointer-events:none}
+.rv-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+.reveal.open .rv-ov{display:none}
+.rv-btn{display:flex;gap:8px;align-items:center;background:var(--acc);color:#171004;font-family:var(--disp);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:11px 20px;clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.rv-btn:hover{background:var(--acc2)}
+
+/* ---------- quiz ---------- */
+.q{border:1px solid var(--line);background:var(--panel);margin-bottom:14px}
+.q-q{padding:13px 16px;border-bottom:1px solid var(--line);color:var(--ink)}
+.q-q::before{content:"? ";color:var(--acc);font-weight:600}
+.opts{padding:10px;display:grid;gap:7px}
+.opt{text-align:left;border:1px solid var(--line2);background:var(--panel2);padding:9px 13px;color:var(--dim);font-size:13px;display:flex;gap:10px;align-items:center;transition:border-color .15s}
+.opt::before{content:"";width:8px;height:8px;border:1px solid var(--faint);flex:none}
+.opt:hover:not(:disabled){border-color:var(--acc);color:var(--ink)}
+.opt:disabled{cursor:default;opacity:.55}
+.opt.ok{border-color:var(--ok);color:var(--ok);opacity:1}
+.opt.ok::before{background:var(--ok);border-color:var(--ok)}
+.opt.bad{border-color:var(--bad);color:var(--bad);opacity:1}
+.opt.bad::before{background:var(--bad);border-color:var(--bad)}
+.q-ex{display:none;padding:11px 16px;border-top:1px solid var(--line);color:var(--ok);font-size:12.5px;background:var(--panel2)}
+.q.solved .q-ex{display:block}
+#quizScore{display:flex;align-items:center;gap:14px;margin:14px 0}
+.xpbar{flex:1;height:8px;background:var(--inset);border:1px solid var(--line2)}
+.xpbar i{display:block;height:100%;background:var(--acc);width:0;transition:width .6s}
+
+/* ---------- checklist ---------- */
+.tsk{display:flex;gap:11px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);background:var(--panel);margin-bottom:7px;color:var(--dim);font-size:13px}
+.tsk input{margin-top:2px;accent-color:var(--ok)}
+.tsk.on{color:var(--ink)}
+
+/* ---------- caderno ---------- */
+.cad-head{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:700px){.cad-head{grid-template-columns:1fr}}
+.fill{background:var(--inset);border:0;border-bottom:1px solid var(--line2);color:var(--netB);font-family:var(--mono);font-size:13px;padding:2px 7px;outline:none}
+.fill:focus{border-bottom-color:var(--acc)}
+.f1{width:120px}.f2{width:170px}.f3{width:240px}.fn{width:70px;text-align:center}
+textarea.fill{width:100%;min-height:74px;border:1px solid var(--line2);resize:vertical;line-height:1.55}
+table.work{width:100%;border-collapse:collapse;font-size:12.5px;margin:8px 0}
+table.work th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line2)}
+table.work td{padding:6px 8px;border-bottom:1px dashed var(--line);color:var(--dim)}
+table.work td:first-child{color:var(--ink);white-space:nowrap}
+table.work input{width:100%;background:var(--inset);border:0;border-bottom:1px solid var(--line2);color:var(--netB);font-family:var(--mono);font-size:12.5px;padding:4px 6px;outline:none}
+table.work input:focus{border-bottom-color:var(--acc)}
+.blk{background:var(--panel);border:1px solid var(--line);padding:16px 18px;margin-bottom:16px}
+.blk>h4{font-family:var(--disp);font-size:15px;color:var(--acc);letter-spacing:.06em;margin-bottom:12px;display:flex;gap:10px;align-items:center}
+.cadBtns{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 0}
+
+/* ---------- vídeos ---------- */
+.vids{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.vid{border:1px solid var(--line2);background:var(--panel);padding:16px;display:flex;flex-direction:column;gap:9px;color:var(--dim);text-decoration:none;transition:border-color .2s}
+.vid:hover{border-color:var(--acc);text-decoration:none;color:var(--ink)}
+.vid .pl{width:44px;height:44px;border:1px solid var(--acc);display:grid;place-items:center;color:var(--acc)}
+.vid .pl .ic{width:18px;height:18px;fill:currentColor;stroke:none}
+.vid b{color:var(--ink);font-size:13.5px;line-height:1.4}
+.vid small{color:var(--faint);font-size:11px;letter-spacing:.06em}
+.site{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);background:var(--panel);margin-bottom:8px;color:var(--dim);text-decoration:none}
+.site:hover{border-color:var(--acc);text-decoration:none;color:var(--ink)}
+.site .ic{color:var(--acc);margin-top:2px}
+.site b{color:var(--ink);display:block;font-size:13px}
+.site small{color:var(--faint);font-size:11px}
+
+/* ---------- professor ---------- */
+#professor{display:none}
+body.teacher #professor{display:block}
+.tzone{border:1px dashed var(--bad);padding:16px 18px;margin-bottom:16px;background:var(--panel)}
+.tzone>h4{color:var(--bad);font-family:var(--disp);font-size:15px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:flex;gap:9px;align-items:center}
+
+/* ---------- toast / footer ---------- */
+#toastHost{position:fixed;top:66px;right:16px;z-index:150;display:flex;flex-direction:column;gap:8px}
+.toast{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--acc);padding:11px 14px;font-size:12.5px;color:var(--ink);max-width:330px;animation:tin .3s}
+.toast.ok{border-left-color:var(--ok)}.toast.ok .ic{color:var(--ok)}
+@keyframes tin{from{transform:translateX(30px);opacity:0}}
+.toast.out{transition:.3s;opacity:0;transform:translateX(30px)}
+footer{border-top:1px solid var(--line);padding:26px 34px;color:var(--faint);font-size:11.5px;text-align:center;max-width:1280px;margin:0 auto}
+footer a{color:var(--acc)}
+
+@media (max-width:960px){
+  .layout{grid-template-columns:1fr}
+  nav#side{position:static;height:auto;display:flex;overflow-x:auto;padding:10px;border-right:none;border-bottom:1px solid var(--line)}
+  .ph{display:none}.mnav{width:auto;white-space:nowrap;border:1px solid var(--line)}
+  main{padding:22px 16px 60px}
+  #topbar{flex-wrap:wrap;height:auto;padding:8px 12px;gap:8px}
+}
+@media print{
+  body{background:#fff;color:#111;overflow:visible;background-image:none}
+  #topbar,nav#side,#toastHost,.noprint{display:none!important}
+  .layout{display:block;padding-top:0;max-width:none}
+  main{padding:0}
+  section{max-width:none;page-break-inside:auto;margin-bottom:26px}
+  h1,h2,h3,h4,p,li,td,th,label,b,small,span,div{color:#111!important}
+  .card,.q,.tsk,.blk,.vid,.site,.kv,.calc input{background:#fff;border-color:#999}
+  .hint{background:#faf8f2;border-color:#999}
+  .cli{background:#f6f6f0;border-color:#999}
+  .cli pre{color:#111;background:transparent}
+  .cli-h{background:#eee;border-color:#999}.cli-h span{color:#555!important}
+  .m-code{color:#000;border-color:#000;background:#fff}
+  .sec-h{color:#333}.sec-h::after{background:#ccc}
+  .fill,table.work input,textarea.fill{background:#fff;border-color:#999;color:#111}
+  .reveal pre{filter:none!important}.rv-ov{display:none!important}
+  a{color:#000;text-decoration:underline}
+  #professor{display:none!important}
+  body.teacher #professor{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-net" viewBox="0 0 24 24"><rect x="2" y="9" width="20" height="6" rx="1"/><circle cx="6.5" cy="12" r="1"/><circle cx="17.5" cy="12" r="1"/><path d="M12 2v7M12 15v7"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 21 12 6 21"/></symbol>
+  <symbol id="i-rot" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2-9.4L1 10"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+</svg>
+
+<header id="topbar">
+  <div class="brand"><b>PORTARIA</b><small>manual de campo</small></div>
+  <span style="color:var(--faint);font-size:11px" class="noprint">acl estendida · packet tracer · os #0051</span>
+  <div class="sp"></div>
+  <button class="tbtn noprint" id="tProfBtn"><svg class="ic"><use href="#i-key"/></svg> modo professor</button>
+  <button class="tbtn noprint" onclick="window.print()"><svg class="ic"><use href="#i-print"/></svg> imprimir</button>
+  <button class="tbtn noprint" id="rstBtn"><svg class="ic"><use href="#i-rot"/></svg> zerar</button>
+</header>
+
+<div class="layout">
+<nav id="side" class="noprint">
+  <div class="ph">Sumário</div>
+  <a class="mnav" href="#hero"><span class="num">00</span> Início</a>
+  <a class="mnav" href="#teoria"><span class="num">01</span> Teoria essencial</a>
+  <a class="mnav" href="#cenario"><span class="num">02</span> Cenário &amp; topologia</a>
+  <a class="mnav" href="#passos"><span class="num">03</span> Passo a passo</a>
+  <a class="mnav" href="#solucoes"><span class="num">04</span> Solução-modelo</a>
+  <a class="mnav" href="#debug"><span class="num">05</span> Prova de fogo &amp; erros</a>
+  <a class="mnav" href="#videos"><span class="num">06</span> Vídeos &amp; sites</a>
+  <a class="mnav" href="#quiz"><span class="num">07</span> Quiz</a>
+  <a class="mnav" href="#caderno"><span class="num">08</span> Caderno do aluno</a>
+  <a class="mnav" href="#professor" id="profNav"><span class="num">09</span> Modo professor</a>
+</nav>
+
+<main>
+
+<!-- ============ 00 HERO ============ -->
+<section id="hero">
+  <h1>OPERAÇÃO <span>PORTARIA</span><br>manual de campo · ACLs estendidas</h1>
+  <div class="sub">Guia de estudo do desafio · Packet Tracer · Configure Extended ACLs — Scenario 1</div>
+  <p class="lead">Você foi contratado como técnico de redes. Sua missão: instalar o "porteiro eletrônico" do prédio — configurar o roteador para <b style="color:var(--ink)">permitir e negar tráfego</b> usando <b style="color:var(--ink)">ACLs Estendidas</b>, testar tudo e fechar o caso final de diagnóstico.</p>
+  <div>
+    <span class="chip a">≈ 90 min</span><span class="chip g">iniciante → intermediário</span>
+    <span class="chip b">pré-requisito: subnetting básico</span><span class="chip w">progresso salvo no navegador</span>
+  </div>
+  <div style="margin:18px 0 26px" class="noprint">
+    <a class="btn-acc" href="portaria.html" target="_blank"><svg class="ic"><use href="#i-zap"/></svg> Abrir o jogo</a>
+    <a class="btn-ghost" href="#teoria" style="margin-left:10px">Começar pela teoria ↓</a>
+  </div>
+  <div class="sec-h">como usar este manual</div>
+  <div class="grid3">
+    <div class="card"><b>① Antes de jogar</b><br>Leia a <a href="#teoria">teoria</a>, brinque com a <b>anatomia do comando</b> e a <b>calculadora de wildcard</b>, e acerte o <a href="#quiz">quiz</a>.</div>
+    <div class="card"><b>② Durante o jogo</b><br>Siga o <a href="#passos">passo a passo</a> e o cenário. Só olhe a <a href="#solucoes">solução-modelo</a> depois de tentar!</div>
+    <div class="card"><b>③ Depois</b><br>Preencha o <a href="#caderno">caderno do aluno</a>, feche o caso de diagnóstico e emita o certificado no jogo.</div>
+  </div>
+</section>
+
+<!-- ============ 01 TEORIA ============ -->
+<section id="teoria">
+  <div class="m-head"><div class="m-code">S-01</div><div class="m-tt"><h2>Teoria essencial</h2><div class="m-sub">5 conceitos que resolvem 90% do desafio</div></div></div>
+
+  <div class="sec-h">1.1 · o que é uma acl</div>
+  <div class="card">
+    <p>Uma <b>ACL (Access Control List)</b> é a <b>caderneta de regras na guarita</b>. Como um porteiro que recebe instruções — "autorize o morador do 302, bloqueie o entregador de pizza do 501, quem não está na lista não entra" — a ACL diz ao roteador se cada pacote deve ser <b style="color:var(--ok)">permitido</b> ou <b style="color:var(--bad)">negado</b> com base em: <b>origem, destino, protocolo e porta (serviço)</b>.</p>
+  </div>
+  <div class="hint grn"><svg class="ic"><use href="#i-check"/></svg><span><b>3 leis da ACL:</b> ① é lida <b>de cima para baixo</b>, linha por linha. ② Para na <b>primeira</b> linha que casar com o pacote (o resto é ignorado). ③ Se ninguém casar → o pacote é <b>negado</b> (deny implícito).</span></div>
+
+  <div class="sec-h">1.2 · padrão × estendida</div>
+  <div class="card">
+    <table class="iptab">
+      <tr><th></th><th>Padrão (1–99)</th><th style="color:var(--acc)">Estendida (100–199)</th></tr>
+      <tr><td>Analisa</td><td>só o IP de <b>origem</b></td><td><b>origem + destino + protocolo + porta</b></td></tr>
+      <tr><td>Precisão</td><td>baixa</td><td>alta</td></tr>
+      <tr><td>Onde aplicar</td><td>perto do <b>destino</b></td><td>perto da <b>origem</b></td></tr>
+      <tr><td>Neste jogo</td><td style="color:var(--bad)">✘ não serve</td><td style="color:var(--ok)">✔ é o que usaremos</td></tr>
+    </table>
+  </div>
+
+  <div class="sec-h">1.3 · anatomia do comando — clique em cada parte</div>
+  <div class="anat" id="anatBox"></div>
+  <div id="anatDetail"></div>
+
+  <div class="sec-h">1.4 · máscara curinga (wildcard) + calculadora</div>
+  <div class="card">
+    <p>A wildcard usa <b style="color:var(--netB)">0</b> = "precisa ser exatamente igual" e <b style="color:var(--warn)">1</b> = "tanto faz". Conversão: <b>wildcard = 255 − máscara</b>, octeto a octeto. Atalhos: <code>host X</code> (um IP = 0.0.0.0) e <code>any</code> (tudo = 0.0.0.0 255.255.255.255).</p>
+    <div class="calc" style="margin-top:14px">
+      <div><label>IP de exemplo</label><input id="calcIp" value="172.22.34.66" spellcheck="false"></div>
+      <div><label>Máscara ou prefixo (ex.: /27 ou 255.255.255.224)</label><input id="calcMask" value="/27" spellcheck="false"></div>
+    </div>
+    <div class="calcOut" id="calcOut"></div>
+    <div class="hint" style="margin-bottom:0"><svg class="ic"><use href="#i-zap"/></svg><span>Teste com <b>/26</b>, <b>/27</b> e <b>/28</b> — são exatamente as três redes do jogo.</span></div>
+  </div>
+
+  <div class="sec-h">1.5 · deny implícito — a regra invisível</div>
+  <div class="hint red"><svg class="ic"><use href="#i-alert"/></svg><span><b>Toda ACL termina com um <code>deny any</code> invisível.</b> Se o pacote não casar com nenhuma linha, ele é barrado. Por isso a última linha escrita é quase sempre <code>access-list 100 permit ip any any</code>. Esquecer isso é o <b>erro nº 1</b>: o roteador bloqueia tudo, até o ping.</span></div>
+
+  <div class="sec-h">1.6 · onde aplicar: interface e direção</div>
+  <div class="card">
+    <p><code>ip access-group 100 in|out</code> — pense <b>em relação ao roteador</b>:</p>
+    <table class="iptab">
+      <tr><th>Direção</th><th>Significado</th><th>Exemplo do jogo</th></tr>
+      <tr><td style="color:var(--acc)">in</td><td>pacote <b>entrando</b> na interface (antes de rotear)</td><td>tráfego do PC1 chegando pela G0/0</td></tr>
+      <tr><td style="color:var(--netB)">out</td><td>pacote <b>saindo</b> da interface (depois de rotear)</td><td>resposta do servidor saindo pela G0/0</td></tr>
+    </table>
+    <div class="hint grn" style="margin-bottom:0"><svg class="ic"><use href="#i-check"/></svg><span><b>Regra de ouro:</b> ACL estendida → aplique o mais perto possível da <b>ORIGEM</b> (direção <b>in</b> na interface da LAN onde o PC está). Assim o tráfego ruim é barrado "logo na portaria", sem desperdiçar banda e sem atrapalhar o resto da rede.</span></div>
+  </div>
+</section>
+
+<!-- ============ 02 CENÁRIO ============ -->
+<section id="cenario">
+  <div class="m-head"><div class="m-code">S-02</div><div class="m-tt"><h2>Cenário &amp; topologia</h2><div class="m-sub">o mapa da missão — confira no jogo</div></div></div>
+
+  <svg id="topoSvg" viewBox="0 0 660 330">
+    <line class="tlink netA" x1="130" y1="88" x2="180" y2="88"/>
+    <line class="tlink netA" x1="234" y1="88" x2="310" y2="128"/>
+    <line class="tlink netB" x1="130" y1="228" x2="180" y2="228"/>
+    <line class="tlink netB" x1="234" y1="228" x2="310" y2="188"/>
+    <line class="tlink netF" x1="430" y1="158" x2="500" y2="158"/>
+    <line class="tlink netF" x1="554" y1="158" x2="600" y2="158"/>
+    <rect class="dbox" x="40" y="64" width="90" height="48" rx="4"/>
+    <text class="dlbl" x="85" y="84" text-anchor="middle" font-weight="600">PC1</text>
+    <text class="dip" x="85" y="99" text-anchor="middle">172.22.34.66</text>
+    <rect class="dsw" x="180" y="75" width="54" height="26" rx="3"/>
+    <text class="dlbl" x="207" y="92" text-anchor="middle" font-size="10">S1</text>
+    <rect class="dbox" x="310" y="118" width="120" height="70" rx="5" style="stroke:var(--acc)"/>
+    <text class="dlbl" x="370" y="146" text-anchor="middle" font-weight="700" font-size="15" fill="var(--acc)">R1</text>
+    <text class="dip" x="370" y="163" text-anchor="middle">roteador da portaria</text>
+    <text class="dip" x="318" y="120" fill="var(--netA)">g0/0</text>
+    <text class="dip" x="318" y="198" fill="var(--netB)">g0/1</text>
+    <text class="dip" x="404" y="150" fill="var(--netF)">g0/2</text>
+    <rect class="dbox" x="40" y="204" width="90" height="48" rx="4"/>
+    <text class="dlbl" x="85" y="224" text-anchor="middle" font-weight="600">PC2</text>
+    <text class="dip" x="85" y="239" text-anchor="middle">172.22.34.98</text>
+    <rect class="dsw" x="180" y="215" width="54" height="26" rx="3"/>
+    <text class="dlbl" x="207" y="232" text-anchor="middle" font-size="10">S2</text>
+    <rect class="dsw" x="500" y="145" width="54" height="26" rx="3"/>
+    <text class="dlbl" x="527" y="162" text-anchor="middle" font-size="10">S3</text>
+    <rect class="dbox" x="600" y="134" width="54" height="48" rx="4" style="stroke:var(--netF)"/>
+    <text class="dlbl" x="627" y="154" text-anchor="middle" font-weight="600">SRV</text>
+    <text class="dip" x="627" y="169" text-anchor="middle">.34.62</text>
+    <text class="dip" x="85" y="128" text-anchor="middle" fill="var(--netA)">172.22.34.64/27</text>
+    <text class="dip" x="85" y="268" text-anchor="middle" fill="var(--netB)">172.22.34.96/28</text>
+    <text class="dip" x="527" y="196" text-anchor="middle" fill="var(--netF)">172.22.34.0/26</text>
+  </svg>
+  <div class="legend">
+    <span><i style="background:var(--netA)"></i>rede do PC1 · /27</span>
+    <span><i style="background:var(--netB)"></i>rede do PC2 · /28</span>
+    <span><i style="background:var(--netF)"></i>rede do servidor · /26</span>
+  </div>
+
+  <div class="sec-h">tabela de endereços</div>
+  <div class="card">
+    <table class="iptab">
+      <tr><th>Equipamento</th><th>IPv4</th><th>Máscara</th><th>Gateway</th><th>Rede</th></tr>
+      <tr><td>PC1</td><td class="n">172.22.34.66</td><td>255.255.255.224 (/27)</td><td>172.22.34.65</td><td>172.22.34.64/27</td></tr>
+      <tr><td>PC2</td><td class="t">172.22.34.98</td><td>255.255.255.240 (/28)</td><td>172.22.34.97</td><td>172.22.34.96/28</td></tr>
+      <tr><td>SERVIDOR (FTP/Telnet/Web)</td><td class="f">172.22.34.62</td><td>255.255.255.192 (/26)</td><td>172.22.34.1</td><td>172.22.34.0/26</td></tr>
+      <tr><td>R1 G0/0</td><td>172.22.34.65</td><td>/27</td><td>—</td><td>rede do PC1</td></tr>
+      <tr><td>R1 G0/1</td><td>172.22.34.97</td><td>/28</td><td>—</td><td>rede do PC2</td></tr>
+      <tr><td>R1 G0/2</td><td>172.22.34.1</td><td>/26</td><td>—</td><td>rede do servidor</td></tr>
+    </table>
+    <p style="margin-top:8px"><b>Portas de serviço:</b> FTP = 21 (dados = 20) · Telnet = 23 · HTTP/www = 80 · HTTPS = 443 · ping usa <b>ICMP</b>.</p>
+  </div>
+</section>
+
+<!-- ============ 03 PASSOS ============ -->
+<section id="passos">
+  <div class="m-head"><div class="m-code">S-03</div><div class="m-tt"><h2>Passo a passo</h2><div class="m-sub">método em 6 passos — com comandos copiáveis</div></div></div>
+
+  <ol class="steps">
+    <li><b>Reconheça o terreno.</b> Entre no roteador e veja o estado atual das interfaces.
+      <div class="cli"><div class="cli-h"><span>Router · modo usuário</span><button class="copy"><svg class="ic"><use href="#i-copy"/></svg> copiar</button></div><pre>enable
+show ip interface brief</pre></div>
+    </li>
+    <li><b>Configure o roteador.</b> Hostname, endereço IP das 3 interfaces e ative cada uma.
+      <div class="cli"><div class="cli-h"><span>Router · configuração base</span><button class="copy"><svg class="ic"><use href="#i-copy"/></svg> copiar</button></div><pre>configure terminal
+hostname R1
+interface g0/0
+ ip address 172.22.34.65 255.255.255.224
+ no shutdown
+interface g0/1
+ ip address 172.22.34.97 255.255.255.240
+ no shutdown
+interface g0/2
+ ip address 172.22.34.1 255.255.255.192
+ no shutdown
+end</pre></div>
+      Conferir: <code>show ip interface brief</code> → todas devem aparecer <b>up/up</b>.
+    </li>
+    <li><b>Traduza a política em regras.</b> Leia o briefing da missão e monte a tabela no <a href="#caderno">caderno</a>: <i>"quem não pode fazer o quê, para onde"</i> → uma linha de ACL para cada proibição + um <code>permit ip any any</code> no final.</li>
+    <li><b>Crie as ACLs</b> (da regra mais específica para a mais genérica). Exemplo ilustrativo:
+      <div class="cli"><div class="cli-h"><span>R1(config) · ACL da rede do PC1 — exemplo</span><button class="copy"><svg class="ic"><use href="#i-copy"/></svg> copiar</button></div><pre>configure terminal
+access-list 100 deny tcp host 172.22.34.66 host 172.22.34.62 eq ftp
+access-list 100 deny tcp host 172.22.34.66 host 172.22.34.62 eq telnet
+access-list 100 permit ip any any
+end</pre></div>
+    </li>
+    <li><b>Aplique a ACL</b> na interface de entrada da rede de origem, direção <b>in</b>:
+      <div class="cli"><div class="cli-h"><span>R1(config) · aplicar na interface</span><button class="copy"><svg class="ic"><use href="#i-copy"/></svg> copiar</button></div><pre>interface g0/0
+ ip access-group 100 in
+end</pre></div>
+    </li>
+    <li><b>Teste e ajuste.</b> Nas abas PC1/PC2 do jogo, e depois no roteador:
+      <div class="cli"><div class="cli-h"><span>PC1 / PC2 · testes</span><button class="copy"><svg class="ic"><use href="#i-copy"/></svg> copiar</button></div><pre>ipconfig
+ping 172.22.34.62
+ftp 172.22.34.62
+telnet 172.22.34.62
+browser 172.22.34.62</pre></div>
+      <div class="cli"><div class="cli-h"><span>R1# · verificação</span><button class="copy"><svg class="ic"><use href="#i-copy"/></svg> copiar</button></div><pre>show access-lists
+show ip interface g0/0
+show running-config</pre></div>
+      💡 <code>show access-lists</code> mostra os <b>contadores de match</b> — se a linha errada tem hits, é ela a culpada! Para reescrever uma ACL numerada: <code>no access-list 100</code> apaga a lista inteira → recrie do zero.
+    </li>
+  </ol>
+</section>
+
+<!-- ============ 04 SOLUÇÕES ============ -->
+<section id="solucoes">
+  <div class="m-head"><div class="m-code">S-04</div><div class="m-tt"><h2>Solução-modelo</h2><div class="m-sub">só depois de tentar! confira a política exata no briefing</div></div></div>
+
+  <div class="hint red"><svg class="ic"><use href="#i-alert"/></svg><span>As receitas abaixo seguem as políticas <b>clássicas</b> deste laboratório. Confira o briefing da missão: os IPs e serviços podem variar. <b>Copiar sem entender = reprovado na fase de diagnóstico 😉</b></span></div>
+
+  <div class="sec-h">receita a · pc1 sem ftp/telnet · pc2 sem telnet</div>
+  <div class="reveal" data-rv="a">
+    <div class="rv-ov"><button class="rv-btn"><svg class="ic"><use href="#i-lock"/></svg> revelar solução</button></div>
+    <div class="cli"><div class="cli-h"><span>R1(config) · receita a</span><button class="copy"><svg class="ic"><use href="#i-copy"/></svg> copiar</button></div><pre>configure terminal
+! ACL 100 — entrada pela G0/0 (rede do PC1)
+access-list 100 deny tcp host 172.22.34.66 host 172.22.34.62 eq ftp
+access-list 100 deny tcp host 172.22.34.66 host 172.22.34.62 eq 20
+access-list 100 deny tcp host 172.22.34.66 host 172.22.34.62 eq telnet
+access-list 100 permit ip any any
+interface g0/0
+ ip access-group 100 in
+! ACL 101 — entrada pela G0/1 (rede do PC2)
+access-list 101 deny tcp host 172.22.34.98 host 172.22.34.62 eq telnet
+access-list 101 permit ip any any
+interface g0/1
+ ip access-group 101 in
+end</pre></div>
+  </div>
+
+  <div class="sec-h">receita b · pc1 só pode acessar o servidor via http</div>
+  <div class="reveal" data-rv="b">
+    <div class="rv-ov"><button class="rv-btn"><svg class="ic"><use href="#i-lock"/></svg> revelar solução</button></div>
+    <div class="cli"><div class="cli-h"><span>R1(config) · receita b</span><button class="copy"><svg class="ic"><use href="#i-copy"/></svg> copiar</button></div><pre>configure terminal
+access-list 100 permit tcp host 172.22.34.66 host 172.22.34.62 eq www
+access-list 100 deny   ip  host 172.22.34.66 host 172.22.34.62
+access-list 100 permit ip any any
+interface g0/0
+ ip access-group 100 in
+end</pre></div>
+  </div>
+
+  <div class="sec-h">variação · acl nomeada (mais fácil de editar)</div>
+  <div class="reveal" data-rv="c">
+    <div class="rv-ov"><button class="rv-btn"><svg class="ic"><use href="#i-lock"/></svg> revelar solução</button></div>
+    <div class="cli"><div class="cli-h"><span>R1(config) · ACL nomeada</span><button class="copy"><svg class="ic"><use href="#i-copy"/></svg> copiar</button></div><pre>configure terminal
+ip access-list extended PORTARIA
+ deny tcp host 172.22.34.66 host 172.22.34.62 eq ftp
+ permit ip any any
+exit
+interface g0/0
+ ip access-group PORTARIA in
+end</pre></div>
+  </div>
+</section>
+
+<!-- ============ 05 DEBUG ============ -->
+<section id="debug">
+  <div class="m-head"><div class="m-code">S-05</div><div class="m-tt"><h2>Prova de fogo &amp; erros clássicos</h2><div class="m-sub">como testar como um profissional</div></div></div>
+
+  <div class="sec-h">sintoma → causa</div>
+  <div class="card">
+    <table class="iptab">
+      <tr><th>Sintoma</th><th>Causa provável</th></tr>
+      <tr><td style="color:var(--bad)">Tudo parou (até o ping)</td><td>Faltou o <code>permit ip any any</code> — o deny implícito barrou tudo</td></tr>
+      <tr><td style="color:var(--warn)">O bloqueio não acontece</td><td>Direção errada (in/out), interface errada, ou ACL criada mas <b>não aplicada</b></td></tr>
+      <tr><td style="color:var(--warn)">Bloqueia mais do que devia</td><td>Ordem errada: um <code>permit</code> genérico antes do <code>deny</code> específico (a ACL para no 1º match!)</td></tr>
+      <tr><td style="color:var(--bad)">Nenhuma resposta de nada</td><td>Interface sem IP ou esqueceu o <code>no shutdown</code></td></tr>
+      <tr><td>Modifiquei a ACL e nada mudou</td><td>ACL numerada só se edita apagando: <code>no access-list 100</code> + recriar</td></tr>
+    </table>
+  </div>
+
+  <div class="sec-h">método do detetive (para o caso final)</div>
+  <div class="card">
+    <ol class="steps" style="counter-reset:st">
+      <li>Rode <b>todos</b> os testes em PC1 e PC2. Anote: <b>o que deveria acontecer × o que aconteceu</b>.</li>
+      <li><code>show access-lists</code> → encontre a linha cujo <b>contador de matches</b> dispara nos testes que falham.</li>
+      <li><code>show ip interface g0/x</code> → confira <b>onde</b> (interface/direção) cada ACL está aplicada.</li>
+      <li>Acuse a linha correta no caso e feche a operação. 🕵️</li>
+    </ol>
+  </div>
+  <div class="hint"><svg class="ic"><use href="#i-zap"/></svg><span>No Packet Tracer real, use o modo <b>Simulation</b> para assistir o pacote sendo barrado na interface — visualiza exatamente a direção in/out.</span></div>
+</section>
+
+<!-- ============ 06 VÍDEOS ============ -->
+<section id="videos">
+  <div class="m-head"><div class="m-code">S-06</div><div class="m-tt"><h2>Vídeos &amp; sites</h2><div class="m-sub">para estudar antes, durante e depois</div></div></div>
+
+  <div class="sec-h">vídeos — abrem uma busca no youtube</div>
+  <div class="vids">
+    <a class="vid" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=acl+estendida+packet+tracer"><div class="pl"><svg class="ic"><use href="#i-play"/></svg></div><b>ACL Estendida no Packet Tracer — passo a passo (PT-BR)</b><small>busca pronta · canais: Professor Ramos, Bóson Treinamentos</small></a>
+    <a class="vid" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=configure+extended+acls+scenario+1+packet+tracer"><div class="pl"><svg class="ic"><use href="#i-play"/></svg></div><b>Este laboratório resolvido (Configure Extended ACLs · Scenario 1)</b><small>busca pronta · comparável ao jogo</small></a>
+    <a class="vid" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=wildcard+mask+cisco+explica%C3%A7%C3%A3o"><div class="pl"><svg class="ic"><use href="#i-play"/></svg></div><b>Máscara curinga (wildcard) sem decoreba</b><small>busca pronta · /26 · /27 · /28</small></a>
+    <a class="vid" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=extended+access+list+explained"><div class="pl"><svg class="ic"><use href="#i-play"/></svg></div><b>Extended ACL explained (inglês — ative as legendas)</b><small>busca pronta · NetworkChuck, David Bombal</small></a>
+    <a class="vid" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=subnetting+explica%C3%A7%C3%A3o+portugu%C3%AAs"><div class="pl"><svg class="ic"><use href="#i-play"/></svg></div><b>Subnetting em minutos (revisão de /26 /27 /28)</b><small>busca pronta · Bóson Treinamentos</small></a>
+    <a class="vid" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=implicit+deny+acl+cisco"><div class="pl"><svg class="ic"><use href="#i-play"/></svg></div><b>Deny implícito e a ordem das regras</b><small>busca pronta · o erro nº 1 dos alunos</small></a>
+  </div>
+
+  <div class="sec-h">sites de referência</div>
+  <div>
+    <a class="site" target="_blank" rel="noopener" href="https://www.cisco.com/c/en/us/support/docs/ip/access-lists/26448-ACLsamples.html"><svg class="ic"><use href="#i-book"/></svg><span><b>Cisco · Configuring Commonly Used IP ACLs (doc oficial)</b><small>exemplos oficiais de ACLs padrão e estendidas — a "bíblia"</small></span></a>
+    <a class="site" target="_blank" rel="noopener" href="https://www.netacad.com"><svg class="ic"><use href="#i-award"/></svg><span><b>Cisco Networking Academy</b><small>baixar o Packet Tracer + cursos gratuitos (CCNA)</small></span></a>
+    <a class="site" target="_blank" rel="noopener" href="https://learningnetwork.cisco.com"><svg class="ic"><use href="#i-net"/></svg><span><b>Cisco Learning Network</b><small>comunidade, fóruns e materiais de estudo</small></span></a>
+    <a class="site" target="_blank" rel="noopener" href="https://study-ccna.com/"><svg class="ic"><use href="#i-term"/></svg><span><b>Study-CCNA (pesquisar "ACL")</b><small>guia em inglês direto ao ponto para o CCNA</small></span></a>
+    <a class="site" target="_blank" rel="noopener" href="https://www.geeksforgeeks.org/computer-networks/"><svg class="ic"><use href="#i-zap"/></svg><span><b>GeeksforGeeks · Computer Networks (pesquisar "ACL")</b><small>resumos rápidos com exemplos</small></span></a>
+  </div>
+</section>
+
+<!-- ============ 07 QUIZ ============ -->
+<section id="quiz">
+  <div class="m-head"><div class="m-code">S-07</div><div class="m-tt"><h2>Quiz de aquecimento</h2><div class="m-sub">10 questões · feedback instantâneo · se errar, leia a explicação</div></div></div>
+  <div id="quizScore" class="noprint"><span style="font-family:var(--disp);font-weight:700;color:var(--acc)" id="scoreTxt">0 / 10</span><div class="xpbar"><i id="scoreFill"></i></div><button class="tbtn" id="quizReset"><svg class="ic"><use href="#i-rot"/></svg> refazer</button></div>
+  <div id="quizBox"></div>
+</section>
+
+<!-- ============ 08 CADERNO ============ -->
+<section id="caderno">
+  <div class="m-head"><div class="m-code">S-08</div><div class="m-tt"><h2>Caderno do aluno</h2><div class="m-sub">preencha durante o jogo · salva automaticamente · imprima ou baixe o .txt</div></div></div>
+
+  <div class="blk">
+    <h4>identificação</h4>
+    <div class="cad-head">
+      <div><label style="font-size:10px;color:var(--faint);letter-spacing:.14em;text-transform:uppercase">Nome</label><input class="fill" style="width:100%" data-k="nome" data-l="Nome"></div>
+      <div><label style="font-size:10px;color:var(--faint);letter-spacing:.14em;text-transform:uppercase">Turma</label><input class="fill" style="width:100%" data-k="turma" data-l="Turma"></div>
+      <div><label style="font-size:10px;color:var(--faint);letter-spacing:.14em;text-transform:uppercase">Data</label><input class="fill" style="width:100%" data-k="data" data-l="Data"></div>
+    </div>
+  </div>
+
+  <div class="blk">
+    <h4><svg class="ic"><use href="#i-book"/></svg> bloco 1 — aquecimento teórico</h4>
+    <p>1.1. Uma ACL diz ao roteador se um pacote deve ser <input class="fill f1" data-k="b1_1a" data-l="1.1 ação 1"> ou <input class="fill f1" data-k="b1_1b" data-l="1.1 ação 2">.</p>
+    <p>1.2. A ACL padrão analisa apenas o IP de <input class="fill f1" data-k="b1_2a" data-l="1.2 padrão">. A estendida analisa origem, <input class="fill f1" data-k="b1_2b" data-l="1.2 ext 1">, <input class="fill f1" data-k="b1_2c" data-l="1.2 ext 2"> e <input class="fill f1" data-k="b1_2d" data-l="1.2 ext 3">.</p>
+    <p>1.3. ACLs estendidas são numeradas de <input class="fill fn" data-k="b1_3a" data-l="1.3 de"> a <input class="fill fn" data-k="b1_3b" data-l="1.3 até">.</p>
+    <p>1.4. Toda ACL termina com um <code>deny any</code> <input class="fill f1" data-k="b1_4a" data-l="1.4 tipo de deny">. Por isso a última linha costuma ser: <input class="fill f3" data-k="b1_4b" data-l="1.4 última linha"></p>
+    <p>1.5. A ACL é lida de <input class="fill f1" data-k="b1_5a" data-l="1.5 de onde"> para <input class="fill f1" data-k="b1_5b" data-l="1.5 para onde">, e para na <input class="fill f1" data-k="b1_5c" data-l="1.5 qual regra"> regra que casar.</p>
+    <p>1.6. ACL estendida fica perto da <input class="fill f1" data-k="b1_6a" data-l="1.6 estendida perto de">; ACL padrão perto do <input class="fill f1" data-k="b1_6b" data-l="1.6 padrão perto de">.</p>
+    <p>1.7. Para filtrar um serviço usamos o protocolo <input class="fill fn" data-k="b1_7a" data-l="1.7 proto serviço">; para filtrar ping, <input class="fill fn" data-k="b1_7b" data-l="1.7 proto ping">.</p>
+  </div>
+
+  <div class="blk">
+    <h4><svg class="ic"><use href="#i-net"/></svg> bloco 2 — máscara curinga</h4>
+    <p style="font-size:12.5px">Lembre: wildcard = 255 − máscara. <b style="color:var(--netB)">0</b> = exato · <b style="color:var(--warn)">1</b> = tanto faz.</p>
+    <table class="work">
+      <thead><tr><th>Rede</th><th>Máscara</th><th>Wildcard</th><th>1º host</th><th>Último host</th><th>Broadcast</th></tr></thead>
+      <tbody>
+        <tr><td>172.22.34.0/26</td><td><input data-k="b2_m1" data-l="B2 máscara /26"></td><td><input data-k="b2_w1" data-l="B2 wildcard /26"></td><td><input data-k="b2_h1a" data-l="B2 1º host /26"></td><td><input data-k="b2_h1b" data-l="B2 último host /26"></td><td><input data-k="b2_b1" data-l="B2 broadcast /26"></td></tr>
+        <tr><td>172.22.34.64/27</td><td><input data-k="b2_m2" data-l="B2 máscara /27"></td><td><input data-k="b2_w2" data-l="B2 wildcard /27"></td><td><input data-k="b2_h2a" data-l="B2 1º host /27"></td><td><input data-k="b2_h2b" data-l="B2 último host /27"></td><td><input data-k="b2_b2" data-l="B2 broadcast /27"></td></tr>
+        <tr><td>172.22.34.96/28</td><td><input data-k="b2_m3" data-l="B2 máscara /28"></td><td><input data-k="b2_w3" data-l="B2 wildcard /28"></td><td><input data-k="b2_h3a" data-l="B2 1º host /28"></td><td><input data-k="b2_h3b" data-l="B2 último host /28"></td><td><input data-k="b2_b3" data-l="B2 broadcast /28"></td></tr>
+      </tbody>
+    </table>
+    <p>2.2. Abrevie: <code>172.22.34.62 0.0.0.0</code> → <input class="fill f2" data-k="b2_2a" data-l="2.2a abreviação host"> &nbsp;·&nbsp; <code>0.0.0.0 255.255.255.255</code> → <input class="fill f2" data-k="b2_2b" data-l="2.2b abreviação any"></p>
+    <p>2.3. Wildcard de "a rede inteira do PC2": <input class="fill f2" data-k="b2_3" data-l="2.3 wildcard rede PC2"></p>
+  </div>
+
+  <div class="blk">
+    <h4><svg class="ic"><use href="#i-net"/></svg> bloco 3 — mapeando o cenário</h4>
+    <table class="work">
+      <thead><tr><th>Equipamento</th><th>IPv4</th><th>Máscara</th><th>Gateway</th></tr></thead>
+      <tbody>
+        <tr><td>PC1</td><td><input data-k="b3_pc1ip" data-l="B3 PC1 ip"></td><td><input data-k="b3_pc1mk" data-l="B3 PC1 máscara"></td><td><input data-k="b3_pc1gw" data-l="B3 PC1 gw"></td></tr>
+        <tr><td>PC2</td><td><input data-k="b3_pc2ip" data-l="B3 PC2 ip"></td><td><input data-k="b3_pc2mk" data-l="B3 PC2 máscara"></td><td><input data-k="b3_pc2gw" data-l="B3 PC2 gw"></td></tr>
+        <tr><td>Servidor</td><td><input data-k="b3_srvip" data-l="B3 SRV ip"></td><td><input data-k="b3_srvmk" data-l="B3 SRV máscara"></td><td><input data-k="b3_srvgw" data-l="B3 SRV gw"></td></tr>
+        <tr><td>R1 G0/0</td><td><input data-k="b3_g00" data-l="B3 g0/0 ip"></td><td><input data-k="b3_g00mk" data-l="B3 g0/0 máscara"></td><td>—</td></tr>
+        <tr><td>R1 G0/1</td><td><input data-k="b3_g01" data-l="B3 g0/1 ip"></td><td><input data-k="b3_g01mk" data-l="B3 g0/1 máscara"></td><td>—</td></tr>
+        <tr><td>R1 G0/2</td><td><input data-k="b3_g02" data-l="B3 g0/2 ip"></td><td><input data-k="b3_g02mk" data-l="B3 g0/2 máscara"></td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p>3.1. A rede do servidor está na interface <input class="fill fn" data-k="b3_1" data-l="3.1 interface do servidor">.</p>
+    <p>3.2. O tráfego do PC1 ao servidor <b>entra</b> no roteador pela interface <input class="fill fn" data-k="b3_2a" data-l="3.2 interface"> na direção <input class="fill fn" data-k="b3_2b" data-l="3.2 direção">.</p>
+    <p>3.3. Portas: FTP = <input class="fill fn" data-k="b3_3a" data-l="3.3 ftp"> · Telnet = <input class="fill fn" data-k="b3_3b" data-l="3.3 telnet"> · HTTP = <input class="fill fn" data-k="b3_3c" data-l="3.3 http"> · ping = <input class="fill fn" data-k="b3_3d" data-l="3.3 ping proto"></p>
+  </div>
+
+  <div class="blk">
+    <h4><svg class="ic"><use href="#i-flag"/></svg> bloco 4 — planejamento (antes de configurar!)</h4>
+    <table class="work">
+      <thead><tr><th>#</th><th>Política em português</th><th>Rascunho da linha ACL</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><input data-k="b4_p1" data-l="B4 política 1"></td><td><input data-k="b4_c1" data-l="B4 comando 1"></td></tr>
+        <tr><td>2</td><td><input data-k="b4_p2" data-l="B4 política 2"></td><td><input data-k="b4_c2" data-l="B4 comando 2"></td></tr>
+        <tr><td>3</td><td><input data-k="b4_p3" data-l="B4 política 3"></td><td><input data-k="b4_c3" data-l="B4 comando 3"></td></tr>
+        <tr><td>4</td><td>Última linha (sempre!)</td><td><input data-k="b4_c4" data-l="B4 última linha"></td></tr>
+      </tbody>
+    </table>
+    <p>Aplicação: ACL <input class="fill fn" data-k="b4_acl1" data-l="B4 acl 1 nº"> na interface <input class="fill fn" data-k="b4_if1" data-l="B4 acl 1 if">, direção <input class="fill fn" data-k="b4_dir1" data-l="B4 acl 1 dir"> (rede do PC1) · ACL <input class="fill fn" data-k="b4_acl2" data-l="B4 acl 2 nº"> na interface <input class="fill fn" data-k="b4_if2" data-l="B4 acl 2 if">, direção <input class="fill fn" data-k="b4_dir2" data-l="B4 acl 2 dir"> (rede do PC2).</p>
+  </div>
+
+  <div class="blk">
+    <h4><svg class="ic"><use href="#i-check"/></svg> bloco 5 — checklist de configuração</h4>
+    <label class="tsk"><input type="checkbox" data-k="c1"><span>Entrar no modo privilegiado (<code>enable</code>)</span></label>
+    <label class="tsk"><input type="checkbox" data-k="c2"><span><code>configure terminal</code> + hostname</span></label>
+    <label class="tsk"><input type="checkbox" data-k="c3"><span>Configurar IP das 3 interfaces + <code>no shutdown</code></span></label>
+    <label class="tsk"><input type="checkbox" data-k="c4"><span>Conferir com <code>show ip interface brief</code> (todas up/up)</span></label>
+    <label class="tsk"><input type="checkbox" data-k="c5"><span>Criar ACL da rede do PC1 (específico → genérico + <code>permit ip any any</code>)</span></label>
+    <label class="tsk"><input type="checkbox" data-k="c6"><span>Aplicar com <code>ip access-group &lt;n&gt; in</code> na interface correta</span></label>
+    <label class="tsk"><input type="checkbox" data-k="c7"><span>Criar + aplicar a ACL da rede do PC2</span></label>
+    <label class="tsk"><input type="checkbox" data-k="c8"><span>Conferir com <code>show access-lists</code> e <code>show ip interface g0/0</code></span></label>
+  </div>
+
+  <div class="blk">
+    <h4><svg class="ic"><use href="#i-zap"/></svg> bloco 6 — registro de testes</h4>
+    <table class="work">
+      <thead><tr><th>Teste</th><th>Esperado</th><th>Observado</th><th>✔/✘</th></tr></thead>
+      <tbody>
+        <tr><td>PC1 → ping servidor</td><td><input data-k="t1e" data-l="T1 esperado"></td><td><input data-k="t1o" data-l="T1 observado"></td><td><input data-k="t1x" data-l="T1 ok?"></td></tr>
+        <tr><td>PC1 → FTP servidor</td><td><input data-k="t2e" data-l="T2 esperado"></td><td><input data-k="t2o" data-l="T2 observado"></td><td><input data-k="t2x" data-l="T2 ok?"></td></tr>
+        <tr><td>PC1 → Telnet servidor</td><td><input data-k="t3e" data-l="T3 esperado"></td><td><input data-k="t3o" data-l="T3 observado"></td><td><input data-k="t3x" data-l="T3 ok?"></td></tr>
+        <tr><td>PC1 → Web servidor</td><td><input data-k="t4e" data-l="T4 esperado"></td><td><input data-k="t4o" data-l="T4 observado"></td><td><input data-k="t4x" data-l="T4 ok?"></td></tr>
+        <tr><td>PC2 → ping servidor</td><td><input data-k="t5e" data-l="T5 esperado"></td><td><input data-k="t5o" data-l="T5 observado"></td><td><input data-k="t5x" data-l="T5 ok?"></td></tr>
+        <tr><td>PC2 → FTP servidor</td><td><input data-k="t6e" data-l="T6 esperado"></td><td><input data-k="t6o" data-l="T6 observado"></td><td><input data-k="t6x" data-l="T6 ok?"></td></tr>
+        <tr><td>PC2 → Telnet servidor</td><td><input data-k="t7e" data-l="T7 esperado"></td><td><input data-k="t7o" data-l="T7 observado"></td><td><input data-k="t7x" data-l="T7 ok?"></td></tr>
+        <tr><td>PC2 → Web servidor</td><td><input data-k="t8e" data-l="T8 esperado"></td><td><input data-k="t8o" data-l="T8 observado"></td><td><input data-k="t8x" data-l="T8 ok?"></td></tr>
+      </tbody>
+    </table>
+    <p>Se algo falhou, qual linha da ACL está envolvida? (use <code>show access-lists</code> e os contadores)</p>
+    <textarea class="fill" data-k="b6_obs" data-l="B6 análise de falha"></textarea>
+  </div>
+
+  <div class="blk">
+    <h4><svg class="ic"><use href="#i-alert"/></svg> bloco 7 — caso final (diagnóstico)</h4>
+    <p>Linha com contadores anormais em <code>show access-lists</code>: <input class="fill f3" data-k="b7_l" data-l="B7 linha suspeita"></p>
+    <p>ACL aplicada em qual interface/direção (<code>show ip interface g0/x</code>): <input class="fill f3" data-k="b7_i" data-l="B7 aplicação"></p>
+    <p style="margin:8px 0 6px">Minha acusação (linha + motivo):</p>
+    <textarea class="fill" data-k="b7_acc" data-l="B7 acusação final"></textarea>
+  </div>
+
+  <div class="blk">
+    <h4><svg class="ic"><use href="#i-award"/></svg> bloco 8 — reflexão final</h4>
+    <p><b>1.</b> Por que a ACL estendida pode ficar perto da origem, mas a padrão precisa ficar perto do destino?</p>
+    <textarea class="fill" data-k="b8_1" data-l="B8 questão 1"></textarea>
+    <p><b>2.</b> O que aconteceria se esquecêssemos o <code>permit ip any any</code>? Por quê?</p>
+    <textarea class="fill" data-k="b8_2" data-l="B8 questão 2"></textarea>
+    <p><b>3.</b> Diferença entre <code>in</code> e <code>out</code> na mesma interface — dê um exemplo do jogo.</p>
+    <textarea class="fill" data-k="b8_3" data-l="B8 questão 3"></textarea>
+    <p><b>4.</b> Para remover UMA linha de uma ACL numerada: qual a limitação do IOS e qual o procedimento?</p>
+    <textarea class="fill" data-k="b8_4" data-l="B8 questão 4"></textarea>
+  </div>
+
+  <div class="cadBtns noprint">
+    <button class="tbtn" id="dlBtn"><svg class="ic"><use href="#i-down"/></svg> baixar respostas (.txt)</button>
+    <button class="tbtn" onclick="window.print()"><svg class="ic"><use href="#i-print"/></svg> imprimir caderno</button>
+  </div>
+</section>
+
+<!-- ============ 09 PROFESSOR ============ -->
+<section id="professor">
+  <div class="m-head"><div class="m-code">S-09</div><div class="m-tt"><h2>Modo professor 🔓</h2><div class="m-sub">gabarito · plano de aula · rubrica — não esqueça de desligar antes de projetar!</div></div></div>
+
+  <div class="tzone">
+    <h4><svg class="ic"><use href="#i-key"/></svg> gabarito rápido</h4>
+    <p><b>B1:</b> permitir/negar · origem | destino/protocolo/porta · 100–199 · implícito + <code>permit ip any any</code> · cima→baixo, primeira · origem/destino · tcp/icmp</p>
+    <p><b>B2:</b></p>
+    <table class="iptab">
+      <tr><th>Rede</th><th>Máscara</th><th>Wildcard</th><th>Hosts</th><th>Broadcast</th></tr>
+      <tr><td>/26</td><td>255.255.255.192</td><td>0.0.0.63</td><td>.1–.62</td><td>.63</td></tr>
+      <tr><td>/27</td><td>255.255.255.224</td><td>0.0.0.31</td><td>.65–.94</td><td>.95</td></tr>
+      <tr><td>/28</td><td>255.255.255.240</td><td>0.0.0.15</td><td>.97–.110</td><td>.111</td></tr>
+    </table>
+    <p>2.2: <code>host 172.22.34.62</code> / <code>any</code> · 2.3: <code>0.0.0.15</code></p>
+    <p><b>B3:</b> servidor .34.62/26 → G0/2 · PC1 entra pela G0/0 <b>in</b> · FTP 21, Telnet 23, HTTP 80, ICMP</p>
+    <p><b>B4:</b> conferir que todas as ACLs terminam com <code>permit ip any any</code> e apontam para <b>in</b> em G0/0 e G0/1.</p>
+    <p><b>B8 (modelo):</b> ① a estendida conhece o destino, então filtra "na portaria" sem afetar outros destinos; a padrão só vê origem. ② o deny implícito barraria TODO o tráfego que atravessa a ACL. ③ in = avaliado ao entrar (antes de rotear); out = ao sair; ex.: ACL do PC1 em G0/0 in. ④ numerada não edita linha única: <code>no access-list 100</code> e recriar (nomeadas permitem editar linha a linha).</p>
+    <p><b>Quiz:</b> 1-B · 2-C · 3-B · 4-A · 5-B · 6-B · 7-B · 8-A · 9-B · 10-B</p>
+  </div>
+
+  <div class="tzone">
+    <h4><svg class="ic"><use href="#i-book"/></svg> plano de aula (2h)</h4>
+    <table class="iptab">
+      <tr><th>Tempo</th><th>Atividade</th></tr>
+      <tr><td>0–10</td><td>Acolhida + contexto da missão (S-00)</td></tr>
+      <tr><td>10–30</td><td>Teoria S-01 com perguntas rápidas + calculadora de wildcard ao vivo</td></tr>
+      <tr><td>30–40</td><td>Alunos preenchem Blocos 1–2 · correção coletiva</td></tr>
+      <tr><td>40–50</td><td>Demo guiada no projetor: endereçar interfaces (S-03 passos 1–2)</td></tr>
+      <tr><td>50–80</td><td>Mão na massa: missões do jogo + Blocos 3–6 (guia S-02/S-03 aberto)</td></tr>
+      <tr><td>80–95</td><td>Caso final de diagnóstico (Bloco 7)</td></tr>
+      <tr><td>95–110</td><td>Correção de erros comuns (S-05) + discussão do Bloco 8</td></tr>
+      <tr><td>110–120</td><td>Certificado no jogo + entrega do caderno (.txt ou impresso)</td></tr>
+    </table>
+    <p style="margin-top:8px"><b>Diferenciação:</b> quem terminar antes reconfigura com <b>ACL nomeada</b> ou testa <code>out</code> no lugar de <code>in</code> e registra a diferença no Bloco 8.</p>
+  </div>
+
+  <div class="tzone">
+    <h4><svg class="ic"><use href="#i-award"/></svg> rubrica sugerida (0–10)</h4>
+    <table class="iptab">
+      <tr><th>Critério</th><th>Peso</th></tr>
+      <tr><td>Blocos 1–2 (teoria + wildcard)</td><td>2,0</td></tr>
+      <tr><td>Blocos 3–4 (cenário + planejamento antes de digitar)</td><td>2,0</td></tr>
+      <tr><td>Bloco 5 (checklist completo no jogo)</td><td>1,0</td></tr>
+      <tr><td>Bloco 6 (testes: esperado × observado consistente)</td><td>2,0</td></tr>
+      <tr><td>Bloco 7 (acusação correta no caso final, justificada)</td><td>1,5</td></tr>
+      <tr><td>Bloco 8 (reflexão com próprio vocabulário)</td><td>1,5</td></tr>
+    </table>
+    <p style="margin-top:8px"><b>Nota sobre o caso final:</b> no jogo, a fase de diagnóstico planta um defeito na configuração (linha ACL, direção ou ACL não aplicada). Avalie a <b>justificativa</b> com base nos contadores de match, não só a resposta final.</p>
+  </div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <p><b style="color:var(--ink)">Manual de Campo — Operação Portaria</b> · material de apoio ao desafio baseado no laboratório oficial <i>Cisco Packet Tracer — Configure Extended ACLs (Scenario 1)</i> · uso educacional.</p>
+  <p class="noprint" style="margin-top:8px"><a href="portaria.html" target="_blank">▶ Abrir o jogo (portaria.html)</a> · progresso do caderno e do quiz fica salvo neste navegador</p>
+</footer>
+
+<div id="toastHost"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const K='portaria-manual-v1';
+const ic=n=>'<svg class="ic"><use href="#i-'+n+'"/></svg>';
+
+/* ---------- estado ---------- */
+let S;
+try{S=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){S={}}
+S.cad=S.cad||{}; S.quiz=S.quiz||{}; S.rev=S.rev||{}; S.teacher=!!S.teacher;
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+
+function toast(msg,ok){
+  const d=document.createElement('div');d.className='toast'+(ok?' ok':'');
+  d.innerHTML=ic(ok?'check':'zap')+'<span>'+msg+'</span>';
+  $('#toastHost').appendChild(d);
+  setTimeout(()=>{d.classList.add('out');setTimeout(()=>d.remove(),350)},3200);
+}
+
+/* ---------- nav ativa ---------- */
+const navLinks=$$('#side .mnav');
+const obs=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting){
+    navLinks.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id));
+  }});
+},{rootMargin:'-30% 0px -60% 0px'});
+ $$('main section').forEach(s=>obs.observe(s));
+
+/* ---------- copiar ---------- */
+ $$('.copy').forEach(b=>b.addEventListener('click',()=>{
+  const pre=b.closest('.cli').querySelector('pre');
+  const txt=pre.textContent;
+  const done=()=>toast('Comandos copiados — cole no terminal do jogo (Ctrl+V)',true);
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(()=>fallback());}
+  else fallback();
+  function fallback(){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done()}catch(e){toast('Não consegui copiar — selecione o texto manualmente')}ta.remove();}
+}));
+
+/* ---------- revelar soluções ---------- */
+ $$('.reveal').forEach(r=>{
+  const id=r.dataset.rv;
+  if(S.rev[id])r.classList.add('open');
+  r.querySelector('.rv-btn').addEventListener('click',()=>{
+    r.classList.add('open');S.rev[id]=true;save();
+    toast('Solução revelada — confira se o seu raciocínio bateu 😉');
+  });
+});
+
+/* ---------- anatomia do comando ---------- */
+const TOK=[
+ {t:'access-list 100',c:'t-num',d:'<b>Número da ACL</b> — cria (ou adiciona linha a) a ACL estendida 100. Estendidas usam a faixa <b>100–199</b>; padrão é 1–99.'},
+ {t:'deny',c:'t-act',d:'<b>Ação</b> para quem casar com a linha: <b>deny</b> = barrar o pacote; <b>permit</b> = deixar passar.'},
+ {t:'tcp',c:'t-pro',d:'<b>Protocolo</b>. <b>tcp</b> = FTP, Telnet, HTTP · <b>udp</b> = DNS · <b>icmp</b> = ping · <b>ip</b> = qualquer protocolo IP (coringa). Para bloquear só um serviço, use tcp ou udp — nunca ip.'},
+ {t:'host 172.22.34.66',c:'t-src',d:'<b>ORIGEM</b> — quem envia o pacote (aqui, o PC1). Formas: <code>host X</code> (um IP exato), <code>rede wildcard</code> (ex.: 172.22.34.64 0.0.0.31) ou <code>any</code> (qualquer).'},
+ {t:'host 172.22.34.62',c:'t-dst',d:'<b>DESTINO</b> — para onde o pacote vai (aqui, o servidor FTP/Web). Mesmas três formas da origem.'},
+ {t:'eq ftp',c:'t-port',d:'<b>Porta/serviço</b> (opcional). <code>eq</code> = "equal (igual a)". ftp=21, telnet=23, www=80, https=443. É o que garante que estamos bloqueando SÓ o serviço pedido.'}
+];
+const ab=$('#anatBox'), ad=$('#anatDetail');
+TOK.forEach((k,i)=>{
+  const s=document.createElement('span');s.className='tok '+k.c;s.textContent=k.t;
+  s.addEventListener('click',()=>{
+    $$('#anatBox .tok').forEach(x=>x.classList.remove('sel'));s.classList.add('sel');
+    ad.innerHTML='<b style="color:var(--acc)">'+k.t+'</b><br>'+k.d;
+  });
+  ab.appendChild(s);
+  if(i<TOK.length-1)ab.appendChild(document.createTextNode(' '));
+});
+ab.firstChild.click();
+
+/* ---------- calculadora wildcard ---------- */
+function calc(){
+  const ipS=$('#calcIp').value.trim(), mS=$('#calcMask').value.trim();
+  const O=$('#calcOut');
+  const bad=m=>{O.innerHTML='<div class="kv" style="grid-column:1/-1;border-color:var(--bad)"><b style="color:var(--bad)">✘ '+m+'</b></div>'};
+  const ipOk=/^(\d{1,3}\.){3}\d{1,3}$/.test(ipS)&&ipS.split('.').every(o=>+o<=255);
+  if(!ipOk)return bad('IP inválido — use 4 octetos de 0 a 255.');
+  let cidr;
+  if(mS.startsWith('/')){cidr=parseInt(mS.slice(1));}
+  else if(/^(\d{1,3}\.){3}\d{1,3}$/.test(mS)){
+    const oct=mS.split('.').map(Number);
+    if(!oct.every(o=>o<=255))return bad('Máscara inválida.');
+    cidr=oct.reduce((a,o)=>a+((o).toString(2).match(/1/g)||[]).length,0);
+    const built=[0,0,0,0].map((_,i)=>{const n=Math.max(0,Math.min(8,cidr-i*8));return n===0?0:256-Math.pow(2,8-n);});
+    if(built.join('.')!==oct.join('.'))return bad('Máscara inválida (bits não contíguos).');
+  } else return bad('Use /27 ou 255.255.255.224.');
+  if(cidr<0||cidr>32)return bad('Prefixo deve estar entre 0 e 32.');
+  const p=ipS.split('.').map(Number);
+  const ipN=((p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3])>>>0;
+  const mN=cidr===0?0:(cidr===32?0xFFFFFFFF:(0xFFFFFFFF<<(32-cidr))>>>0);
+  const wN=(~mN)>>>0, netN=(ipN&mN)>>>0, bcN=(netN|wN)>>>0;
+  const fmt=n=>[n>>>24&255,n>>>16&255,n>>>8&255,n&255].join('.');
+  const hosts=cidr>=31?null:Math.pow(2,32-cidr)-2;
+  O.innerHTML=
+   '<div class="kv"><small>máscara</small><b>'+fmt(mN)+' (/'+cidr+')</b></div>'+
+   '<div class="kv hl"><small>wildcard</small><b>'+fmt(wN)+'</b></div>'+
+   '<div class="kv"><small>rede</small><b>'+fmt(netN)+'</b></div>'+
+   '<div class="kv"><small>broadcast</small><b>'+fmt(bcN)+'</b></div>'+
+   '<div class="kv"><small>primeiro host</small><b>'+(hosts?fmt(netN+1):'—')+'</b></div>'+
+   '<div class="kv"><small>último host</small><b>'+(hosts?fmt(bcN-1):'—')+'</b></div>'+
+   '<div class="kv"><small>hosts válidos</small><b>'+(hosts===null?(cidr===32?'1 (ponto-a-ponto)':'2 (especial)'):hosts)+'</b></div>';
+}
+ $('#calcIp').addEventListener('input',calc);
+ $('#calcMask').addEventListener('input',calc);
+calc();
+
+/* ---------- quiz ---------- */
+const QUIZ=[
+ {q:'ACLs estendidas numeradas usam a faixa:',o:['1–99','100–199','200–299'],a:1,e:'Padrão = 1–99. Estendida = 100–199 (e há também as nomeadas: ip access-list extended).'},
+ {q:'A wildcard da rede 172.22.34.96/28 é:',o:['0.0.0.31','255.255.255.240','0.0.0.15'],a:2,e:'/28 → máscara 255.255.255.240 → wildcard 0.0.0.15 (255−240 = 15).'},
+ {q:'Um pacote que não casa com nenhuma linha da ACL é:',o:['Permitido','Negado (deny implícito)','Devolvido ao remetente'],a:1,e:'Toda ACL termina com um "deny any" invisível.'},
+ {q:'A ACL estendida deve ser aplicada:',o:['O mais perto possível da origem','O mais perto possível do destino','Tanto faz, se a interface estiver certa'],a:0,e:'Ela já conhece origem, destino e serviço — filtre "na portaria". A padrão é que fica perto do destino.'},
+ {q:'Para bloquear APENAS Telnet (mantendo ping e web), a linha usa:',o:['ip como protocolo','tcp como protocolo e eq telnet','icmp como protocolo'],a:1,e:'Telnet = TCP porta 23. Usar "ip" casaria com qualquer tráfego.'},
+ {q:'O comando que aplica a ACL 100 na interface é:',o:['access-group 100','ip access-group 100 in','apply acl 100'],a:1,e:'No modo de configuração da interface: ip access-group <n|nome> in|out.'},
+ {q:'Se você esquecer o "permit ip any any" no final:',o:['Nada muda — o IOS adiciona sozinho','Todo o tráfego que atravessa a ACL é bloqueado','Só o ping para de funcionar'],a:1,e:'O deny implícito barra tudo o que não casou antes — inclusive pings e respostas.'},
+ {q:'"show access-lists" é útil principalmente para:',o:['Ver as linhas e quantas vezes cada uma casou (matches)','Ver o endereço MAC dos PCs','Trocar a ordem das linhas'],a:0,e:'Os contadores de match denunciam qual linha está agindo — ferramenta nº 1 do diagnóstico.'},
+ {q:'Para corrigir UMA linha de uma ACL numerada:',o:['Edita a linha direto','Dá "no access-list <n>" e recria a lista inteira','Reinicia o roteador'],a:1,e:'ACL numerada não permite edição linha a linha — apaga tudo e refaz. As nomeadas permitem.'},
+ {q:'A palavra-chave icmp numa linha de ACL filtra:',o:['Tráfego web','Pings (echo request/reply)','Conexões FTP'],a:1,e:'ICMP é o protocolo do ping e do traceroute.'}
+];
+const qb=$('#quizBox');
+function renderQuiz(){
+  qb.innerHTML='';
+  QUIZ.forEach((Q,i)=>{
+    const d=document.createElement('div');d.className='q';
+    const chosen=S.quiz[i];
+    d.innerHTML='<div class="q-q">'+(i+1)+'. '+Q.q+'</div><div class="opts"></div><div class="q-ex">'+Q.e+'</div>';
+    const box=d.querySelector('.opts');
+    Q.o.forEach((op,j)=>{
+      const b=document.createElement('button');b.className='opt';b.textContent=op;
+      if(chosen!==undefined){
+        b.disabled=true;
+        if(j===Q.a)b.classList.add('ok');
+        if(j===chosen&&chosen!==Q.a)b.classList.add('bad');
+      }else{
+        b.addEventListener('click',()=>{
+          S.quiz[i]=j;save();
+          d.classList.add('solved');
+          [...box.children].forEach((x,k)=>{x.disabled=true;if(k===Q.a)x.classList.add('ok');});
+          if(j!==Q.a){b.classList.add('bad');toast('Quase! Leia a explicação abaixo.')}
+          else toast('Acertou! +XP 🎯',true);
+          score();
+        });
+      }
+      box.appendChild(b);
+    });
+    if(chosen!==undefined)d.classList.add('solved');
+    qb.appendChild(d);
+  });
+  score();
+}
+function score(){
+  const n=Object.keys(S.quiz).filter(k=>S.quiz[k]===QUIZ[k].a).length;
+  $('#scoreTxt').textContent=n+' / '+QUIZ.length;
+  $('#scoreFill').style.width=(n/QUIZ.length*100)+'%';
+}
+ $('#quizReset').addEventListener('click',()=>{S.quiz={};save();renderQuiz();toast('Quiz reiniciado.')});
+renderQuiz();
+
+/* ---------- caderno ---------- */
+ $$('[data-k]').forEach(inp=>{
+  const k=inp.dataset.k;
+  if(inp.type==='checkbox'){
+    inp.checked=!!S.cad[k];
+    inp.addEventListener('change',()=>{inp.closest('.tsk')&&inp.closest('.tsk').classList.toggle('on',inp.checked);S.cad[k]=inp.checked;save()});
+    inp.closest('.tsk')&&inp.closest('.tsk').classList.toggle('on',inp.checked);
+  }else{
+    inp.value=S.cad[k]||'';
+    inp.addEventListener('input',()=>{S.cad[k]=inp.value;save()});
+  }
+});
+function labelFor(inp){
+  if(inp.dataset.l)return inp.dataset.l;
+  const tr=inp.closest('tr');
+  if(tr){
+    const cells=[...tr.children];
+    const td=inp.closest('td');
+    const idx=td?cells.indexOf(td):0;
+    const head=cells[0].textContent.trim().slice(0,50);
+    const ths=tr.closest('table').querySelectorAll('thead th');
+    const col=ths[idx]?ths[idx].textContent.trim():'';
+    return head+(col?' · '+col:'');
+  }
+  return inp.dataset.k;
+}
+ $('#dlBtn').addEventListener('click',()=>{
+  let out='CADERNO DO ALUNO — OPERAÇÃO PORTARIA · ACLs ESTENDIDAS\n'+'='.repeat(60)+'\n\n';
+  $$('.blk').forEach(b=>{
+    out+='--- '+b.querySelector('h4').textContent.trim().toUpperCase()+' ---\n';
+    b.querySelectorAll('[data-k]').forEach(inp=>{
+      const v=inp.type==='checkbox'?(inp.checked?'[x]':'[ ]'):(inp.value||'(vazio)');
+      out+=labelFor(inp)+': '+v+'\n';
+    });
+    out+='\n';
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([out],{type:'text/plain;charset=utf-8'}));
+  a.download='caderno-operacao-portaria-'+((S.cad.nome||'aluno').replace(/\s+/g,'-').toLowerCase())+'.txt';
+  a.click();URL.revokeObjectURL(a.href);
+  toast('Caderno exportado — envie o arquivo ao professor.',true);
+});
+
+/* ---------- modo professor / zerar ---------- */
+function setTeacher(v){S.teacher=v;save();document.body.classList.toggle('teacher',v);
+  $('#tProfBtn').innerHTML=ic(v?'lock':'key')+' modo professor'+(v?' ON':'');}
+ $('#tProfBtn').addEventListener('click',()=>{
+  if(!S.teacher){if(!confirm('O modo professor revela GABARITO, plano de aula e rubrica.\n\nAtivar agora? (desligue antes de projetar para a turma!)'))return;}
+  setTeacher(!S.teacher);
+  toast(S.teacher?'Modo professor ATIVADO — cuidado ao projetar 🔓':'Modo professor desativado.',S.teacher);
+  if(S.teacher)location.hash='#professor';
+});
+setTeacher(S.teacher);
+ $('#rstBtn').addEventListener('click',()=>{
+  if(!confirm('Apagar TODO o progresso deste manual (caderno, quiz e soluções reveladas)?\n\nO progresso do jogo (portaria.html) não é afetado.'))return;
+  localStorage.removeItem(K);location.reload();
+});
+</script>
+</body>
+</html>
