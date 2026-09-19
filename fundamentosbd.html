@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Banco de Dados — MySQL</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0b1220;color:#e2e8f0;line-height:1.55}
+header{background:#0e1626;border-bottom:1px solid #22304d;padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+h1{font-size:1.15rem;color:#fff}h1 span{color:#f59e0b}
+.sub{font-size:.8rem;color:#94a3b8}
+.score{display:flex;align-items:center;gap:10px;font-size:.85rem;color:#cbd5e1}
+.bar{width:170px;height:8px;background:#1c2942;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#f59e0b,#38bdf8);transition:.4s}
+nav.tabs{display:flex;gap:8px;overflow-x:auto;padding:12px 20px;background:#0e1626;border-bottom:1px solid #22304d;position:sticky;top:0;z-index:9}
+.tab{white-space:nowrap;padding:8px 14px;border-radius:99px;border:1px solid #22304d;background:#111a2e;color:#94a3b8;cursor:pointer;font-size:.85rem}
+.tab:hover{color:#e2e8f0;border-color:#38bdf8}
+.tab.active{background:linear-gradient(135deg,#f59e0b,#d97706);color:#1c1917;font-weight:700;border:none}
+.tab.exam{border-color:#ef4444;color:#fca5a5}
+.tab.exam.active{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff}
+main{max-width:980px;margin:0 auto;padding:18px 20px 70px}
+.module h2{font-size:1.25rem;color:#fff;margin:8px 0 2px}
+.module .week{color:#f59e0b;font-size:.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.summary{background:#111a2e;border:1px solid #22304d;border-left:4px solid #f59e0b;padding:14px 16px;border-radius:10px;margin:12px 0}
+.summary b{color:#fbbf24}
+.summary ul{margin:8px 0 0 18px}
+.summary li{margin:5px 0;font-size:.92rem;color:#cbd5e1}
+code{background:#1c2942;padding:1px 6px;border-radius:5px;font-family:ui-monospace,Consolas,monospace;font-size:.85em;color:#7dd3fc}
+.card{background:#111a2e;border:1px solid #22304d;border-radius:12px;padding:16px;margin:12px 0}
+.card.done{border-color:#2f6b4f}
+.card.exOk{border-color:#34d399}.card.exBad{border-color:#f87171}
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.tag{font-size:.68rem;padding:2px 9px;border-radius:99px;background:#1c2942;color:#93c5fd;text-transform:uppercase;letter-spacing:.5px}
+.tag.sql{color:#fbbf24}.tag.match{color:#a78bfa}
+.pts{font-size:.72rem;color:#64748b}
+.q{font-size:.95rem;margin-bottom:10px;color:#e2e8f0}
+.opt{display:block;width:100%;text-align:left;background:#16213a;border:1px solid #22304d;color:#e2e8f0;padding:10px 12px;border-radius:8px;margin:6px 0;cursor:pointer;font-size:.92rem;transition:.15s}
+.opt:hover:not(:disabled){border-color:#38bdf8}
+.opt.sel{border-color:#38bdf8;background:rgba(56,189,248,.14)}
+.opt.ok{border-color:#34d399;background:rgba(52,211,153,.12)}
+.opt.bad{border-color:#f87171;background:rgba(248,113,113,.12)}
+textarea.sql{width:100%;min-height:92px;background:#0a0f1a;border:1px solid #22304d;border-radius:8px;color:#a7f3d0;font-family:ui-monospace,Consolas,monospace;padding:10px;font-size:.9rem;resize:vertical}
+.btnrow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.btn{padding:8px 14px;border-radius:8px;border:1px solid #334155;background:#1c2942;color:#e2e8f0;cursor:pointer;font-size:.85rem}
+.btn:hover{border-color:#38bdf8}
+.btn.primary{background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#1c1917;font-weight:600}
+.btn.danger{background:linear-gradient(135deg,#ef4444,#b91c1c);border:none;color:#fff;font-weight:600}
+.fb{margin-top:10px;font-size:.9rem}
+.fb ul{margin:6px 0 0 18px}
+.check{color:#34d399}.cross{color:#f87171}
+.console{background:#0a0f1a;border:1px solid #22304d;border-radius:8px;padding:10px 12px;font-family:ui-monospace,monospace;font-size:.85rem;color:#a7f3d0;margin-top:10px;white-space:pre-wrap}
+table.rt{border-collapse:collapse;margin-top:10px;font-family:ui-monospace,monospace;font-size:.8rem;width:100%}
+.rt th{background:#1c2942;color:#7dd3fc;text-align:left}
+.rt th,.rt td{border:1px solid #22304d;padding:6px 10px}
+.rt tr:nth-child(even) td{background:#0f172a}
+.hintbox{margin-top:8px;font-size:.85rem;color:#fcd34d;background:rgba(245,158,11,.08);border:1px dashed #b45309;padding:8px 10px;border-radius:8px;display:none}
+select.m{background:#16213a;color:#e2e8f0;border:1px solid #22304d;border-radius:6px;padding:6px;font-size:.85rem;max-width:100%;width:100%}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;margin:8px 0;font-size:.85rem}
+@media(max-width:640px){.pair{grid-template-columns:1fr}}
+details{margin-top:8px}summary{cursor:pointer;color:#7dd3fc;font-size:.85rem}
+pre{background:#0a0f1a;padding:10px;border-radius:8px;overflow:auto;color:#a7f3d0;margin-top:6px;font-family:ui-monospace,Consolas,monospace;font-size:.85rem}
+.schema{margin:12px 0}.schema h4{color:#7dd3fc;margin:10px 0 0}
+/* ===== PROVA ===== */
+.exambar{position:sticky;top:56px;z-index:8;background:#111a2e;border:1px solid #ef4444;border-radius:10px;padding:10px 14px;margin:12px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.timer{font-family:ui-monospace,monospace;font-size:1.15rem;font-weight:700;color:#34d399;min-width:90px}
+.timer.warn{color:#fbbf24}.timer.danger{color:#f87171}
+.tbar{flex:1;height:8px;background:#1c2942;border-radius:99px;overflow:hidden;min-width:120px}
+.tbar i{display:block;height:100%;width:100%;background:#34d399;transition:1s linear}
+.examintro{text-align:center;padding:40px 20px}
+.examintro h2{color:#fff;margin-bottom:8px}
+.examintro p{color:#94a3b8;max-width:520px;margin:0 auto 18px}
+.result{background:#111a2e;border:1px solid #22304d;border-radius:14px;padding:26px;text-align:center;margin:14px 0}
+.result .letter{font-size:3.4rem;font-weight:800;color:#fbbf24}
+.result .msg{color:#cbd5e1;margin:4px 0 10px}
+footer{text-align:center;color:#475569;font-size:.78rem;padding:18px}
+.reset{font-size:.75rem;padding:5px 10px}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🗄️ Simulador de Atividades — <span>Banco de Dados (MySQL)</span></h1>
+    <div class="sub">8 módulos + Prova Final cronometrada • Quizzes, Editor SQL, MongoDB e Álgebra Relacional</div>
+  </div>
+  <div class="score">
+    <span id="scoreTxt">0/0 atividades • 0 XP</span>
+    <div class="bar"><i id="bar"></i></div>
+    <button class="btn reset" onclick="if(confirm('Apagar todo o progresso?')){localStorage.removeItem('bdSimDone');location.reload();}">↺</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+<main id="content"></main>
+
+<footer>Simulador educacional de MySQL / MongoDB — o progresso dos módulos é salvo automaticamente neste navegador.</footer>
+
+<script>
+/* ============ DADOS DO BANCO DE EXEMPLO ============ */
+const T_CLIENTES={cols:["id_cliente","nome","email","cidade","idade"],rows:[[1,"Ana Souza","ana@email.com","São Paulo",29],[2,"Bruno Lima","bruno@email.com","Rio de Janeiro",34],[3,"Carla Dias","carla@email.com","São Paulo",41],[4,"Diego Alves","diego@email.com","Belo Horizonte",22],[5,"Elisa Rocha","elisa@email.com","Curitiba",37]]};
+const T_PRODUTOS={cols:["id_produto","nome","preco","estoque"],rows:[[1,"Teclado Mecânico",250.00,40],[2,"Mouse Gamer",120.00,65],[3,'Monitor 24"',890.00,15],[4,"Headset",180.00,30],[5,"Webcam HD",210.00,25]]};
+const T_PEDIDOS={cols:["id_pedido","id_cliente","id_produto","quantidade","data_pedido"],rows:[[1,1,2,3,"2025-11-05"],[2,2,1,1,"2025-11-06"],[3,3,3,2,"2025-11-10"],[4,1,4,1,"2025-11-12"],[5,4,5,2,"2025-11-15"]]};
+
+const MODULES=[
+/* ================= MÓDULO 1 ================= */
+{num:1,tab:"SGBD & Docker",title:"Sistemas de Gerenciamento de Bancos de Dados",week:"Semana 1",
+goals:["Diferenciar banco de dados de sistema de arquivos","Reconhecer as vantagens e componentes de um SGBD","Identificar as linguagens do SQL","Subir o MySQL em container Docker"],
+summary:["<b>Banco de Dados (BD)</b>: coleção organizada de dados relacionados, com integridade e acesso controlado.",
+"<b>SGBD</b>: software que define, armazena, consulta e protege os dados (MySQL, PostgreSQL, Oracle, MongoDB).",
+"<b>BD × Sistema de Arquivos</b>: o SGBD reduz redundância e inconsistência e garante integridade, segurança, concorrência e recuperação (backup).",
+"<b>Metadados</b>: dados sobre os dados (ex.: estrutura das tabelas). <b>Esquema</b>: o projeto/estrutura; <b>Instância</b>: os dados num instante.",
+"<b>Linguagens</b>: <code>DDL</code> (CREATE, ALTER, DROP) • <code>DML</code> (INSERT, UPDATE, DELETE) • <code>DQL</code> (SELECT) • <code>DCL</code> (GRANT, REVOKE) • <code>TCL</code> (COMMIT, ROLLBACK).",
+"<b>Usuários</b>: administrador (DBA), projetista, desenvolvedor e usuário final.",
+"<b>Docker</b>: executa o MySQL em containers isolados: <code>docker run --name meu-mysql -e MYSQL_ROOT_PASSWORD=senha -d mysql</code>."],
+activities:[
+{type:"quiz",q:"Um SGBD (Sistema de Gerenciamento de Banco de Dados) é...",options:["Um software que permite definir, criar, consultar e administrar bancos de dados","Um hardware dedicado ao armazenamento de arquivos","Uma linguagem de programação orientada a objetos","Um sistema operacional para servidores"],answer:0,explain:"O SGBD é a camada de software (MySQL, PostgreSQL, Oracle...) entre os dados e os usuários/aplicações."},
+{type:"quiz",q:"Qual é a principal vantagem de um SGBD sobre armazenar dados apenas em arquivos?",options:["Arquivos são mais rápidos para consultas","Controle de redundância, integridade, segurança e acesso concorrente aos dados","O SGBD elimina a necessidade de backup","Arquivos não permitem gravar dados"],answer:1,explain:"O SGBD centraliza os dados garantindo integridade, segurança, concorrência e recuperação."},
+{type:"quiz",q:"Metadados são...",options:["Dados duplicados no banco","Dados sobre os próprios dados — como a estrutura das tabelas","Backups automáticos","Registros apagados"],answer:1,explain:"Metadados descrevem a estrutura do banco: nomes de tabelas, tipos de colunas, restrições."},
+{type:"quiz",q:"Qual categoria do SQL é usada para DEFINIR a estrutura de tabelas?",options:["DML","DQL","DDL","TCL"],answer:2,explain:"DDL = CREATE, ALTER, DROP. DML manipula dados, DQL consulta (SELECT), DCL concede permissões."},
+{type:"quiz",q:"A diferença entre ESQUEMA e INSTÂNCIA é:",options:["Não há diferença","Esquema é a estrutura/projeto do banco; instância são os dados em um determinado momento","Esquema são os dados; instância é a estrutura","Ambos são backups"],answer:1,explain:"O esquema raramente muda; a instância muda a cada INSERT/UPDATE/DELETE."},
+{type:"quiz",q:"No contexto do curso, o Docker é utilizado para...",options:["Editar diagramas ER","Executar o MySQL e outros SGBDs em containers isolados e padronizados","Compilar consultas SQL","Normalizar tabelas automaticamente"],answer:1,explain:"Containers garantem o mesmo ambiente em qualquer máquina, sem instalar o MySQL direto no sistema."},
+{type:"quiz",q:"Qual comando cria e inicia um container MySQL chamado 'meu-mysql' com senha root definida?",options:["mysql start meu-mysql","docker build mysql","docker run --name meu-mysql -e MYSQL_ROOT_PASSWORD=senha123 -d mysql","run mysql --container meu-mysql"],answer:2,explain:"docker run cria o container; -e define variável de ambiente; -d executa em segundo plano; mysql é a imagem."},
+{type:"sql",q:"Simule no console o comando SQL que LISTA todos os bancos de dados existentes no servidor MySQL.",ph:"SHOW ...;",
+must:[{re:/show\s+databases/i,label:"Contém SHOW DATABASES"}],
+hint:"É um comando utilitário que começa com SHOW.",
+ok:"mysql> SHOW DATABASES;\n+--------------------+\n| Database           |\n+--------------------+\n| information_schema |\n| mysql              |\n| performance_schema |\n| sys                |\n+--------------------+\n4 rows in set (0.00 sec)",
+sol:"SHOW DATABASES;"}]},
+/* ================= MÓDULO 2 ================= */
+{num:2,tab:"Modelo ER",title:"O Modelo Relacional e a Modelagem Entidade-Relacionamento",week:"Semana 2",
+goals:["Identificar entidades, atributos e chaves","Classificar relacionamentos e cardinalidades","Traduzir o modelo ER para o modelo relacional"],
+summary:["<b>Entidade</b>: objeto do mundo real sobre o qual guardamos dados (Cliente, Produto). <b>Atributo</b>: propriedade da entidade (nome, preço).",
+"<b>Chave primária (PK)</b>: identifica unicamente cada tupla (linha). <b>Chave candidata</b>: alternativa única. <b>Chave estrangeira (FK)</b>: referencia a PK de outra tabela.",
+"<b>Cardinalidades</b>: 1:1, 1:N e N:M. Relacionamento <b>N:M</b> gera uma tabela intermediária com FKs.",
+"<b>Atributo composto</b>: pode ser dividido (endereço → rua, número, cidade). <b>Multivalorado</b>: admite vários valores (telefones).",
+"No modelo relacional, cada entidade vira uma <b>tabela</b>, cada atributo vira uma <b>coluna</b> e cada ocorrência vira uma <b>linha</b>.",
+"Ferramentas para desenhar diagramas ER: <b>Lucidchart</b> e <b>Draw.io</b>."],
+activities:[
+{type:"quiz",q:"No modelo Entidade-Relacionamento, uma ENTIDADE representa...",options:["Um objeto do mundo real sobre o qual queremos guardar dados","Uma consulta SQL","Um índice do banco","Um usuário do sistema"],answer:0,explain:"Ex.: Cliente, Produto, Pedido — viram tabelas no modelo relacional."},
+{type:"quiz",q:"A chave primária (PK) serve para...",options:["Criptografar os dados","Identificar unicamente cada linha/tupla da tabela","Ordenar automaticamente a tabela","Acelerar a internet"],answer:1,explain:"PK não admite valores repetidos nem nulos."},
+{type:"quiz",q:"A chave estrangeira (FK) tem a função de...",options:["Gerar senhas","Referenciar a chave primária de outra tabela, criando o relacionamento","Substituir a chave primária","Apagar dados em cascata sempre"],answer:1,explain:"Ex.: pedidos.id_cliente referencia clientes.id_cliente."},
+{type:"quiz",q:"'Um cliente pode fazer vários pedidos, mas cada pedido pertence a um único cliente'. Cardinalidade:",options:["1:1","1:N","N:M","0:0"],answer:1,explain:"Um-para-muitos: a FK fica no lado N (em pedidos)."},
+{type:"quiz",q:"Em um relacionamento N:M (ex.: alunos e disciplinas), como implementar no modelo relacional?",options:["Guardar tudo numa única coluna","Criar uma tabela intermediária (associativa) com FKs das duas entidades","Não é possível implementar","Usar apenas uma chave primária dupla"],answer:1,explain:"Ex.: matriculas(id_aluno FK, id_disciplina FK)."},
+{type:"quiz",q:"O endereço dividido em rua, número e cidade é um exemplo de atributo...",options:["Simples","Multivalorado","Composto","Derivado"],answer:2,explain:"Composto = divisível em partes. Multivalorado seria, ex., uma lista de telefones."},
+{type:"quiz",q:"Quais ferramentas citadas no material servem para desenhar diagramas ER on-line?",options:["Lucidchart e Draw.io","Photoshop e Illustrator","Excel e PowerPoint","VS Code e Git"],answer:0,explain:"Ambas permitem representar entidades, atributos, chaves e relacionamentos graficamente."},
+{type:"sql",q:"No banco <code>loja</code>, crie a tabela <code>pedidos</code> com: id_pedido INT (PK), id_cliente INT, id_produto INT, quantidade INT, data_pedido DATE — e uma FOREIGN KEY em id_cliente referenciando <code>clientes</code>.",
+ph:"CREATE TABLE pedidos (...);",
+must:[{re:/create\s+table\s+pedidos/i,label:"Cria a tabela pedidos"},{re:/primary\s+key/i,label:"Define a chave primária"},{re:/foreign\s+key/i,label:"Declara FOREIGN KEY"},{re:/references\s+clientes/i,label:"REFERENCES clientes"},{re:/id_cliente/i,label:"Contém a coluna id_cliente"}],
+hint:"FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)",
+ok:"Query OK, 0 rows affected (0.03 sec)\nTabela 'pedidos' criada com sucesso.",
+sol:"CREATE TABLE pedidos (\n  id_pedido INT PRIMARY KEY,\n  id_cliente INT,\n  id_produto INT,\n  quantidade INT,\n  data_pedido DATE,\n  FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)\n);"}]},
+/* ================= MÓDULO 3 ================= */
+{num:3,tab:"SQL Básico 1",title:"SQL Básico 1 — Criação e Formas Normais",week:"Semana 3",
+goals:["Criar banco de dados e tabelas com comandos","Aplicar tipos de dados e restrições (constraints)","Identificar a 1ª, 2ª e 3ª Forma Normal"],
+summary:["<code>CREATE DATABASE loja;</code> cria o banco • <code>USE loja;</code> seleciona o banco ativo.",
+"<code>CREATE TABLE</code> define colunas, tipos (INT, VARCHAR(n), DECIMAL(m,d), DATE) e restrições: <code>PRIMARY KEY</code>, <code>FOREIGN KEY</code>, <code>NOT NULL</code>, <code>UNIQUE</code>, <code>AUTO_INCREMENT</code>, <code>DEFAULT</code>.",
+"<code>ALTER TABLE ... ADD COLUMN</code> altera a estrutura • <code>DROP TABLE</code> remove a tabela (estrutura e dados).",
+"<b>1FN</b>: valores atômicos — sem grupos repetidos ou listas numa célula.",
+"<b>2FN</b>: em 1FN + sem dependência parcial de parte de uma chave composta.",
+"<b>3FN</b>: em 2FN + sem dependências transitivas (atributo dependendo de outro não-chave)."],
+activities:[
+{type:"sql",q:"Crie um banco de dados chamado <code>loja</code>.",ph:"CREATE ...;",
+must:[{re:/create\s+database\s+loja/i,label:"CREATE DATABASE loja"}],
+hint:"Comece com CREATE DATABASE e o nome.",
+ok:"Query OK, 1 row affected (0.01 sec)",sol:"CREATE DATABASE loja;"},
+{type:"sql",q:"Crie a tabela <code>clientes</code> com: id_cliente INT (PK, AUTO_INCREMENT), nome VARCHAR(50) NOT NULL, email VARCHAR(100), cidade VARCHAR(50), idade INT.",
+ph:"CREATE TABLE clientes (...);",
+must:[{re:/create\s+table\s+clientes/i,label:"Cria a tabela clientes"},{re:/id_cliente\s+int/i,label:"id_cliente INT"},{re:/primary\s+key/i,label:"Chave primária"},{re:/varchar\s*\(/i,label:"Campos VARCHAR"},{re:/not\s+null/i,label:"Restrição NOT NULL"}],
+hint:"id_cliente INT PRIMARY KEY AUTO_INCREMENT, nome VARCHAR(50) NOT NULL ...",
+ok:"Query OK, 0 rows affected (0.02 sec)\nTabela 'clientes' criada.",
+sol:"CREATE TABLE clientes (\n  id_cliente INT PRIMARY KEY AUTO_INCREMENT,\n  nome VARCHAR(50) NOT NULL,\n  email VARCHAR(100),\n  cidade VARCHAR(50),\n  idade INT\n);"},
+{type:"sql",q:"Adicione a coluna <code>telefone VARCHAR(20)</code> à tabela <code>clientes</code> usando ALTER.",ph:"ALTER ...;",
+must:[{re:/alter\s+table\s+clientes/i,label:"ALTER TABLE clientes"},{re:/add/i,label:"Usa ADD"},{re:/telefone/i,label:"Adiciona a coluna telefone"}],
+hint:"ALTER TABLE tabela ADD COLUMN coluna tipo;",
+ok:"Query OK, 0 rows affected (0.01 sec)\nRecords: 0  Duplicates: 0  Warnings: 0",
+sol:"ALTER TABLE clientes ADD COLUMN telefone VARCHAR(20);"},
+{type:"quiz",q:"Qual comando remove completamente uma tabela (estrutura + dados)?",options:["DELETE TABLE","DROP TABLE","REMOVE TABLE","ERASE TABLE"],answer:1,explain:"DROP remove a estrutura; DELETE remove apenas linhas."},
+{type:"quiz",q:"Qual tipo de dado é mais adequado para armazenar PREÇO?",options:["INT","DECIMAL(8,2)","VARCHAR(10)","DATE"],answer:1,explain:"DECIMAL evita erros de arredondamento de ponto flutuante em valores monetários."},
+{type:"quiz",q:"A tabela ALUNOS guarda vários telefones separados por vírgula numa única célula. Qual forma normal é violada?",options:["1FN","2FN","3FN","BCNF"],answer:0,explain:"1FN exige valores atômicos — sem listas/grupos repetidos em uma célula."},
+{type:"quiz",q:"Tabela com chave composta (matricula, cod_disciplina) onde nome_aluno depende apenas da matricula. O que é violado?",options:["1FN","2FN","3FN","Nada"],answer:1,explain:"Dependência parcial: o atributo depende de parte da chave composta → viola 2FN."},
+{type:"quiz",q:"Tabela FUNCIONARIOS(id, nome, id_depto, nome_depto): nome_depto depende de id_depto (não-chave). O que é violado?",options:["1FN","2FN","3FN","Nada"],answer:2,explain:"Dependência transitiva: id → id_depto → nome_depto. Solução: separar em tabela DEPARTAMENTOS."}]},
+/* ================= MÓDULO 4 ================= */
+{num:4,tab:"Normalização",title:"Normalização, Usuários e Permissões",week:"Semana 4",
+goals:["Aplicar a normalização em tabelas reais","Criar usuários e conceder permissões (DCL)","Inserir dados em um banco complexo"],
+summary:["A normalização <b>elimina redundâncias</b> e evita <b>anomalias</b> de inserção, atualização e exclusão.",
+"<b>Anomalia de atualização</b>: o mesmo dado repetido em várias linhas exige várias alterações (risco de inconsistência).",
+"Criar usuário: <code>CREATE USER 'aluno'@'localhost' IDENTIFIED BY 'senha';</code>",
+"Conceder permissão: <code>GRANT SELECT, INSERT ON loja.* TO 'aluno'@'localhost';</code>",
+"Revogar permissão: <code>REVOKE ...</code> • Remover usuário: <code>DROP USER</code>.",
+"Inserir dados: <code>INSERT INTO tabela (colunas) VALUES (valores);</code>",
+"<code>DELETE</code> remove linhas mantendo a estrutura; <code>TRUNCATE</code> esvazia a tabela rápido; <code>DROP</code> remove tudo."],
+activities:[
+{type:"quiz",q:"Qual é o objetivo principal da normalização?",options:["Deixar o banco mais lento","Eliminar redundâncias e anomalias de inserção/atualização/exclusão","Aumentar o volume de dados","Criptografar as tabelas"],answer:1,explain:"Tabelas bem normalizadas guardam cada fato apenas uma vez."},
+{type:"quiz",q:"A ANOMALIA DE ATUALIZAÇÃO ocorre quando...",options:["O banco atualiza sozinho","Um mesmo dado repetido em várias linhas precisa ser alterado em todos os lugares","O usuário esquece a senha","O backup falha"],answer:1,explain:"Se o dado muda em uma linha e não nas outras, o banco fica inconsistente."},
+{type:"quiz",q:"A tabela VENDAS(id_venda, cliente, tel1, tel2, produto1, preco1, produto2, preco2) tem qual problema principal?",options:["Falta chave estrangeira","Grupos repetidos/colunas repetidas — não está nem na 1FN","Excesso de índices","Está perfeita"],answer:1,explain:"Repetir 'produto1, produto2...' quebra a 1FN; a solução é decompor em VENDAS e ITENS_VENDA."},
+{type:"sql",q:"Crie um usuário chamado <code>aluno</code> que conecta do localhost com a senha <code>Senha@123</code>.",
+ph:"CREATE USER ...;",
+must:[{re:/create\s+user/i,label:"CREATE USER"},{re:/aluno['\"]?@['\"]?localhost/i,label:"Usuário 'aluno'@'localhost'"},{re:/identified\s+by/i,label:"IDENTIFIED BY (senha)"}],
+hint:"CREATE USER 'aluno'@'localhost' IDENTIFIED BY 'Senha@123';",
+ok:"Query OK, 0 rows affected (0.01 sec)",sol:"CREATE USER 'aluno'@'localhost' IDENTIFIED BY 'Senha@123';"},
+{type:"sql",q:"Conceda ao usuário <code>aluno</code> as permissões SELECT e INSERT sobre todas as tabelas do banco <code>loja</code>.",
+ph:"GRANT ...;",
+must:[{re:/grant/i,label:"Usa GRANT"},{re:/select/i,label:"Concede SELECT"},{re:/on\s+loja\.\*/i,label:"ON loja.* (todas as tabelas)"},{re:/to/i,label:"Cláusula TO"},{re:/aluno/i,label:"Para o usuário aluno"}],
+hint:"GRANT privilégios ON banco.* TO 'usuario'@'localhost';",
+ok:"Query OK, 0 rows affected (0.00 sec)",sol:"GRANT SELECT, INSERT ON loja.* TO 'aluno'@'localhost';"},
+{type:"quiz",q:"O comando REVOKE serve para...",options:["Criar usuários","Remover privilégios concedidos","Fazer backup","Renomear tabelas"],answer:1,explain:"REVOKE é o inverso do GRANT (categoria DCL)."},
+{type:"sql",q:"Insira na tabela <code>clientes</code> o registro: Felipe Costa, felipe@email.com, Salvador, 28 anos.",
+ph:"INSERT INTO ...;",
+must:[{re:/insert\s+into\s+clientes/i,label:"INSERT INTO clientes"},{re:/values\s*\(/i,label:"Cláusula VALUES"},{re:/felipe/i,label:"Contém os dados do Felipe"}],
+hint:"INSERT INTO clientes (nome, email, cidade, idade) VALUES (...);",
+ok:"Query OK, 1 row affected (0.01 sec)",sol:"INSERT INTO clientes (nome, email, cidade, idade)\nVALUES ('Felipe Costa', 'felipe@email.com', 'Salvador', 28);"},
+{type:"quiz",q:"Qual a diferença entre DELETE e DROP em uma tabela?",options:["Nenhuma","DELETE remove linhas mantendo a estrutura; DROP remove a tabela inteira","DROP remove só uma linha","DELETE apaga o banco de dados"],answer:1,explain:"DELETE é DML (dados); DROP é DDL (estrutura)."}]},
+/* ================= MÓDULO 5 ================= */
+{num:5,tab:"SQL Consultas",title:"SQL Básico 2 — SELECT, Agregações e GROUP BY",week:"Semana 5",
+goals:["Praticar consultas com SELECT, WHERE, LIKE, BETWEEN, IN, ORDER BY","Usar funções de agregação: COUNT, SUM, AVG, MAX, MIN","Agrupar resultados com GROUP BY e filtrar grupos com HAVING"],
+summary:["<code>SELECT colunas FROM tabela WHERE condição ORDER BY coluna ASC|DESC LIMIT n;</code>",
+"Operadores: <code>=</code>, <code>&lt;&gt;</code>, <code>&lt;</code>, <code>&gt;</code>, <code>BETWEEN a AND b</code>, <code>IN (lista)</code>, <code>LIKE</code>, <code>AND/OR</code>.",
+"<code>LIKE 'S%'</code> = começa com S • <code>'%a'</code> = termina com a • <code>'_a%'</code> = segunda letra 'a'.",
+"<code>DISTINCT</code> elimina duplicatas.",
+"<b>Agregações</b>: <code>COUNT(*)</code> (conta linhas), <code>SUM</code> (soma), <code>AVG</code> (média), <code>MAX</code>/<code>MIN</code> (maior/menor).",
+"<b>GROUP BY</b>: agrupa linhas com o mesmo valor para agregar por grupo (ex.: clientes por cidade).",
+"<b>HAVING</b>: filtra GRUPOS depois do GROUP BY (WHERE filtra linhas antes)."],
+schema:[T_CLIENTES,T_PRODUTOS,T_PEDIDOS],
+activities:[
+{type:"sql",q:"Selecione TODAS as colunas de todos os clientes.",ph:"SELECT ...;",
+must:[{re:/select\s+\*/i,label:"SELECT * (todas as colunas)"},{re:/from\s+clientes/i,label:"FROM clientes"}],
+hint:"O asterisco (*) representa todas as colunas.",
+ok:"5 rows in set (0.00 sec)",table:T_CLIENTES,sol:"SELECT * FROM clientes;"},
+{type:"sql",q:"Selecione apenas <code>nome</code> e <code>email</code> dos clientes que moram em <code>São Paulo</code>.",
+ph:"SELECT ... WHERE ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/nome/i,label:"Coluna nome"},{re:/email/i,label:"Coluna email"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/where/i,label:"Filtro WHERE"},{re:/cidade\s*=\s*['\"]s[aã]o\s*paulo['\"]/i,label:"cidade = 'São Paulo'"}],
+hint:"Strings usam aspas simples: WHERE cidade = 'São Paulo'",
+ok:"2 rows in set (0.00 sec)",table:{cols:["nome","email"],rows:[["Ana Souza","ana@email.com"],["Carla Dias","carla@email.com"]]},
+sol:"SELECT nome, email FROM clientes WHERE cidade = 'São Paulo';"},
+{type:"sql",q:"Selecione <code>nome</code> e <code>idade</code> dos clientes com idade <b>maior que 30</b>, ordenados da idade mais alta para a mais baixa.",
+ph:"SELECT ... ORDER BY ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/nome/i,label:"Coluna nome"},{re:/idade/i,label:"Coluna idade"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/where/i,label:"Filtro WHERE"},{re:/idade\s*>\s*30/i,label:"idade > 30"},{re:/order\s+by/i,label:"ORDER BY"},{re:/desc/i,label:"Ordenação DESC"}],
+hint:"Maior para menor = DESC.",
+ok:"3 rows in set (0.00 sec)",table:{cols:["nome","idade"],rows:[["Carla Dias",41],["Elisa Rocha",37],["Bruno Lima",34]]},
+sol:"SELECT nome, idade FROM clientes WHERE idade > 30 ORDER BY idade DESC;"},
+{type:"sql",q:"Liste todos os produtos com preço <b>menor que 200</b>.",ph:"SELECT ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/from\s+produtos/i,label:"FROM produtos"},{re:/where/i,label:"Filtro WHERE"},{re:/preco\s*<\s*200/i,label:"preco < 200"}],
+hint:"WHERE preco < 200",
+ok:"2 rows in set (0.00 sec)",table:{cols:["id_produto","nome","preco","estoque"],rows:[[2,"Mouse Gamer",120.00,65],[4,"Headset",180.00,30]]},
+sol:"SELECT * FROM produtos WHERE preco < 200;"},
+{type:"sql",q:"Selecione os clientes cuja <code>cidade</code> começa com a letra <b>S</b> (use LIKE).",ph:"SELECT ... LIKE ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/like\s+['\"]s%/i,label:"LIKE 'S%'"}],
+hint:"O símbolo % substitui qualquer sequência de caracteres.",
+ok:"2 rows in set (0.00 sec)",table:{cols:["nome","cidade"],rows:[["Ana Souza","São Paulo"],["Carla Dias","São Paulo"]]},
+sol:"SELECT * FROM clientes WHERE cidade LIKE 'S%';"},
+{type:"sql",q:"Selecione <code>nome</code> e <code>idade</code> dos clientes com idade ENTRE 25 e 35 (use BETWEEN).",
+ph:"SELECT ... BETWEEN ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/nome/i,label:"Coluna nome"},{re:/idade/i,label:"Coluna idade"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/between\s+25\s+and\s+35/i,label:"BETWEEN 25 AND 35"}],
+hint:"WHERE idade BETWEEN 25 AND 35",
+ok:"2 rows in set (0.00 sec)",table:{cols:["nome","idade"],rows:[["Ana Souza",29],["Bruno Lima",34]]},
+sol:"SELECT nome, idade FROM clientes WHERE idade BETWEEN 25 AND 35;"},
+{type:"sql",q:"Selecione os nomes dos clientes cujo <code>id_cliente</code> está na lista (1, 3) usando <b>IN</b>.",
+ph:"SELECT ... IN ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/in\s*\(\s*1\s*,\s*3\s*\)/i,label:"IN (1, 3)"}],
+hint:"WHERE id_cliente IN (1, 3)",
+ok:"2 rows in set (0.00 sec)",table:{cols:["nome"],rows:[["Ana Souza"],["Carla Dias"]]},
+sol:"SELECT nome FROM clientes WHERE id_cliente IN (1, 3);"},
+{type:"sql",q:"Liste as cidades dos clientes <b>sem repetição</b> (use DISTINCT).",ph:"SELECT DISTINCT ...;",
+must:[{re:/select\s+distinct/i,label:"SELECT DISTINCT"},{re:/cidade/i,label:"Coluna cidade"},{re:/from\s+clientes/i,label:"FROM clientes"}],
+hint:"SELECT DISTINCT cidade FROM ...",
+ok:"4 rows in set (0.00 sec)",table:{cols:["cidade"],rows:[["São Paulo"],["Rio de Janeiro"],["Belo Horizonte"],["Curitiba"]]},
+sol:"SELECT DISTINCT cidade FROM clientes;"},
+{type:"sql",q:"Conte quantos pedidos existem na tabela <code>pedidos</code> (use COUNT).",ph:"SELECT ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/count\s*\(/i,label:"Função COUNT"},{re:/from\s+pedidos/i,label:"FROM pedidos"}],
+hint:"SELECT COUNT(*) FROM ...",
+ok:"1 row in set (0.00 sec)",table:{cols:["COUNT(*)"],rows:[[5]]},
+sol:"SELECT COUNT(*) FROM pedidos;"},
+{type:"sql",q:"Conte quantos clientes são da cidade de <b>São Paulo</b> (COUNT + WHERE).",ph:"SELECT ...;",
+must:[{re:/count\s*\(/i,label:"Função COUNT"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/where/i,label:"Filtro WHERE"},{re:/s[aã]o\s*paulo/i,label:"Filtro cidade = 'São Paulo'"}],
+hint:"SELECT COUNT(*) FROM clientes WHERE ...",
+ok:"1 row in set (0.00 sec)",table:{cols:["COUNT(*)"],rows:[[2]]},
+sol:"SELECT COUNT(*) FROM clientes WHERE cidade = 'São Paulo';"},
+{type:"sql",q:"Calcule a <b>soma total</b> das quantidades vendidas na tabela <code>pedidos</code> (use SUM).",ph:"SELECT ...;",
+must:[{re:/sum\s*\(/i,label:"Função SUM"},{re:/quantidade/i,label:"Coluna quantidade"},{re:/from\s+pedidos/i,label:"FROM pedidos"}],
+hint:"SELECT SUM(quantidade) FROM ...",
+ok:"1 row in set (0.00 sec)",table:{cols:["SUM(quantidade)"],rows:[[9]]},
+sol:"SELECT SUM(quantidade) FROM pedidos;"},
+{type:"sql",q:"Calcule a <b>média</b> de preço dos produtos (use AVG).",ph:"SELECT ...;",
+must:[{re:/avg\s*\(/i,label:"Função AVG"},{re:/preco/i,label:"Coluna preco"},{re:/from\s+produtos/i,label:"FROM produtos"}],
+hint:"SELECT AVG(preco) FROM ...",
+ok:"1 row in set (0.00 sec)",table:{cols:["AVG(preco)"],rows:[["330.00"]]},
+sol:"SELECT AVG(preco) FROM produtos;"},
+{type:"sql",q:"Mostre o <b>maior</b> e o <b>menor</b> preço dos produtos (use MAX e MIN).",ph:"SELECT ...;",
+must:[{re:/max\s*\(/i,label:"Função MAX"},{re:/min\s*\(/i,label:"Função MIN"},{re:/preco/i,label:"Coluna preco"},{re:/from\s+produtos/i,label:"FROM produtos"}],
+hint:"SELECT MAX(preco), MIN(preco) FROM ...",
+ok:"1 row in set (0.00 sec)",table:{cols:["MAX(preco)","MIN(preco)"],rows:[["890.00","120.00"]]},
+sol:"SELECT MAX(preco), MIN(preco) FROM produtos;"},
+{type:"sql",q:"📊 <b>GROUP BY</b> — conte quantos clientes existem em <b>cada cidade</b>.",ph:"SELECT ... GROUP BY ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/count\s*\(/i,label:"Função COUNT"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/group\s+by/i,label:"GROUP BY"},{re:/cidade/i,label:"Agrupando por cidade"}],
+hint:"SELECT cidade, COUNT(*) FROM clientes GROUP BY cidade;",
+ok:"4 rows in set (0.00 sec)",table:{cols:["cidade","COUNT(*)"],rows:[["São Paulo",2],["Rio de Janeiro",1],["Belo Horizonte",1],["Curitiba",1]]},
+sol:"SELECT cidade, COUNT(*) FROM clientes GROUP BY cidade;"},
+{type:"sql",q:"📊 <b>HAVING</b> — mostre apenas as cidades que têm <b>mais de 1 cliente</b> (GROUP BY + HAVING).",ph:"SELECT ... HAVING ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/count\s*\(/i,label:"Função COUNT"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/group\s+by/i,label:"GROUP BY"},{re:/having/i,label:"Cláusula HAVING"},{re:/>\s*1/i,label:"Condição > 1"}],
+hint:"... GROUP BY cidade HAVING COUNT(*) > 1;",
+ok:"1 row in set (0.00 sec)",table:{cols:["cidade","COUNT(*)"],rows:[["São Paulo",2]]},
+sol:"SELECT cidade, COUNT(*) FROM clientes\nGROUP BY cidade\nHAVING COUNT(*) > 1;"},
+{type:"quiz",q:"O padrão LIKE 'A%' casa com quais nomes?",options:["Nomes que terminam com A","Nomes que começam com A","Nomes com exatamente 2 letras","Nomes que contêm 'a' no meio"],answer:1,explain:"% substitui qualquer sequência após o A."},
+{type:"quiz",q:"Para que serve DISTINCT?",options:["Duplicar a tabela","Eliminar valores duplicados no resultado","Ordenar os resultados","Filtrar por data"],answer:1,explain:"SELECT DISTINCT cidade FROM clientes retorna cada cidade uma única vez."},
+{type:"quiz",q:"Para que serve o GROUP BY?",options:["Remover a tabela","Agrupar linhas com o mesmo valor para aplicar funções de agregação","Ordenar a tabela em ordem alfabética","Criar um backup"],answer:1,explain:"GROUP BY + COUNT/SUM/AVG gera totais por grupo."},
+{type:"quiz",q:"Qual a diferença entre WHERE e HAVING?",options:["São a mesma coisa","WHERE filtra LINHAS antes do agrupamento; HAVING filtra GRUPOS depois do GROUP BY","HAVING só funciona com datas","WHERE é mais lento"],answer:1,explain:"HAVING normalmente trabalha junto com COUNT, SUM, AVG..."}]},
+/* ================= MÓDULO 6 ================= */
+{num:6,tab:"Álgebra + DML",title:"Álgebra Relacional e Atualização/Exclusão (UPDATE, DELETE)",week:"Semana 6",
+goals:["Relacionar operações da álgebra relacional ao SQL","Praticar consultas de atualização e exclusão","Evitar comandos perigosos sem WHERE"],
+summary:["<b>σ (seleção)</b>: filtra <b>linhas</b> → cláusula <code>WHERE</code>.",
+"<b>π (projeção)</b>: escolhe <b>colunas</b> → lista após o <code>SELECT</code>.",
+"<b>⋈ (junção)</b>: combina tabelas → <code>JOIN ... ON</code>. Também existem ∪ (união), ∩ (interseção), − (diferença), × (produto cartesiano) e ρ (renomeação).",
+"<code>UPDATE tabela SET coluna = valor WHERE condição;</code>",
+"<code>DELETE FROM tabela WHERE condição;</code>",
+"⚠️ <b>UPDATE ou DELETE sem WHERE</b> afeta TODAS as linhas da tabela!"],
+schema:[T_CLIENTES,T_PRODUTOS,T_PEDIDOS],
+activities:[
+{type:"quiz",q:"A operação σ (sigma) da álgebra relacional...",options:["Seleciona colunas","Seleciona LINHAS (tuplas) que atendem a uma condição","Junta duas tabelas","Ordena os dados"],answer:1,explain:"σ condição (Relação) equivale ao WHERE do SQL."},
+{type:"quiz",q:"A operação π (pi) da álgebra relacional...",options:["Seleciona COLUNAS (atributos) da relação","Filtra linhas","Remove duplicatas do disco","Cria índices"],answer:0,explain:"π nome, cidade (CLIENTES) equivale a SELECT nome, cidade FROM clientes."},
+{type:"quiz",q:"O operador ⋈ representa...",options:["União","Diferença","Junção (combine relações por um atributo comum)","Renomeação"],answer:2,explain:"Junção natural equivale ao INNER JOIN ... ON do SQL."},
+{type:"quiz",q:"σ cidade = 'São Paulo' (CLIENTES) corresponde a qual cláusula SQL?",options:["SELECT","FROM","WHERE","ORDER BY"],answer:2,explain:"A seleção (σ) vira o filtro WHERE."},
+{type:"sql",q:"Traduza para SQL: <code>π nome, cidade (σ idade &gt; 30 (CLIENTES))</code>",
+ph:"SELECT ...;",
+must:[{re:/select/i,label:"Usa SELECT (projeção π)"},{re:/nome/i,label:"Coluna nome"},{re:/cidade/i,label:"Coluna cidade"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/where/i,label:"WHERE (seleção σ)"},{re:/idade\s*>\s*30/i,label:"idade > 30"}],
+hint:"π vira a lista de colunas; σ vira o WHERE.",
+ok:"3 rows in set (0.00 sec)",table:{cols:["nome","cidade"],rows:[["Bruno Lima","Rio de Janeiro"],["Carla Dias","São Paulo"],["Elisa Rocha","Curitiba"]]},
+sol:"SELECT nome, cidade FROM clientes WHERE idade > 30;"},
+{type:"sql",q:"O monitor (id_produto = 3) entrou em promoção. Atualize o <code>preco</code> dele para <code>199.90</code>.",
+ph:"UPDATE ...;",
+must:[{re:/update\s+produtos/i,label:"UPDATE produtos"},{re:/set\s+preco/i,label:"SET preco"},{re:/199\s*[.,]\s*90/i,label:"Novo preço 199.90"},{re:/where/i,label:"WHERE (linha específica)"},{re:/id_produto\s*=\s*3/i,label:"id_produto = 3"}],
+hint:"UPDATE tabela SET coluna = valor WHERE ...",
+ok:"Query OK, 1 row affected (0.01 sec)\nRows matched: 1  Changed: 1",
+sol:"UPDATE produtos SET preco = 199.90 WHERE id_produto = 3;"},
+{type:"sql",q:"O pedido 5 foi cancelado. Remova-o da tabela <code>pedidos</code>.",ph:"DELETE ...;",
+must:[{re:/delete\s+from\s+pedidos/i,label:"DELETE FROM pedidos"},{re:/where/i,label:"WHERE (linha específica)"},{re:/id_pedido\s*=\s*5/i,label:"id_pedido = 5"}],
+hint:"DELETE FROM tabela WHERE condição;",
+ok:"Query OK, 1 row affected (0.01 sec)",sol:"DELETE FROM pedidos WHERE id_pedido = 5;"},
+{type:"quiz",q:"O que acontece ao executar UPDATE produtos SET preco = 0; SEM WHERE?",options:["Nada, o MySQL bloqueia","Todos os produtos terão preço 0","Apenas o primeiro produto é alterado","O comando dá erro de sintaxe"],answer:1,explain:"Sem WHERE, o UPDATE afeta todas as linhas — cuidado redobrado!"}]},
+/* ================= MÓDULO 7 ================= */
+{num:7,tab:"NoSQL",title:"Bancos de Dados NoSQL (MongoDB) — CRUD",week:"Semana 7",
+goals:["Classificar os tipos de bancos NoSQL","Executar operações CRUD no MongoDB","Comparar NoSQL x Relacional"],
+summary:["NoSQL surgiu para grandes volumes, alta escala e <b>schema flexível</b>. Tipos: <b>Documento</b> (MongoDB), <b>Chave-valor</b> (Redis), <b>Colunas</b> (Cassandra), <b>Grafo</b> (Neo4j).",
+"MongoDB guarda <b>documentos BSON/JSON</b> dentro de <b>coleções</b>; cada documento tem um <code>_id</code> padrão.",
+"CRUD Mongo: <code>insertOne()</code> • <code>find()</code> • <code>updateOne({filtro}, {$set:{...}})</code> • <code>deleteOne({filtro})</code>.",
+"<b>Relacional</b>: schema rígido, JOINs, ACID, escala vertical. <b>NoSQL</b>: schema flexível, escala horizontal, consistência eventual."],
+activities:[
+{type:"quiz",q:"O MongoDB é um banco NoSQL orientado a...",options:["Grafos","Documentos (JSON/BSON)","Colunas largas","Chave-valor"],answer:1,explain:"Dados ficam em documentos JSON dentro de coleções."},
+{type:"quiz",q:"O Redis é um banco NoSQL do tipo...",options:["Documento","Grafo","Chave-valor (extremamente rápido)","Colunas"],answer:2,explain:"Redis guarda pares chave→valor em memória (cache, sessões)."},
+{type:"quiz",q:"Qual banco NoSQL é baseado em GRAFOS (nós e arestas)?",options:["Neo4j","MongoDB","Cassandra","MySQL"],answer:0,explain:"Neo4j é ideal para relacionamentos complexos: redes sociais, recomendações."},
+{type:"quiz",q:"Em MongoDB, todo documento recebe por padrão um identificador chamado...",options:["id","_id","pk","uid"],answer:1,explain:"_id é gerado automaticamente (ObjectId) se não for informado."},
+{type:"quiz",q:"Uma vantagem típica dos bancos NoSQL sobre os relacionais é...",options:["Schema rígido e fixo","Schema flexível e escalabilidade horizontal","JOINs mais rápidos","Garantia ACID em tudo"],answer:1,explain:"Documentos da mesma coleção podem ter estruturas diferentes."},
+{type:"match",q:"Ligue cada comando SQL ao seu equivalente no MongoDB:",pairs:[{l:"INSERT INTO clientes VALUES (...)",r:"db.clientes.insertOne({...})"},{l:"SELECT * FROM clientes",r:"db.clientes.find()"},{l:"UPDATE clientes SET ... WHERE ...",r:"db.clientes.updateOne({...}, {$set:{...}})"},{l:"DELETE FROM clientes WHERE ...",r:"db.clientes.deleteOne({...})"}],explain:"CRUD: Create→insertOne, Read→find, Update→updateOne, Delete→deleteOne."},
+{type:"sql",q:"Complete o comando MongoDB que busca clientes da cidade 'São Paulo':<br><code>db.clientes.__________({ cidade: 'São Paulo' })</code>",
+ph:"db.clientes....( ... );",
+must:[{re:/find\s*\(/i,label:"Método find()"}],
+hint:"O 'SELECT' do MongoDB chama-se find.",
+ok:"MongoDB Shell result:\n{ _id: ObjectId('a1'), nome: 'Ana Souza', cidade: 'São Paulo' }\n{ _id: ObjectId('a3'), nome: 'Carla Dias', cidade: 'São Paulo' }",
+sol:"db.clientes.find({ cidade: 'São Paulo' })"},
+{type:"quiz",q:"Qual comando MongoDB atualiza UM documento existente?",options:["find()","updateOne({filtro}, {$set:{...}})","insertOne()","drop()"],answer:1,explain:"updateMany atualizaria todos que casarem com o filtro."}]},
+/* ================= MÓDULO 8 ================= */
+{num:8,tab:"Projeto Final",title:"Revisão Geral — Projeto Final de Banco de Dados (JOINs)",week:"Semana 8",
+goals:["Construir um banco completo: criar, modelar, povoar e consultar","Combinar tabelas com JOINs (2 tabelas e 3 tabelas)","Aplicar normalização e agregar dados com JOIN + GROUP BY"],
+summary:["<b>Estudo de caso: Sistema de Biblioteca e Loja</b> — criar, modelar, povoar e consultar.",
+"O <b>INNER JOIN</b> retorna somente as linhas que possuem correspondência nas duas tabelas.",
+"JOIN de 2 tabelas: <code>FROM pedidos JOIN clientes ON pedidos.id_cliente = clientes.id_cliente</code>.",
+"JOIN de 3 tabelas (pedido + cliente + produto): cada JOIN conecta por uma FK.",
+"É possível <b>combinar</b> JOIN + WHERE + GROUP BY + funções de agregação em uma única consulta.",
+"No final, teste seus conhecimentos na <b>🏁 Prova Final cronometrada</b>."],
+schema:[T_CLIENTES,T_PRODUTOS,T_PEDIDOS],
+activities:[
+{type:"sql",q:"📦 ETAPA 1 — Crie o banco de dados <code>biblioteca</code>.",ph:"CREATE ...;",
+must:[{re:/create\s+database\s+biblioteca/i,label:"CREATE DATABASE biblioteca"}],
+hint:"Mesma sintaxe do módulo 3.",ok:"Query OK, 1 row affected (0.01 sec)",sol:"CREATE DATABASE biblioteca;"},
+{type:"sql",q:"📦 ETAPA 2 — Crie a tabela <code>autores</code>: id_autor INT (PK, AUTO_INCREMENT), nome VARCHAR(80) NOT NULL.",
+ph:"CREATE TABLE ...;",
+must:[{re:/create\s+table\s+autores/i,label:"Cria a tabela autores"},{re:/id_autor\s+int/i,label:"id_autor INT"},{re:/primary\s+key/i,label:"Chave primária"},{re:/not\s+null/i,label:"NOT NULL no nome"}],
+hint:"Siga o modelo da tabela clientes.",ok:"Query OK, 0 rows affected (0.02 sec)",
+sol:"CREATE TABLE autores (\n  id_autor INT PRIMARY KEY AUTO_INCREMENT,\n  nome VARCHAR(80) NOT NULL\n);"},
+{type:"sql",q:"📦 ETAPA 3 — Crie a tabela <code>livros</code>: id_livro INT (PK, AUTO_INCREMENT), titulo VARCHAR(100) NOT NULL, ano INT, id_autor INT com FOREIGN KEY referenciando <code>autores</code>.",
+ph:"CREATE TABLE ...;",
+must:[{re:/create\s+table\s+livros/i,label:"Cria a tabela livros"},{re:/primary\s+key/i,label:"Chave primária"},{re:/foreign\s+key/i,label:"FOREIGN KEY"},{re:/references\s+autores/i,label:"REFERENCES autores"}],
+hint:"FOREIGN KEY (id_autor) REFERENCES autores(id_autor)",
+ok:"Query OK, 0 rows affected (0.02 sec)",
+sol:"CREATE TABLE livros (\n  id_livro INT PRIMARY KEY AUTO_INCREMENT,\n  titulo VARCHAR(100) NOT NULL,\n  ano INT,\n  id_autor INT,\n  FOREIGN KEY (id_autor) REFERENCES autores(id_autor)\n);"},
+{type:"sql",q:"📦 ETAPA 4 — Insira o autor <b>Machado de Assis</b> em <code>autores</code>.",ph:"INSERT ...;",
+must:[{re:/insert\s+into\s+autores/i,label:"INSERT INTO autores"},{re:/values\s*\(/i,label:"Cláusula VALUES"},{re:/machado/i,label:"Nome do autor"}],
+hint:"INSERT INTO autores (nome) VALUES (...);",ok:"Query OK, 1 row affected",
+sol:"INSERT INTO autores (nome) VALUES ('Machado de Assis');"},
+{type:"sql",q:"📦 ETAPA 5 — Insira o livro <b>Dom Casmurro</b> (ano 1899, id_autor 1) em <code>livros</code>.",ph:"INSERT ...;",
+must:[{re:/insert\s+into\s+livros/i,label:"INSERT INTO livros"},{re:/values\s*\(/i,label:"Cláusula VALUES"},{re:/casmurro/i,label:"Título do livro"}],
+hint:"Informe titulo, ano e id_autor.",ok:"Query OK, 1 row affected",
+sol:"INSERT INTO livros (titulo, ano, id_autor) VALUES ('Dom Casmurro', 1899, 1);"},
+{type:"sql",q:"📦 ETAPA 6 — Consulta com JOIN: mostre <code>titulo</code> (de livros) e <code>nome</code> (de autores), combinando as duas tabelas pelo id_autor.",
+ph:"SELECT ... JOIN ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/titulo/i,label:"Coluna titulo"},{re:/nome/i,label:"Coluna nome"},{re:/from\s+livros/i,label:"FROM livros"},{re:/join/i,label:"Usa JOIN"},{re:/autores/i,label:"Tabela autores"},{re:/on/i,label:"Condição ON"}],
+hint:"FROM livros JOIN autores ON livros.id_autor = autores.id_autor",
+ok:"1 row in set (0.00 sec)",table:{cols:["titulo","nome"],rows:[["Dom Casmurro","Machado de Assis"]]},
+sol:"SELECT livros.titulo, autores.nome\nFROM livros\nJOIN autores ON livros.id_autor = autores.id_autor;"},
+{type:"quiz",q:"🔍 O INNER JOIN retorna...",options:["Todas as linhas das duas tabelas, mesmo sem correspondência","Somente as linhas que possuem correspondência nas duas tabelas","Somente as linhas da primeira tabela","Somente as linhas sem correspondência"],answer:1,explain:"Para incluir linhas sem correspondência usa-se LEFT/RIGHT JOIN."},
+{type:"sql",q:"🔗 <b>JOIN 2 tabelas</b> — no banco <code>loja</code>, mostre o <code>id_pedido</code> e o <code>nome</code> do cliente de cada pedido (pedidos × clientes).",
+ph:"SELECT ... JOIN ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/id_pedido/i,label:"Coluna id_pedido"},{re:/nome/i,label:"Coluna nome (do cliente)"},{re:/from\s+pedidos/i,label:"FROM pedidos"},{re:/join/i,label:"Usa JOIN"},{re:/clientes/i,label:"Tabela clientes"},{re:/on/i,label:"Condição ON"},{re:/id_cliente/i,label:"Junta pelo id_cliente"}],
+hint:"FROM pedidos JOIN clientes ON pedidos.id_cliente = clientes.id_cliente",
+ok:"5 rows in set (0.00 sec)",table:{cols:["id_pedido","nome"],rows:[[1,"Ana Souza"],[2,"Bruno Lima"],[3,"Carla Dias"],[4,"Ana Souza"],[5,"Diego Alves"]]},
+sol:"SELECT pedidos.id_pedido, clientes.nome\nFROM pedidos\nJOIN clientes ON pedidos.id_cliente = clientes.id_cliente;"},
+{type:"sql",q:"🔗 <b>JOIN com filtro</b> — mostre o nome do cliente e a quantidade dos pedidos em que a <b>quantidade &gt; 1</b>.",
+ph:"SELECT ... JOIN ... WHERE ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/join/i,label:"Usa JOIN"},{re:/clientes/i,label:"Tabela clientes"},{re:/on/i,label:"Condição ON"},{re:/where/i,label:"Filtro WHERE"},{re:/quantidade\s*>\s*1/i,label:"quantidade > 1"}],
+hint:"Adicione WHERE quantidade > 1 depois do ON.",
+ok:"3 rows in set (0.00 sec)",table:{cols:["nome","quantidade"],rows:[["Ana Souza",3],["Carla Dias",2],["Diego Alves",2]]},
+sol:"SELECT clientes.nome, pedidos.quantidade\nFROM pedidos\nJOIN clientes ON pedidos.id_cliente = clientes.id_cliente\nWHERE pedidos.quantidade > 1;"},
+{type:"sql",q:"🔗 <b>JOIN de 3 tabelas</b> — mostre o nome do cliente e o nome do produto de cada pedido (pedidos × clientes × produtos).",
+ph:"SELECT ... JOIN ... JOIN ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/join/i,label:"Usa JOIN"},{re:/clientes/i,label:"Tabela clientes"},{re:/produtos/i,label:"Tabela produtos"},{re:/on/i,label:"Condições ON"},{re:/id_cliente/i,label:"Junta pelo id_cliente"},{re:/id_produto/i,label:"Junta pelo id_produto"}],
+hint:"FROM pedidos JOIN clientes ON ... JOIN produtos ON pedidos.id_produto = produtos.id_produto",
+ok:"5 rows in set (0.00 sec)",table:{cols:["nome","produto"],rows:[["Ana Souza","Mouse Gamer"],["Bruno Lima","Teclado Mecânico"],["Carla Dias",'Monitor 24"'],["Ana Souza","Headset"],["Diego Alves","Webcam HD"]]},
+sol:"SELECT clientes.nome, produtos.nome AS produto\nFROM pedidos\nJOIN clientes ON pedidos.id_cliente = clientes.id_cliente\nJOIN produtos ON pedidos.id_produto = produtos.id_produto;"},
+{type:"sql",q:"🔗 <b>JOIN + GROUP BY (avançado)</b> — mostre o nome de cada cliente e a soma das quantidades que ele pediu.",
+ph:"SELECT ... JOIN ... GROUP BY ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/sum\s*\(/i,label:"Função SUM"},{re:/join/i,label:"Usa JOIN"},{re:/clientes/i,label:"Tabela clientes"},{re:/on/i,label:"Condição ON"},{re:/group\s+by/i,label:"GROUP BY"}],
+hint:"SELECT c.nome, SUM(p.quantidade) ... GROUP BY c.nome",
+ok:"4 rows in set (0.00 sec)",table:{cols:["nome","SUM(quantidade)"],rows:[["Ana Souza",4],["Bruno Lima",1],["Carla Dias",2],["Diego Alves",2]]},
+sol:"SELECT clientes.nome, SUM(pedidos.quantidade)\nFROM pedidos\nJOIN clientes ON pedidos.id_cliente = clientes.id_cliente\nGROUP BY clientes.nome;"},
+{type:"quiz",q:"🔍 Se a tabela livros guardasse também o NOME DO AUTOR repetido em cada livro, qual forma normal seria violada?",options:["1FN","2FN","3FN (dependência transitiva via id_autor)","Nenhuma"],answer:2,explain:"titulo → id_autor → nome_autor: o nome do autor deve ficar só na tabela autores."}]}
+];
+
+/* ================= PROVA FINAL ================= */
+const EXAM_TIME=720; // 12 minutos
+const EXAM_QS=[
+{type:"quiz",q:"Qual é a principal vantagem de um SGBD sobre armazenar dados apenas em arquivos?",options:["Arquivos são mais rápidos","Controle de redundância, integridade, segurança e concorrência","O SGBD elimina a necessidade de backup","Arquivos não permitem gravar dados"],answer:1},
+{type:"quiz",q:"DDL inclui quais comandos?",options:["SELECT, FROM, WHERE","CREATE, ALTER, DROP","GRANT, REVOKE","COMMIT, ROLLBACK"],answer:1},
+{type:"quiz",q:"A chave primária (PK) serve para...",options:["Criptografar os dados","Identificar unicamente cada linha da tabela","Ordenar automaticamente","Acelerar a internet"],answer:1},
+{type:"quiz",q:"A chave estrangeira (FK) tem a função de...",options:["Gerar senhas","Referenciar a chave primária de outra tabela","Substituir a PK","Apagar dados sempre"],answer:1},
+{type:"quiz",q:"Um relacionamento N:M implementa-se no modelo relacional com...",options:["Uma única coluna","Uma tabela intermediária (associativa) com FKs das duas entidades","Sem chave alguma","Duas PKs independentes sem tabela nova"],answer:1},
+{type:"quiz",q:"Vários telefones guardados numa única célula viola...",options:["1FN","2FN","3FN","Nenhuma"],answer:0},
+{type:"quiz",q:"σ (seleção) da álgebra relacional corresponde a qual cláusula SQL?",options:["SELECT","WHERE","JOIN","ORDER BY"],answer:1},
+{type:"quiz",q:"π (projeção) corresponde a...",options:["A lista de colunas após o SELECT","O WHERE","O LIMIT","O GROUP BY"],answer:0},
+{type:"quiz",q:"Executar UPDATE sem WHERE...",options:["Dá erro de sintaxe","Afeta TODAS as linhas da tabela","Afeta só a primeira linha","Não faz nada"],answer:1},
+{type:"quiz",q:"O MongoDB é um banco NoSQL orientado a...",options:["Grafos","Documentos (JSON/BSON)","Colunas largas","Chave-valor"],answer:1},
+{type:"quiz",q:"GRANT e REVOKE pertencem à categoria...",options:["DDL","DML","DCL","TCL"],answer:2},
+{type:"sql",q:"Selecione <code>nome</code> e <code>idade</code> dos clientes do <b>Rio de Janeiro</b>.",ph:"SELECT ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/nome/i,label:"Coluna nome"},{re:/idade/i,label:"Coluna idade"},{re:/from\s+clientes/i,label:"FROM clientes"},{re:/where/i,label:"Filtro WHERE"},{re:/rio/i,label:"Filtro cidade = 'Rio de Janeiro'"}],
+sol:"SELECT nome, idade FROM clientes WHERE cidade = 'Rio de Janeiro';"},
+{type:"sql",q:"Conte quantos produtos têm <b>estoque menor que 30</b>.",ph:"SELECT ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/count\s*\(/i,label:"Função COUNT"},{re:/from\s+produtos/i,label:"FROM produtos"},{re:/where/i,label:"Filtro WHERE"},{re:/estoque\s*<\s*30/i,label:"estoque < 30"}],
+sol:"SELECT COUNT(*) FROM produtos WHERE estoque < 30;"},
+{type:"sql",q:"Mostre <code>titulo</code> (livros) e <code>nome</code> (autores) usando <b>JOIN</b>.",ph:"SELECT ... JOIN ...;",
+must:[{re:/select/i,label:"Usa SELECT"},{re:/titulo/i,label:"Coluna titulo"},{re:/nome/i,label:"Coluna nome"},{re:/from\s+livros/i,label:"FROM livros"},{re:/join/i,label:"Usa JOIN"},{re:/autores/i,label:"Tabela autores"},{re:/on/i,label:"Condição ON"}],
+sol:"SELECT livros.titulo, autores.nome FROM livros JOIN autores ON livros.id_autor = autores.id_autor;"},
+{type:"match",q:"Ligue cada comando SQL ao seu equivalente no MongoDB:",pairs:[{l:"INSERT INTO clientes VALUES (...)",r:"db.clientes.insertOne({...})"},{l:"SELECT * FROM clientes",r:"db.clientes.find()"},{l:"UPDATE clientes SET ... WHERE ...",r:"db.clientes.updateOne({...}, {$set:{...}})"},{l:"DELETE FROM clientes WHERE ...",r:"db.clientes.deleteOne({...})"}]},
+{type:"match",q:"Ligue cada comando à sua categoria SQL:",pairs:[{l:"CREATE TABLE / ALTER / DROP",r:"DDL — definição de estrutura"},{l:"INSERT / UPDATE / DELETE",r:"DML — manipulação de dados"},{l:"SELECT",r:"DQL — consulta de dados"},{l:"GRANT / REVOKE",r:"DCL — controle de acesso"}]}
+];
+
+/* ============ MOTOR ============ */
+const S={done:new Set(JSON.parse(localStorage.getItem('bdSimDone')||'[]'))};
+const save=()=>localStorage.setItem('bdSimDone',JSON.stringify([...S.done]));
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function h(t,c,html){const e=document.createElement(t);if(c)e.className=c;if(html!=null)e.innerHTML=html;return e;}
+
+function refreshScore(){
+  const total=MODULES.reduce((n,m)=>n+m.activities.length,0);
+  document.getElementById('scoreTxt').textContent=`${S.done.size}/${total} atividades • ${S.done.size*10} XP`;
+  document.getElementById('bar').style.width=(S.done.size/total*100)+'%';
+}
+function markDone(id,card){
+  if(S.done.has(id))return;
+  S.done.add(id);save();refreshScore();
+  if(card){card.classList.add('done');const st=card.querySelector('.pts');if(st)st.textContent='✔ concluída • 10 XP';}
+}
+function cardHead(type){
+  const head=h('div','qhead');
+  head.append(h('span','tag '+type,type==='quiz'?'Quiz':type==='sql'?'SQL Editor':'Ligar os pares'));
+  head.append(h('span','pts','10 XP'));
+  return head;
+}
+function resultTable(t){
+  const tb=h('table','rt');const tr=h('tr');
+  t.cols.forEach(c=>tr.append(h('th',null,esc(String(c)))));tb.append(tr);
+  const body=h('tbody');
+  t.rows.forEach(r=>{const row=h('tr');r.forEach(v=>row.append(h('td',null,esc(String(v)))));body.append(row);});
+  tb.append(body);return tb;
+}
+function renderQuiz(a,id){
+  const c=h('div','card');if(S.done.has(id))c.classList.add('done');
+  c.append(cardHead('quiz'),h('p','q',a.q));
+  const fb=h('div','fb');
+  a.options.forEach((t,i)=>{
+    const b=h('button','opt');b.textContent=t;
+    b.onclick=()=>{
+      if(i===a.answer){
+        b.classList.add('ok');c.querySelectorAll('.opt').forEach(o=>o.disabled=true);
+        fb.innerHTML=`<span class="check">✔ Correto!</span> ${a.explain||''}`;
+        markDone(id,c);
+      }else{b.classList.add('bad');b.disabled=true;fb.innerHTML='<span class="cross">✖ Não é essa.</span> Tente novamente.';}
+    };
+    c.append(b);
+  });
+  c.append(fb);return c;
+}
+function renderSQL(a,id){
+  const c=h('div','card');if(S.done.has(id))c.classList.add('done');
+  if(S.done.has(id)){const st=c.querySelector('.pts');}
+  c.append(cardHead('sql'),h('p','q',a.q));
+  if(S.done.has(id)){const hd=c.querySelector('.qhead .pts');if(hd)hd.textContent='✔ concluída • 10 XP';}
+  const ta=h('textarea','sql');ta.placeholder=a.ph||'Digite seu comando SQL...';ta.spellcheck=false;c.append(ta);
+  const hint=h('div','hintbox');hint.innerHTML='💡 '+a.hint;
+  const fb=h('div','fb');
+  const bCheck=h('button','btn primary');bCheck.textContent='▶ Verificar';
+  const bHint=h('button','btn');bHint.textContent='💡 Dica';
+  const bClr=h('button','btn');bClr.textContent='Limpar';
+  bHint.onclick=()=>hint.style.display='block';
+  bClr.onclick=()=>{ta.value='';fb.innerHTML='';};
+  bCheck.onclick=()=>{
+    const v=ta.value;fb.innerHTML='';
+    if(!v.trim()){fb.innerHTML='<span class="cross">✖</span> Digite um comando SQL.';return;}
+    let ok=true;const ul=h('ul');
+    a.must.forEach(m=>{const p=m.re.test(v);ok=ok&&p;ul.append(h('li',null,`<span class="${p?'check':'cross'}">${p?'✔':'✖'}</span> ${m.label}`));});
+    (a.mustNot||[]).forEach(m=>{const bad=m.re.test(v);ok=ok&&!bad;ul.append(h('li',null,`<span class="${bad?'cross':'check'}">${bad?'✖':'✔'}</span> ${m.label}`));});
+    fb.append(ul);
+    if(ok){
+      fb.append(h('div','console',a.ok||'Query OK'));
+      if(a.table)fb.append(resultTable(a.table));
+      if(a.sol){const d=h('details');d.append(h('summary',null,'Ver solução modelo'));d.append(h('pre',null,esc(a.sol)));fb.append(d);}
+      markDone(id,c);
+    }
+  };
+  const row=h('div','btnrow');row.append(bCheck,bHint,bClr);
+  c.append(row,hint,fb);return c;
+}
+function renderMatch(a,id){
+  const c=h('div','card');if(S.done.has(id))c.classList.add('done');
+  c.append(cardHead('match'),h('p','q',a.q));
+  const rights=a.pairs.map(p=>p.r);const shuf=[...rights].sort(()=>Math.random()-.5);
+  const selMap=[];
+  a.pairs.forEach(p=>{
+    const row=h('div','pair');
+    row.append(h('code',null,esc(p.l)));
+    const s=h('select','m');s.append(h('option',null,'— selecione —'));
+    shuf.forEach(r=>{const o=h('option');o.value=r;o.textContent=r;s.append(o);});
+    row.append(s);selMap.push({sel:s,right:p.r});c.append(row);
+  });
+  const fb=h('div','fb');
+  const b=h('button','btn primary');b.textContent='▶ Verificar';
+  b.onclick=()=>{
+    let ok=true;
+    selMap.forEach(({sel,right})=>{const g=sel.value===right;sel.style.borderColor=g?'#34d399':'#f87171';if(!g)ok=false;});
+    if(ok){fb.innerHTML=`<span class="check">✔ Perfeito! Todos os pares corretos.</span> ${a.explain||''}`;markDone(id,c);}
+    else fb.innerHTML='<span class="cross">✖</span> Alguns pares estão errados (borda vermelha). Tente de novo.';
+  };
+  const row=h('div','btnrow');row.append(b);c.append(row,fb);return c;
+}
+function resultTablesBlock(tables){
+  const w=h('div','schema');
+  w.append(h('p',null,'<b style="color:#fbbf24">📖 Dicionário de dados — banco <code>loja</code> (use como referência)</b>'));
+  tables.forEach(t=>{
+    const label=t.cols[0]==='id_cliente'?'clientes':t.cols[0]==='id_produto'?'produtos':'pedidos';
+    w.append(h('h4',null,'Tabela: '+label));
+    w.append(resultTable(t));
+  });
+  return w;
+}
+function buildModule(m){
+  const sec=h('section','module');
+  sec.append(h('h2',null,`Módulo ${m.num} — ${m.title}`),h('p','week',m.week));
+  const g=h('div','summary');g.innerHTML='<b>🎯 Objetivos</b>';
+  const ul=h('ul');m.goals.forEach(t=>ul.append(h('li',null,t)));g.append(ul);sec.append(g);
+  const s=h('div','summary');s.innerHTML='<b>📘 Resumo do conteúdo</b>';
+  const ul2=h('ul');m.summary.forEach(t=>ul2.append(h('li',null,t)));s.append(ul2);sec.append(s);
+  if(m.schema)sec.append(resultTablesBlock(m.schema));
+  m.activities.forEach((a,i)=>{
+    const id=`m${m.num}a${i}`;
+    const card=a.type==='quiz'?renderQuiz(a,id):a.type==='sql'?renderSQL(a,id):renderMatch(a,id);
+    sec.append(card);
+  });
+  return sec;
+}
+
+/* ============ PROVA CRONOMETRADA ============ */
+let examTimer=null,examState={started:false,finished:false,remaining:EXAM_TIME};
+function gradeLetter(p){
+  if(p>=94)return['A','🏆 Excelente! Domínio completo do conteúdo.'];
+  if(p>=90)return['A-','🌟 Ótimo!'];
+  if(p>=86)return['B+','👍 Muito bom!'];
+  if(p>=83)return['B','👍 Bom!'];
+  if(p>=80)return['B-','👍 Bom, dá para revisar alguns pontos.'];
+  if(p>=76)return['C+','🙂 Satisfatório.'];
+  if(p>=73)return['C','🙂 Satisfatório.'];
+  if(p>=70)return['C-','🙂 Satisfatório, revise os erros.'];
+  if(p>=66)return['D+','⚠️ Abaixo do esperado.'];
+  if(p>=63)return['D','⚠️ Abaixo do esperado.'];
+  if(p>=60)return['D-','⚠️ No limite — revise os módulos!'];
+  return['F','📕 Reprovado — revise os módulos e tente novamente!'];
+}
+function fmtTime(s){const m=Math.floor(s/60),ss=s%60;return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');}
+function buildExamSection(){
+  const sec=h('section','module');sec.id='examSec';
+  sec.append(h('h2',null,'🏁 Prova Final Cronometrada'),h('p','week','Modo avaliação — todo o conteúdo do curso'));
+  const intro=h('div','examintro');
+  intro.innerHTML=`<p>⚠️ Você terá <b style="color:#fbbf24">12 minutos</b> para resolver <b style="color:#fbbf24">${EXAM_QS.length} questões</b> (quizzes, editor SQL e ligar-pares) sobre <b>todos os módulos</b>.</p>
+  <p>• Questões de quiz: 1 tentativa de marcação (pode trocar até entregar)<br>• SQL: digite o comando completo<br>• Ao terminar o tempo, a prova é entregue automaticamente<br>• A nota sai em porcentagem e conceito (A a F)</p>`;
+  const btnStart=h('button','btn danger');btnStart.textContent='🚀 Iniciar prova';btnStart.style.fontSize='1rem';btnStart.style.padding='12px 26px';
+  btnStart.onclick=startExam;
+  intro.append(btnStart);
+  sec.append(intro);
+  const holder=h('div');holder.id='examBody';sec.append(holder);
+  return sec;
+}
+function startExam(){
+  if(!confirm(`Iniciar a prova final?\n${EXAM_QS.length} questões • ${EXAM_TIME/60} minutos • sem pausa!`))return;
+  clearInterval(examTimer);
+  examState={started:true,finished:false,remaining:EXAM_TIME};
+  const body=document.getElementById('examBody');body.innerHTML='';
+  const bar=h('div','exambar');
+  bar.innerHTML=`<span class="timer" id="examTimer">${fmtTime(EXAM_TIME)}</span><div class="tbar"><i id="examTbar"></i></div>`;
+  const btnSubmit=h('button','btn danger');btnSubmit.textContent='📤 Entregar prova';btnSubmit.onclick=()=>submitExam(false);
+  bar.append(btnSubmit);
+  body.append(bar);
+  EXAM_QS.forEach((q,i)=>{
+    const card=h('div','card');card.id='eq'+i;
+    card.append(h('div','qhead',`<span class="tag">Questão ${i+1}/${EXAM_QS.length}</span><span class="pts">1 ponto</span>`),h('p','q',q.q));
+    if(q.type==='quiz'){
+      q.options.forEach((t,j)=>{
+        const b=h('button','opt');b.textContent=t;
+        b.onclick=()=>{card.dataset.answer=j;card.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));b.classList.add('sel');};
+        card.append(b);
+      });
+    } else if(q.type==='sql'){
+      const ta=h('textarea','sql');ta.placeholder='Digite seu comando SQL...';ta.spellcheck=false;card.append(ta);
+      card.append(h('div','fb'));
+    } else {
+      const shuf=[...q.pairs.map(p=>p.r)].sort(()=>Math.random()-.5);
+      q.pairs.forEach(p=>{
+        const row=h('div','pair');
+        row.append(h('code',null,esc(p.l)));
+        const s=h('select','m');s.append(h('option',null,'— selecione —'));
+        shuf.forEach(r=>{const o=h('option');o.value=r;o.textContent=r;s.append(o);});
+        row.append(s);card.append(row);
+      });
+      card.append(h('div','fb'));
+    }
+    body.append(card);
+  });
+  const fin=h('div','btnrow');fin.style.justifyContent='center';
+  const bEnd=h('button','btn danger');bEnd.textContent='📤 Entregar prova';bEnd.onclick=()=>submitExam(false);
+  fin.append(bEnd);body.append(fin);
+  examTimer=setInterval(()=>{
+    examState.remaining--;
+    const tEl=document.getElementById('examTimer'),bEl=document.getElementById('examTbar');
+    if(!tEl){clearInterval(examTimer);return;}
+    tEl.textContent=fmtTime(Math.max(examState.remaining,0));
+    bEl.style.width=(examState.remaining/EXAM_TIME*100)+'%';
+    if(examState.remaining<=60){tEl.className='timer danger';bEl.style.background='#f87171';}
+    else if(examState.remaining<=180){tEl.className='timer warn';bEl.style.background='#fbbf24';}
+    if(examState.remaining<=0)submitExam(true);
+  },1000);
+}
+function submitExam(auto){
+  if(!examState.started||examState.finished)return;
+  examState.finished=true;clearInterval(examTimer);
+  let score=0;const detail=[];
+  EXAM_QS.forEach((q,i)=>{
+    const card=document.getElementById('eq'+i);let ok=false;
+    if(q.type==='quiz'){
+      const chosen=card.dataset.answer;
+      card.querySelectorAll('.opt').forEach((o,j)=>{
+        o.disabled=true;
+        if(j===q.answer)o.classList.add('ok');
+        else if(chosen!==undefined&&+chosen===j)o.classList.add('bad');
+      });
+      ok=chosen!==undefined&&+chosen===q.answer;
+    } else if(q.type==='sql'){
+      const ta=card.querySelector('textarea');const v=ta.value;ta.disabled=true;
+      ok=q.must.every(m=>m.re.test(v))&&(q.mustNot||[]).every(m=>!m.re.test(v));
+      const fb=card.querySelector('.fb');fb.innerHTML='';
+      const ul=h('ul');
+      q.must.forEach(m=>{const p=m.re.test(v);ul.append(h('li',null,`<span class="${p?'check':'cross'}">${p?'✔':'✖'}</span> ${m.label}`));});
+      fb.append(ul);
+      if(ok)fb.append(h('p','check','✔ Correto!'));
+      else{fb.append(h('p','cross','✖ Incorreto.'));const d=h('details');d.append(h('summary',null,'Solução modelo'));d.append(h('pre',null,esc(q.sol||'')));fb.append(d);}
+    } else {
+      let mOk=true;
+      card.querySelectorAll('select').forEach((s,idx)=>{s.disabled=true;const g=s.value===q.pairs[idx].r;s.style.borderColor=g?'#34d399':'#f87171';if(!g)mOk=false;});
+      const fb=card.querySelector('.fb');fb.innerHTML=mOk?'<span class="check">✔ Todos os pares corretos!</span>':'<span class="cross">✖ Há pares incorretos.</span>';
+      ok=mOk;
+    }
+    if(ok)score++;
+    detail.push(ok);
+    card.classList.add(ok?'exOk':'exBad');
+  });
+  const pct=Math.round(score/EXAM_QS.length*100);
+  const[letter,msg]=gradeLetter(pct);
+  const used=EXAM_TIME-examState.remaining;
+  const body=document.getElementById('examBody');
+  const res=h('div','result');
+  res.innerHTML=`${auto?'<p class="cross">⏰ Tempo esgotado — prova entregue automaticamente!</p>':''}
+  <div class="letter">${letter}</div>
+  <p style="font-size:1.2rem;color:#fff">${pct}% • ${score}/${EXAM_QS.length} questões</p>
+  <p class="msg">${msg}</p>
+  <p style="color:#64748b;font-size:.8rem">Tempo utilizado: ${fmtTime(used)} de ${fmtTime(EXAM_TIME)}</p>`;
+  const bAgain=h('button','btn primary');bAgain.textContent='🔄 Refazer prova';bAgain.onclick=startExam;
+  res.append(bAgain);
+  body.insertBefore(res,body.firstChild);
+  body.scrollIntoView({behavior:'smooth'});
+}
+
+/* ============ NAVEGAÇÃO ============ */
+const nav=document.getElementById('tabs'),content=document.getElementById('content');
+const sections=[];
+MODULES.forEach(m=>{
+  const b=h('button','tab');b.innerHTML=`<b>M${m.num}</b> · ${m.tab}`;
+  b.onclick=()=>show(sections.length);
+  nav.append(b);sections.push(b);
+  content.append(buildModule(m));
+});
+const examBtn=h('button','tab exam');examBtn.innerHTML='🏁 Prova Final';
+examBtn.onclick=()=>show(sections.length);
+nav.append(examBtn);sections.push(examBtn);
+content.append(buildExamSection());
+
+function show(i){
+  sections.forEach((b,j)=>b.classList.toggle('active',j===i));
+  content.querySelectorAll(':scope > section').forEach((s,j)=>s.style.display=j===i?'block':'none');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+refreshScore();show(0);
+</script>
+</body>
+</html>
