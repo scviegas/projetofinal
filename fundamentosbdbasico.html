@@ -578,7 +578,8 @@ function renderActivity(mi,ai,a){
 
 /* ===== QUIZ ===== */
 function pick(key,oi){
-  if(isDone(key))return;
+  // Permite responder novamente mesmo quando a atividade já está salva como concluída.
+  // award() continua idempotente e não duplica XP.
   var parts=key.split("-");
   var mi=parseInt(parts[0],10),ai=parseInt(parts[1],10);
   var a=MODULES[mi].activities[ai];
