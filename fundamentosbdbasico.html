@@ -467,13 +467,15 @@ function totalActs(){return MODULES.reduce(function(a,m){return a+m.activities.l
 function countDone(){return Object.keys(done).length}
 function isDone(k){return !!done[k]}
 function award(k,card){
+  // Registra XP apenas uma vez, mas SEMPRE libera a navegação adiante.
   if(!done[k]){
-    done[k]=1; save();
-    if(card) card.classList.add('done');
+    done[k]=1;
+    save();
     updateScore();
     renderTabs();
-    showNextStep(k);
   }
+  if(card) card.classList.add('done');
+  showNextStep(k);
 }
 function showNextStep(key){
   var parts=key.split('-'), mi=parseInt(parts[0],10), ai=parseInt(parts[1],10);
