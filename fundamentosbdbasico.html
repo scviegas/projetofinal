@@ -466,7 +466,33 @@ function resetAll(){if(confirm('Apagar todo o progresso?')){lsSet('bdSimDone',''
 function totalActs(){return MODULES.reduce(function(a,m){return a+m.activities.length},0)}
 function countDone(){return Object.keys(done).length}
 function isDone(k){return !!done[k]}
-function award(k,card){if(!done[k]){done[k]=1;save();if(card)card.classList.add('done');updateScore();}}
+function award(k,card){
+  if(!done[k]){
+    done[k]=1; save();
+    if(card) card.classList.add('done');
+    updateScore();
+    renderTabs();
+    showNextStep(k);
+  }
+}
+function showNextStep(key){
+  var parts=key.split('-'), mi=parseInt(parts[0],10), ai=parseInt(parts[1],10);
+  var card=document.getElementById('c-'+key); if(!card)return;
+  var old=document.getElementById('next-'+key); if(old)old.remove();
+  var box=document.createElement('div'); box.id='next-'+key; box.className='btnrow';
+  if(ai < MODULES[mi].activities.length-1){
+    box.innerHTML='<button class="btn primary" onclick="nextActivity('+mi+','+(ai+1)+')">Próxima atividade →</button>';
+  } else if(mi < MODULES.length-1){
+    box.innerHTML='<button class="btn primary" onclick="go('+(mi+1)+')">Próxima etapa: '+MODULES[mi+1].tab+' →</button>';
+  } else {
+    box.innerHTML='<button class="btn danger" onclick="goExam()">Ir para a Prova Final →</button>';
+  }
+  card.appendChild(box);
+}
+function nextActivity(mi,ai){
+  var el=document.getElementById('c-'+mi+'-'+ai);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+}
 
 function updateScore(){
   var t=totalActs(),d=countDone(),xp=d*XP_PER_ACT;
