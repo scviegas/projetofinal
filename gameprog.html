@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAVA://TERMINAL — Missão: Compilar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0b08; --panel:#0d0f0b; --line:#22251c; --line2:#2e3226;
+  --amber:#f2b04a; --amber-dim:#9a7a3e;
+  --text:#d6d2c4; --dim:#7d8072; --faint:#3f4336;
+  --ok:#7bd8a2; --err:#ef5f6b; --cyan:#6cc5d0;
+  --kw:#f0a35e; --str:#a3d977; --num:#6cc5d0; --cmt:#69705f; --cls:#e8d29a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:radial-gradient(1100px 500px at 50% -8%, rgba(242,176,74,.045), transparent 60%), var(--bg);
+  color:var(--text); font-family:'JetBrains Mono',monospace; font-size:15px; line-height:1.55; overflow-x:hidden;
+}
+/* efeitos de CRT */
+.fx{position:fixed;inset:0;pointer-events:none;z-index:60}
+.fx.scan{background:repeating-linear-gradient(0deg, rgba(0,0,0,.15) 0 1px, transparent 1px 3px)}
+.fx.vig{background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.42) 100%)}
+#wrap{max-width:940px;margin:14px auto;padding:0 12px;display:flex;flex-direction:column;min-height:calc(100vh - 28px)}
+#monitor{border:1px solid var(--line2);background:rgba(12,14,10,.72);flex:1;display:flex;flex-direction:column;box-shadow:0 0 0 1px #000,0 24px 70px rgba(0,0,0,.55);transition:box-shadow .3s}
+#monitor.flash-ok{box-shadow:0 0 0 1px #000,0 0 0 2px var(--ok),0 24px 70px rgba(0,0,0,.55)}
+#monitor.flash-err{box-shadow:0 0 0 1px #000,0 0 0 2px var(--err),0 24px 70px rgba(0,0,0,.55)}
+/* HUD */
+#hud{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:rgba(242,176,74,.03)}
+.logo{color:var(--amber);font-weight:800;letter-spacing:.5px;font-size:.9rem}
+.ver{color:var(--faint);font-size:.68rem;margin-left:6px}
+#hudUser{color:var(--dim);font-size:.74rem;margin-left:10px}
+.hud-right{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.72rem}
+.chip{color:var(--dim);display:inline-flex;gap:5px;align-items:center}
+.chip b{color:var(--amber);font-weight:700;position:relative}
+.cores{letter-spacing:2px}
+.cores .on{color:var(--amber)} .cores .off{color:var(--faint)}
+#streakChip{color:var(--cyan)}
+#streakChip.hidden,.hidden{display:none!important}
+.tbtn{background:transparent;border:1px solid var(--line2);color:var(--dim);font:inherit;font-size:.72rem;padding:3px 9px;cursor:pointer;transition:color .12s,border-color .12s}
+.tbtn:hover{color:var(--amber);border-color:var(--amber-dim)}
+.tbtn:disabled{opacity:.35;pointer-events:none}
+/* tela */
+#screen{padding:22px 22px 34px;flex:1;overflow-wrap:break-word}
+#statusbar{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:6px 14px;font-size:.68rem;color:var(--faint)}
+#statusMsg{color:var(--dim)} #statusMsg.ok{color:var(--ok)} #statusMsg.err{color:var(--err)}
+.dim{color:var(--dim)} .small{font-size:.75rem} .amber{color:var(--amber)} .okc{color:var(--ok)} .errc{color:var(--err)}
+code.ic{background:rgba(242,176,74,.1);color:var(--kw);padding:0 5px;border-radius:3px;font-size:.92em;white-space:pre}
+/* boot */
+.boot{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52vh;gap:20px}
+.ascii{color:var(--amber);font-size:min(13px,2.6vw);line-height:1.25;text-shadow:0 0 14px rgba(242,176,74,.22);animation:flick 2.4s 1}
+@keyframes flick{0%,90%,94%,98%,100%{opacity:1}92%{opacity:.55}96%{opacity:.8}}
+#bootLines{min-height:215px;text-align:left;width:100%;max-width:600px;font-size:.85rem}
+#bootLines .bl{opacity:0;animation:lin .18s forwards}
+/* animação de entrada de linha */
+@keyframes lin{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
+/* meta / prompt / código */
+.meta{display:flex;gap:14px;flex-wrap:wrap;align-items:center;color:var(--dim);font-size:.7rem;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:16px}
+.meta .hl{color:var(--amber)}
+.prompt{font-size:1.06rem;font-weight:700;margin:4px 0 16px;color:#ece8da;white-space:pre-wrap;min-height:1.5em}
+.code{background:var(--panel);border:1px solid var(--line);padding:16px 16px 14px;margin:0 0 16px;font-size:.9rem;line-height:1.65;overflow-x:auto;position:relative;white-space:pre}
+.code-tag{position:absolute;top:-8px;left:12px;background:var(--bg);padding:0 7px;font-size:.62rem;color:var(--dim);letter-spacing:1.5px}
+.code .ln{display:flex;gap:14px;opacity:0;animation:lin .22s forwards}
+.code .no{color:#4a4d41;user-select:none;width:2ch;text-align:right;flex:none}
+.c-kw{color:var(--kw);font-weight:600} .c-str{color:var(--str)} .c-num{color:var(--num)}
+.c-cmt{color:var(--cmt);font-style:italic} .c-cls{color:var(--cls)}
+/* opções */
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;gap:12px;width:100%;text-align:left;background:transparent;border:none;border-left:2px solid var(--line2);padding:9px 12px;color:var(--text);font:inherit;font-size:.95rem;cursor:pointer;white-space:pre-line;transition:background .1s,color .1s;animation:lin .25s backwards}
+.opt .k{color:var(--amber-dim);font-weight:700;flex:none}
+.opt:hover{background:var(--amber);color:#12100a}
+.opt:hover .k{color:#12100a}
+.opt.correct{border-left-color:var(--ok);background:rgba(123,216,162,.08);color:var(--ok)}
+.opt.wrong{border-left-color:var(--err);background:rgba(239,95,107,.07);color:var(--err)}
+.opt.dead{opacity:.35;text-decoration:line-through;pointer-events:none}
+/* linha de resposta com caret */
+.answer-line{display:flex;gap:9px;align-items:center;font-size:1.02rem;padding:12px 14px;background:var(--panel);border:1px solid var(--line);margin-bottom:12px;animation:lin .25s}
+.answer-line.shake{animation:shake .4s}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+.ps1{color:var(--ok);font-weight:700;flex:none}
+.mirror{min-height:1.45em;flex:1;white-space:pre-wrap;word-break:break-all}
+.caret{display:inline-block;width:.62em;height:1.12em;background:var(--amber);vertical-align:text-bottom;animation:blink 1.05s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.ghost{position:absolute;opacity:0;pointer-events:none;left:-9999px}
+.q-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+/* chips de lacuna */
+.gap-opts{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;animation:lin .25s}
+.gchip{background:transparent;border:1px solid var(--line2);color:var(--text);font:inherit;font-size:.95rem;padding:6px 16px;cursor:pointer;transition:all .1s}
+.gchip:hover{background:var(--amber);color:#12100a;border-color:var(--amber)}
+.gchip.wrong{border-color:var(--err);color:var(--err)}
+.gchip.dead{opacity:.3;text-decoration:line-through;pointer-events:none}
+.gap{color:var(--amber);background:rgba(242,176,74,.12);border:1px dashed var(--amber-dim);padding:0 7px;margin:0 2px}
+/* ordenar linhas */
+.order-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.ord-box{border:1px solid var(--line);background:var(--panel);min-height:190px;padding:10px 10px 12px}
+.ord-head{font-size:.64rem;color:var(--dim);letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase}
+.oline{display:flex;gap:9px;width:100%;text-align:left;background:transparent;border:none;border-left:2px solid transparent;color:var(--text);font:inherit;font-size:.82rem;padding:5px 6px;cursor:pointer;transition:background .1s;animation:lin .2s backwards}
+.oline:hover{background:rgba(242,176,74,.12);border-left-color:var(--amber)}
+.oline .no{color:var(--amber);font-weight:700;flex:none}
+.oline .lc{white-space:pre}
+.oph{color:var(--faint);font-size:.82rem;padding:4px 8px}
+/* timer */
+.timer{display:flex;align-items:center;gap:10px;font-size:.82rem}
+.timer .bar{letter-spacing:1px;color:var(--ok)}
+.timer.warn .bar,.timer.warn .tnum{color:var(--err);animation:blink 0.6s steps(1) infinite}
+/* explicação */
+.explain{border:1px solid var(--line);border-left:3px solid var(--ok);background:rgba(123,216,162,.05);padding:14px 16px;margin-top:16px;animation:lin .3s}
+.explain.err{border-left-color:var(--err);background:rgba(239,95,107,.05)}
+.ex-head{font-weight:800;letter-spacing:.5px;margin-bottom:4px;font-size:.95rem}
+.explain .ex-head{color:var(--ok)} .explain.err .ex-head{color:var(--err)}
+.ex-log{font-size:.78rem;color:var(--dim);margin:4px 0 10px;white-space:pre-wrap}
+.ex-log b{font-weight:700}
+.explain .ex-log b{color:var(--ok)} .explain.err .ex-log b{color:var(--err)}
+.ex-pts{color:var(--amber);font-weight:700;font-size:.85rem;margin-bottom:8px}
+.ex-correct{color:var(--ok);margin-bottom:8px;font-weight:700;font-size:.92rem}
+.ex-text{color:var(--text);font-size:.92rem;margin-bottom:12px;white-space:pre-wrap}
+.ex-text.hint{color:var(--cyan);margin-top:12px;margin-bottom:0}
+.ex-text.hint::before{content:'DICA › ';color:var(--dim);letter-spacing:1px}
+/* menu */
+.menu{display:flex;flex-direction:column;gap:4px}
+.mrow{display:flex;align-items:baseline;gap:10px;width:100%;background:transparent;border:none;border-left:2px solid var(--line2);padding:11px 12px;color:var(--text);font:inherit;font-size:.93rem;cursor:pointer;text-align:left;transition:background .1s,color .1s;animation:lin .25s backwards}
+.mrow:hover{background:var(--amber);color:#12100a}
+.mrow:hover .mk,.mrow:hover .msem,.mrow:hover .mval,.mrow:hover .mst{color:#12100a}
+.mrow:hover .dots{border-color:rgba(18,16,10,.45)}
+.mk{color:var(--amber);font-weight:700}
+.msem{color:var(--dim);font-size:.74rem;min-width:10ch}
+.mname{font-weight:700}
+.dots{flex:1;border-bottom:1px dotted #34382c;transform:translateY(-4px);min-width:20px}
+.mval{color:var(--dim);font-size:.76rem;flex:none}
+.mst{font-size:.78rem;color:var(--faint);flex:none;min-width:6ch;text-align:right}
+.mst.ok{color:var(--ok)}
+.menu-foot{margin-top:18px;color:var(--faint);font-size:.72rem}
+/* caixa de resultado */
+.result-box{border:1px solid var(--amber-dim);padding:22px 24px;margin-top:8px;max-width:520px;animation:lin .3s}
+.result-box .rb-title{color:var(--amber);font-weight:800;letter-spacing:1px;margin-bottom:12px}
+.result-box .rb-nota{font-size:1.7rem;font-weight:800;color:var(--ok);margin:8px 0 12px}
+.result-box .rb-stats{color:var(--dim);font-size:.82rem;line-height:1.8}
+/* boletim */
+.brow{display:flex;align-items:baseline;gap:10px;font-size:.92rem;padding:4px 0}
+.brow .dots{transform:translateY(-4px)}
+.brow .bval{color:var(--amber);font-weight:700}
+.concept{margin-top:14px;font-size:1.05rem;font-weight:800;color:var(--cyan);letter-spacing:1px}
+/* manual */
+.overlay{position:fixed;inset:0;background:rgba(4,5,3,.82);display:flex;align-items:center;justify-content:center;z-index:100;padding:18px}
+.manual{background:var(--panel);border:1px solid var(--amber-dim);max-width:700px;width:100%;max-height:84vh;display:flex;flex-direction:column;box-shadow:0 30px 90px rgba(0,0,0,.65)}
+.manual-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--amber);font-weight:700;font-size:.78rem;letter-spacing:1.5px}
+.manual-body{overflow-y:auto;padding:16px 18px}
+.manual-body pre{font-size:.8rem;line-height:1.7;color:var(--text);white-space:pre;overflow-x:auto;margin:0}
+.man-sec{color:var(--amber);font-weight:700;font-size:.72rem;letter-spacing:2px;margin:20px 0 6px}
+.man-sec:first-child{margin-top:0}
+/* pontos voadores */
+.fly{position:absolute;right:0;top:-4px;color:var(--ok);font-weight:700;font-size:.72rem;pointer-events:none;animation:fly 1s forwards}
+@keyframes fly{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-20px)}}
+@media(max-width:640px){
+  body{font-size:13.5px}
+  #screen{padding:16px 14px 26px}
+  .order-cols{grid-template-columns:1fr}
+  .msem{display:none}
+  .mrow{font-size:.85rem}
+  #hudUser{display:none}
+}
+</style>
+</head>
+<body>
+<div class="fx scan"></div>
+<div class="fx vig"></div>
+<div id="wrap">
+  <div id="monitor">
+    <header id="hud">
+      <div><span class="logo">JAVA://TERMINAL</span><span class="ver">v1.0.4</span><span id="hudUser"></span></div>
+      <div class="hud-right">
+        <span class="chip">NÚCLEOS <span class="cores" id="hudVidas"></span></span>
+        <span class="chip">PTS <b id="hudPts">0000</b></span>
+        <span class="chip" id="streakChip">STREAK <b id="hudStreak">x2</b></span>
+        <span class="chip" id="hudMode"></span>
+        <button class="tbtn" id="btnManual">[M] MANUAL</button>
+        <button class="tbtn" id="btnSom">[S] SOM:ON</button>
+        <button class="tbtn" id="btnBoletim">[B] BOLETIM</button>
+        <button class="tbtn" id="btnMenu">[ESC] MENU</button>
+      </div>
+    </header>
+    <main id="screen"></main>
+    <footer id="statusbar">
+      <span id="statusMsg">sistema operacional. aguardando comandos.</span>
+      <span>treinamento 100% local · semanas 1–9</span>
+    </footer>
+  </div>
+</div>
+<div id="manualWrap" class="overlay hidden">
+  <div class="manual">
+    <div class="manual-head"><span>MANUAL DE SOBREVIVÊNCIA — JAVA BÁSICO</span><button class="tbtn" id="manualClose">[ESC] FECHAR</button></div>
+    <div class="manual-body" id="manualBody"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   JAVA://TERMINAL — jogo educacional de linguagem Java
+   Módulos: Fundamentos · Seleção/Iteração · Vetores/Matrizes
+            Grau B (avaliação) · Grau C (desafio infinito)
+   ============================================================ */
+
+/* ---------- utilidades ---------- */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const screenEl = () => $('#screen');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const norm = s => s.replace(/\s+/g,' ').trim();
+const fmt = x => x.toFixed(1).replace('.', ',');
+const pad4 = n => String(n).padStart(4,'0');
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* temporizadores controlados (limpos a cada troca de cena) */
+let tids=[], iids=[];
+function later(fn,ms){ const id=setTimeout(fn,ms); tids.push(id); return id; }
+function every(fn,ms){ const id=setInterval(fn,ms); iids.push(id); return id; }
+function cleanup(){ tids.forEach(clearTimeout); iids.forEach(clearInterval); tids=[]; iids=[]; }
+
+/* ---------- áudio (gerado localmente via WebAudio) ---------- */
+let actx=null;
+function initAudio(){ try{ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); }catch(e){} }
+document.addEventListener('pointerdown', initAudio);
+function tone(f,d,type='square',v=.05,delay=0){
+  if(!S.som||!actx) return;
+  const t=actx.currentTime+delay, o=actx.createOscillator(), g=actx.createGain();
+  o.type=type; o.frequency.value=f;
+  g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+d+.02);
+}
+const sfx={
+  key(){ tone(1300+Math.random()*400,.03,'square',.012); },
+  sel(){ tone(720,.05,'square',.04); },
+  ok(){ tone(523,.09,'square',.05); tone(659,.09,'square',.05,.09); tone(784,.16,'square',.05,.18); },
+  err(){ tone(210,.18,'sawtooth',.06); tone(140,.26,'sawtooth',.05,.11); },
+  life(){ tone(110,.3,'sawtooth',.07); },
+  tick(){ tone(980,.02,'square',.02); },
+  win(){ [523,659,784,1047].forEach((f,i)=>tone(f,.13,'square',.05,i*.11)); },
+  boss(){ [196,185,147].forEach((f,i)=>tone(f,.24,'sawtooth',.06,i*.2)); }
+};
+
+/* ---------- realce de sintaxe Java (feito à mão) ---------- */
+const KW=['public','class','static','void','new','final','return','if','else','while','for','break','continue','import','package','true','false','null','int','double','char','boolean','long','float','byte','short'];
+function hl(code){
+  const e=esc(code);
+  return e.replace(/(\/\/[^\n]*)|("(?:[^"\\]|\\.)*")|('(?:[^'\\]|\\.)*')|\b(\d+(?:\.\d+)?[fFdDlL]?)\b|\b([A-Za-z_$][\w$]*)\b/g,
+    (m,cmt,str,chr,num,word)=>{
+      if(cmt) return '<span class="c-cmt">'+cmt+'</span>';
+      if(str) return '<span class="c-str">'+str+'</span>';
+      if(chr) return '<span class="c-str">'+chr+'</span>';
+      if(num) return '<span class="c-num">'+num+'</span>';
+      if(word){
+        if(KW.includes(word)) return '<span class="c-kw">'+word+'</span>';
+        if(/^[A-Z]/.test(word)) return '<span class="c-cls">'+word+'</span>';
+      }
+      return m;
+    });
+}
+/* `trecho` no meio de um texto vira código colorido inline */
+function rich(text){
+  return esc(text).split(/`([^`]*)`/g).map((p,i)=> i%2 ? '<code class="ic">'+hl(p)+'</code>' : p).join('');
+}
+
+/* ---------- banco de questões ---------- */
+const MODS=[
+{ id:'m1', sem:'SEMANA 1-2', nome:'FUNDAMENTOS DE PROGRAMAÇÃO', val:3.0,
+  intro:'Dados e tipagem, variáveis e constantes, expressões aritméticas e interatividade com Scanner. Aqui nasce todo programa: guardar números, calcular e conversar com o usuário.',
+  qs:[
+  { t:'mc', q:'Nas linhas abaixo o programador tenta alterar uma variável logo depois de criá-la. O que acontece?',
+    code:`public class Cadastro {
+    public static void main(String[] args) {
+        final int LIMITE = 100;
+        int idade = 20;
+
+        LIMITE = 200;  // tenta alterar
+
+        System.out.println(idade);
+    }
+}`,
+    opts:['Compila normalmente e imprime 20',
+          'Erro de compilação: não é possível atribuir a uma variável `final`',
+          'Compila e imprime 200',
+          'Erro em tempo de execução: NullPointerException'],
+    ok:1,
+    ex:'`final` cria uma CONSTANTE: o valor só pode ser atribuído uma vez, na própria declaração. Reatribuir (`LIMITE = 200;`) gera erro de compilação. Por convenção, constantes ficam em MAIÚSCULAS.',
+    dica:'Pense no significado literal da palavra-chave `final`.' },
+  { t:'out', q:'Uma pizza de 7 fatias dividida entre 2 pessoas. O que este programa imprime no console?',
+    code:`int fatias = 7;
+int pessoas = 2;
+
+System.out.println(fatias / pessoas);`,
+    ans:['3'],
+    ex:'Quando os DOIS operandos são `int`, o Java faz divisão INTEIRA: 7 / 2 = 3 — a parte decimal (.5) é descartada, sem arredondar. Para o valor real, seria preciso `7 / 2.0`.',
+    dica:'Repare no tipo das duas variáveis. int / int corta os decimais.' },
+  { t:'out', q:'O mesmo cálculo, mas agora um dos valores é double. Qual é a saída EXATA?',
+    code:`System.out.println(7 / 2.0);`,
+    ans:['3.5','3,5'],
+    ex:'Basta UM operando ser `double` para o resultado virar real: 3.5. E atenção: o Java imprime decimais com PONTO, nunca com vírgula.',
+    dica:'O double "contamina" a conta com casas decimais. E o Java usa ponto, não vírgula.' },
+  { t:'mc', q:'O clássico das provas. O que aparece no console?',
+    code:`System.out.println("Soma: " + 2 + 3);`,
+    opts:['Soma: 5','Soma: 23','Soma: 2 3','Erro de compilação'], ok:1,
+    ex:'O `+` é avaliado da ESQUERDA para a DIREITA. `"Soma: " + 2` produz a string "Soma: 2"; depois `"Soma: 2" + 3` concatena de novo: "Soma: 23". Para somar antes, use parênteses: `"Soma: " + (2 + 3)`.',
+    dica:'Quando um lado do `+` é String, o Java passa a CONCATENAR em vez de somar.' },
+  { t:'out', q:'A ordem mudou. Qual é a saída agora?',
+    code:`System.out.println(2 + 3 + " = soma");`,
+    ans:['5 = soma'],
+    ex:'Aqui os dois primeiros operandos são números: `2 + 3` = 5, uma soma de verdade. Só depois `5 + " = soma"` concatena. Compare com a missão anterior — a ordem muda tudo!',
+    dica:'Leia da esquerda para a direita: número com número ainda é matemática.' },
+  { t:'mc', q:'Este programa nem chega a rodar. Por quê?',
+    code:`public class Nota {
+    public static void main(String[] args) {
+        int nota = 8.5;
+        System.out.println(nota);
+    }
+}`,
+    opts:['Imprime 8','Imprime 8.5','Erro de compilação: 8.5 é double e não cabe em um int','Imprime 0'], ok:2,
+    ex:'Java é FORTEMENTE tipado: cada variável tem um tipo fixo. `8.5` é um `double`, e guardá-lo num `int` sem conversão é erro de compilação. Soluções: `double nota = 8.5;` ou o cast `(int) 8.5` (que descarta os decimais).',
+    dica:'8.5 tem casa decimal. Qual tipo suporta casas decimais?' },
+  { t:'out', q:'A loja quer o valor do frete inteiro, sem centavos. O que é impresso?',
+    code:`double frete = 9.99;
+int valor = (int) frete;
+
+System.out.println(valor);`,
+    ans:['9'],
+    ex:'O cast `(int)` TRUNCA o valor: 9.99 vira 9 — corta os decimais, sem arredondar. Para arredondar de verdade seria preciso `Math.round(frete)`.',
+    dica:'Cast não arredonda... ele corta.' },
+  { t:'mc', q:'Entrada de dados ao vivo! O usuário digitou `Ana` e pressionou ENTER. Qual é a saída do programa?',
+    code:`import java.util.Scanner;
+
+public class Ola {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        System.out.print("Nome: ");
+        String nome = teclado.nextLine();
+        System.out.println("Ola, " + nome + "!");
+    }
+}`,
+    opts:['Nome: Ola, Ana!','Ola, Ana!','Nome: Ana','Ola, nome!'], ok:1,
+    ex:'`System.out.print` escreve SEM quebrar linha (o "Nome: " aparece no console, mas o que o programa imprime como resposta é só a última linha). `teclado.nextLine()` lê o que foi digitado e guarda em `nome`. No fim, `"Ola, " + nome + "!"` concatena tudo: Ola, Ana!',
+    dica:'`print` não quebra linha, `println` quebra. O que o println final imprime?' }
+]},
+
+{ id:'m2', sem:'SEMANA 3-4', nome:'SELEÇÃO E ITERAÇÃO', val:3.0,
+  intro:'Expressões booleanas, relacionais e lógicas; if, if-else e else-if; while e for. É aqui que o programa aprende a TOMAR DECISÕES e a REPETIR trabalho sem preguiça.',
+  qs:[
+  { t:'mc', q:'Controle de bar: menor de idade só entra acompanhado. Qual é a saída (duas linhas)?',
+    code:`int idade = 17;
+boolean acompanhado = true;
+
+System.out.println(idade >= 18 || acompanhado);
+System.out.println(idade >= 18 && acompanhado);`,
+    opts:['true\nfalse','true\ntrue','false\nfalse','false\ntrue'], ok:0,
+    ex:'`idade >= 18` é false. Com `||` (OU) basta UM lado true → `false || true` = true. Com `&&` (E) TODOS precisam ser true → `false && true` = false.',
+    dica:'OU é generoso: um true basta. E é exigente: todos precisam ser true.' },
+  { t:'out', q:'Simulador de poupança: R$1 na 1ª semana, R$2 na 2ª, e assim por diante. Quanto acumula ao fim da 4ª semana? (saída do programa)',
+    code:`int i = 1;
+int soma = 0;
+
+while (i <= 4) {
+    soma += i;
+    i++;
+}
+
+System.out.println(soma);`,
+    ans:['10'],
+    ex:'Passo a passo: i=1 → soma=1; i=2 → soma=3; i=3 → soma=6; i=4 → soma=10; i=5 → a condição `i <= 4` falha e o laço encerra. Imprime 10.',
+    dica:'É 1+2+3+4. Acompanhe i e soma em cada volta do while.' },
+  { t:'mc', q:'Situação do estudante. Qual linha o programa imprime?',
+    code:`int nota = 6;
+
+if (nota >= 7) {
+    System.out.println("Aprovado");
+} else if (nota >= 5) {
+    System.out.println("Recuperacao");
+} else {
+    System.out.println("Reprovado");
+}`,
+    opts:['Aprovado','Recuperacao','Reprovado','Aprovado e depois Recuperacao'], ok:1,
+    ex:'As condições são testadas de cima para baixo e SÓ o primeiro bloco verdadeiro executa. `nota >= 7` é false (6 < 7); `nota >= 5` é true → imprime Recuperacao e pula o resto.',
+    dica:'Mesmo que 6 satisfaça outra condição, o else-if para no primeiro teste verdadeiro.' },
+  { t:'gap', q:'Complete a condição para que o acesso funcione CORRETAMENTE:',
+    code:`int senha = 1234;
+
+if (senha ░░░░ 1234) {
+    System.out.println("Acesso liberado");
+}`,
+    opts:['==','=','>=','!='], ok:0,
+    ex:'`==` COMPARA dois valores; `=` ATRIBUI. Dentro de um if, a comparação precisa produzir um boolean — por isso `==`.',
+    dica:'Um símbolo só é atribuição. Dois símbolos é comparação.' },
+  { t:'out', q:'Sequência misteriosa. Qual é a saída?',
+    code:`String seq = "";
+
+for (int i = 0; i < 6; i += 2) {
+    seq += i;
+}
+
+System.out.println(seq);`,
+    ans:['024'],
+    ex:'i vale 0, depois 2, depois 4 — quando vira 6, `i < 6` é falso e o laço para. Como `seq` é String, cada valor é CONCATENADO: "0" + "2" + "4" = 024.',
+    dica:'i começa em 0 e pula de 2 em 2. E como seq é String, o + concatena!' },
+  { t:'order', q:'O programa embaralhou! Ordene as linhas para somar 1 + 2 + 3 e imprimir o total (6):',
+    lines:['int total = 0;','for (int i = 1; i <= 3; i++) {','    total += i;','}','System.out.println(total);'],
+    ex:'Primeiro a variável acumuladora precisa existir. O `for` declara i, repete o corpo enquanto `i <= 3` e soma cada valor. O `println` fora do laço mostra o total: 6.',
+    dica:'Nada pode ser usado antes de declarado.' },
+  { t:'mc', q:'Um laço com dois desvios. Qual é a saída?',
+    code:`for (int i = 1; i <= 5; i++) {
+    if (i == 3) {
+        continue;   // pula esta volta
+    }
+    if (i == 5) {
+        break;      // encerra o laço
+    }
+    System.out.print(i);
+}`,
+    opts:['12345','124','1234','1245'], ok:1,
+    ex:'i=1 imprime 1; i=2 imprime 2; i=3 → `continue` pula o resto da volta; i=4 imprime 4; i=5 → `break` encerra o laço ANTES do print. Resultado: 124.',
+    dica:'`continue` pula UMA volta; `break` cancela todas as próximas. Ambos agem antes do print.' },
+  { t:'mc', q:'BUG REPORT: o programa abaixo trava. O que o analista escreveu no relatório?',
+    code:`int i = 10;
+
+while (i > 0) {
+    System.out.println(i);
+    // faltou algo aqui?
+}`,
+    opts:['Imprime 10 uma vez e para','Erro de compilação: while exige i++','Loop infinito: i nunca muda, a condição i > 0 é sempre verdadeira','Imprime de 10 até 1 e para'], ok:2,
+    ex:'A condição depende de `i`, mas `i` nunca é alterado dentro do laço: sempre 10, sempre true, repetindo para sempre. Correção clássica: adicionar `i--;` dentro do bloco.',
+    dica:'Uma condição de parada falha quando você nunca chega perto dela.' }
+]},
+
+{ id:'m3', sem:'SEMANA 5-6', nome:'VETORES E MATRIZES', val:3.0,
+  intro:'Estruturas de dados homogêneas: vetores (arrays 1D) e matrizes (arrays 2D). Muitos dados, poucas variáveis — e o índice 0 governa tudo.',
+  qs:[
+  { t:'out', q:'Placar do jogo armazenado em um vetor. O que é impresso?',
+    code:`int[] pontos = {10, 25, 8, 42};
+
+System.out.println(pontos[2]);`,
+    ans:['8'],
+    ex:'Vetores em Java começam no ÍNDICE 0: pontos[0]=10, pontos[1]=25, pontos[2]=8. O número entre colchetes é a POSIÇÃO, não a quantidade.',
+    dica:'A primeira posição é 0, não 1.' },
+  { t:'mc', q:'Um vetor criado com `new` e ainda "vazio". O que o programa imprime?',
+    code:`int[] dados = new int[7];
+
+System.out.println(dados.length);
+System.out.println(dados[0]);`,
+    opts:['7 e depois 0','7 e depois erro de execução','0 e depois 0','6 e depois 0'], ok:0,
+    ex:'`new int[7]` cria 7 posições já inicializadas com 0 (padrão do Java para números). `length` devolve o TAMANHO do vetor (7). Saída: 7 e depois 0.',
+    dica:'Arrays criados com new nascem zerados. length é o tamanho total.' },
+  { t:'out', q:'Total das compras no carrinho. Qual é a saída?',
+    code:`double[] carrinho = {5.5, 3.0, 12.5};
+double total = 0;
+
+for (int i = 0; i < carrinho.length; i++) {
+    total += carrinho[i];
+}
+
+System.out.println(total);`,
+    ans:['21.0','21'],
+    ex:'O laço percorre todas as posições (i de 0 a `length - 1`) acumulando: 5.5 + 3.0 + 12.5 = 21.0. Como `total` é double, o Java imprime 21.0 — sempre com casa decimal.',
+    dica:'Percorra somando posição por posição. O resultado é double: como o Java o imprime?' },
+  { t:'mc', q:'O programador quer o último elemento. O que acontece ao executar?',
+    code:`int[] v = {5, 10, 15};
+
+System.out.println(v[3]);`,
+    opts:['Imprime 15','Imprime 5','Erro em execução: ArrayIndexOutOfBoundsException — o índice 3 não existe','Erro de compilação: o vetor tem tamanho 3'], ok:2,
+    ex:'O vetor tem 3 elementos, então os índices válidos são 0, 1 e 2. O índice 3 está FORA dos limites → ArrayIndexOutOfBoundsException, o erro mais famoso do Java. Para o último: `v[v.length - 1]`.',
+    dica:'3 elementos = índices 0, 1 e 2. E estourar o limite é erro de EXECUÇÃO.' },
+  { t:'gap', q:'Complete para que o for-each imprima todos os nomes:',
+    code:`String[] nomes = {"Ana", "Bia", "Caio"};
+
+for (░░░░ n : nomes) {
+    System.out.println(n);
+}`,
+    opts:['String','int','char','nomes'], ok:0,
+    ex:'No for-each, a variável declarada (`n`) precisa ter o mesmo tipo dos ELEMENTOS. Como `nomes` guarda String, o tipo é String. O laço entrega um elemento por volta: Ana, Bia, Caio.',
+    dica:'Qual é o tipo dos itens guardados dentro do vetor nomes?' },
+  { t:'out', q:'Mapa do jogo em uma matriz. O que é impresso?',
+    code:`int[][] mapa = {
+    {1, 2, 3},
+    {4, 5, 6}
+};
+
+System.out.println(mapa[1][0]);`,
+    ans:['4'],
+    ex:'`matriz[linha][coluna]`. A linha 1 é {4, 5, 6} e a coluna 0 dentro dela é 4. (A linha 0 é {1, 2, 3} — não confunda!)',
+    dica:'Primeiro escolha a LINHA, depois a COLUNA. Linhas também começam em 0.' },
+  { t:'out', q:'Somando TODOS os elementos da matriz. Qual é a saída?',
+    code:`int[][] m = { {1, 2}, {3, 4} };
+int total = 0;
+
+for (int i = 0; i < m.length; i++) {
+    for (int j = 0; j < m[i].length; j++) {
+        total += m[i][j];
+    }
+}
+
+System.out.println(total);`,
+    ans:['10'],
+    ex:'O `for` externo percorre as LINHAS (`m.length` = 2) e o interno as COLUNAS de cada linha (`m[i].length` = 2). Soma: 1+2+3+4 = 10. Detalhe fino: `m[i].length` é o tamanho da linha i — matrizes nem sempre são quadradas.',
+    dica:'For dentro de for: o externo anda nas linhas, o interno nas colunas.' },
+  { t:'out', q:'Algoritmo clássico: encontrar o maior valor do vetor. Qual é a saída?',
+    code:`int[] v = {4, 9, 2};
+int maior = v[0];
+
+for (int i = 1; i < v.length; i++) {
+    if (v[i] > maior) {
+        maior = v[i];
+    }
+}
+
+System.out.println(maior);`,
+    ans:['9'],
+    ex:'Começa presumindo que o maior é o primeiro (v[0] = 4). Cada volta compara: 9 > 4 → maior vira 9; 2 > 9 → nada acontece. No fim, `maior` guarda o campeão: 9.',
+    dica:'maior só é substituído quando aparece alguém maior que ele.' }
+]},
+
+{ id:'gb', sem:'SEMANA 7-8', nome:'GRAU B — AVALIAÇÃO', val:10.0, boss:true,
+  intro:'Revisão geral + AVALIAÇÃO. Seis missões mistas de todas as semanas, com TIMER de 40 segundos cada. Sem dicas, sem segunda chance por questão. Boa sorte, estagiário.',
+  qs:[
+  { t:'out', q:'A divisão foi "arrumada" com um cast. Qual é a saída?',
+    code:`int a = 5;
+int b = 2;
+
+double r = (double) a / b;
+
+System.out.println(r);`,
+    ans:['2.5','2,5'],
+    ex:'O cast `(double)` transforma a em 5.0 ANTES da divisão, então 5.0 / 2 = 2.5 (divisão real). Sem o cast, `a / b` seria divisão inteira = 2.',
+    dica:'O cast age primeiro: quem está sendo dividido por 2?' },
+  { t:'out', q:'Contagem regressiva de 5 até 1, pulando de 2 em 2. Qual é a saída?',
+    code:`String contagem = "";
+
+for (int i = 5; i > 0; i -= 2) {
+    contagem += i;
+}
+
+System.out.println(contagem);`,
+    ans:['531'],
+    ex:'i vale 5, depois 3, depois 1. Quando i vira -1, `i > 0` é falso e o laço para. Concatenando as strings: 531.',
+    dica:'Desça de 2 em 2 partindo de 5 e pare quando i <= 0.' },
+  { t:'mc', q:'Classificador numérico. O que é impresso?',
+    code:`int x = 12;
+
+if (x % 2 == 0 && x > 10) {
+    System.out.println("A");
+} else if (x % 2 == 0) {
+    System.out.println("B");
+} else {
+    System.out.println("C");
+}`,
+    opts:['A','B','C','A e B'], ok:0,
+    ex:'`x % 2 == 0` → 12 é par (resto 0). `x > 10` → true. `true && true` entra no primeiro if e imprime A. O resto nunca chega a ser avaliado.',
+    dica:'`%` devolve o resto da divisão. 12 dividido por 2 tem resto 0.' },
+  { t:'out', q:'Análise de dados: quantos números pares há no vetor? (saída)',
+    code:`int[] v = {3, 8, 5, 6, 7};
+int pares = 0;
+
+for (int n : v) {
+    if (n % 2 == 0) {
+        pares++;
+    }
+}
+
+System.out.println(pares);`,
+    ans:['2'],
+    ex:'O for-each visita 3, 8, 5, 6, 7. Pares (resto 0 na divisão por 2): 8 e 6 → pares = 2. Combinação clássica de prova: for-each + if + contador.',
+    dica:'`n % 2 == 0` significa que n é divisível por 2.' },
+  { t:'order', q:'Técnica fundamental de entrevista: TROCAR o conteúdo de duas variáveis. Ordene as linhas para imprimir 8-3:',
+    lines:['int a = 3, b = 8;','int aux = a;','a = b;','b = aux;','System.out.println(a + "-" + b);'],
+    ex:'Sem a variável `aux`, o valor 3 seria perdido no primeiro `a = b`. Guarde a em aux, copie b para a e, por fim, recupere o valor antigo: `b = aux`. Resultado: 8-3.',
+    dica:'Sem um "depósito temporário", o primeiro valor se perde na troca.' },
+  { t:'out', q:'Registro de vendas em uma matriz zerada. Qual é a saída?',
+    code:`int[][] vendas = new int[2][3];
+
+vendas[0][1] = 5;
+vendas[1][2] = 7;
+
+int soma = 0;
+
+for (int i = 0; i < vendas.length; i++) {
+    soma += vendas[i][1];
+}
+
+System.out.println(soma);`,
+    ans:['5'],
+    ex:'`new int[2][3]` cria tudo ZERADO. Só duas posições receberam valor: vendas[0][1]=5 e vendas[1][2]=7. O laço soma a COLUNA 1 de cada linha: vendas[0][1] (=5) + vendas[1][1] (=0) = 5.',
+    dica:'O laço soma apenas a coluna 1. Quais posições da coluna 1 receberam valores?' }
+]}
+];
+const GC_BASE = MODS.flatMap(m => m.qs.filter(q=>q.t!=='order').map(q => ({ q, src:m.sem })));
+
+/* ---------- manual ---------- */
+const MANUAL=[
+ ['■ TIPOS E VARIÁVEIS',`int x = 10;            // números inteiros
+double y = 3.14;       // decimais (sempre com PONTO)
+char  c = 'A';         // 1 caractere, aspas SIMPLES
+boolean ok = true;     // true ou false
+String nome = "Ana";   // texto, aspas DUPLAS
+final int DIAS = 7;    // constante: não muda nunca`],
+ ['■ EXPRESSÕES ARITMÉTICAS',`+  -  *  /  %          // % = resto da divisão
+7 / 2    → 3           // int / int trunca
+7 / 2.0  → 3.5         // com double, vira real
+(int) 9.99 → 9         // cast trunca, não arredonda
+"a" + 2 + 3 → "a23"    // String + = concatenação
+(2 + 3) + " a" → "5 a" // parênteses resolvem`],
+ ['■ ENTRADA E SAÍDA',`Scanner t = new Scanner(System.in);
+int n = t.nextInt();       // lê um inteiro
+double d = t.nextDouble(); // lê um decimal
+String s = t.nextLine();   // lê a linha inteira
+System.out.print("x");     // escreve, SEM quebra
+System.out.println("x");   // escreve, COM quebra`],
+ ['■ COMPARAÇÕES E LÓGICA',`==  !=  >  <  >=  <=   // == compara; = atribui!
+&&  → E: todos precisam ser true
+||  → OU: um true basta
+!   → NÃO: inverte true/false`],
+ ['■ SELEÇÃO',`if (cond) { }
+else if (cond2) { }
+else { }
+// apenas o PRIMEIRO bloco verdadeiro executa`],
+ ['■ ITERAÇÃO',`while (cond) { }                    // enquanto true
+for (int i = 0; i < 5; i++) { }     // contador clássico
+for (int x : vetor) { }             // for-each
+break    // encerra o laço agora
+continue // pula para a próxima volta`],
+ ['■ VETORES (1D)',`int[] v = {4, 8, 15};      // índices: 0, 1, 2
+int[] w = new int[3];      // nasce zerado
+v[0] = 10;                 // atribui
+v.length                   // tamanho (sem parênteses!)
+v[v.length - 1]            // último elemento`],
+ ['■ MATRIZES (2D)',`int[][] m = { {1,2}, {3,4} };
+int[][] n = new int[3][4]; // 3 linhas, 4 colunas
+m[1][0]                    // linha 1, coluna 0
+m.length                   // nº de linhas
+m[i].length                // colunas da linha i
+for + for aninhados        // percurso clássico`]
+];
+
+/* ---------- persistência ---------- */
+function load(){ try{ const r=localStorage.getItem('javaterm_save'); if(r) return JSON.parse(r); }catch(e){} return null; }
+function save(){ try{ localStorage.setItem('javaterm_save', JSON.stringify(S)); }catch(e){} }
+function freshS(nome){ return { nome, melhor:{m1:0,m2:0,m3:0,gb:0}, gcRec:0, som:true }; }
+
+/* ---------- estado global ---------- */
+let S = load() || freshS('');
+let sess=null, current=null;
+let phase='boot', bootSkip=false, menuArm=0, resetArm=0, currentIntro=0, lastLevel=0;
+
+/* ---------- HUD / status ---------- */
+function status(txt, cls=''){ const el=$('#statusMsg'); el.textContent=txt; el.className=cls; }
+function renderHUD(){
+  $('#hudUser').textContent = S.nome ? '· '+S.nome.toLowerCase()+'@academia' : '';
+  const v = sess ? sess.vidas : 3;
+  $('#hudVidas').innerHTML = '<span class="on">'+'■'.repeat(v)+'</span><span class="off">'+'□'.repeat(3-v)+'</span>';
+  $('#hudPts').textContent = pad4(sess?sess.pts:0);
+  const st=$('#streakChip');
+  if(sess && sess.streak>=2){ st.classList.remove('hidden'); $('#hudStreak').textContent='x'+sess.streak; }
+  else st.classList.add('hidden');
+  $('#hudMode').textContent = sess ? (sess.gc?'MODO GC':'MODO '+MODS[sess.mi].id.toUpperCase()) : 'MENU';
+  $('#btnSom').textContent = '[S] SOM:'+(S.som?'ON':'OFF');
+}
+function flyPts(txt){
+  const b=$('#hudPts'); if(!b) return;
+  const sp=document.createElement('span'); sp.className='fly'; sp.textContent=txt;
+  b.appendChild(sp); setTimeout(()=>sp.remove(),1000);
+}
+function flash(cls){ const m=$('#monitor'); m.classList.remove('flash-ok','flash-err'); void m.offsetWidth; m.classList.add(cls); setTimeout(()=>m.classList.remove(cls),550); }
+
+/* ---------- typewriter (entende `código` inline) ---------- */
+function typeRich(el, text, done){
+  const segs=[]; let buf='', inCode=false;
+  for(let i=0;i<text.length;i++){
+    if(text[i]==='`'){ (inCode?segs.push({t:'code',v:buf}):segs.push({t:'txt',v:buf})); buf=''; inCode=!inCode; continue; }
+    buf+=text[i];
+  }
+  segs.push({t:inCode?'code':'txt', v:buf});
+  let si=0, ci=0, lastBeep=0;
+  const caret='<span class="caret"></span>';
+  (function step(){
+    if(si>=segs.length){ el.innerHTML=el.innerHTML.replace(caret,''); if(done) done(); return; }
+    const sg=segs[si];
+    if(sg.t==='code'){
+      el.innerHTML = build()+'<code class="ic">'+hl(sg.v)+'</code>'+caret;
+      si++; ci=0; sfx.sel(); later(step,40); return;
+    }
+    if(ci<sg.v.length){
+      ci++;
+      const now=performance.now();
+      if(now-lastBeep>48){ sfx.key(); lastBeep=now; }
+      el.innerHTML = build()+esc(sg.v.slice(0,ci))+caret;
+      later(step, 14);
+    } else { si++; ci=0; later(step, 8); }
+  })();
+  function build(){ let h=''; for(let k=0;k<si;k++){ const s=segs[k]; h += s.t==='code' ? '<code class="ic">'+hl(s.v)+'</code>' : esc(s.v); } return h; }
+}
+
+/* ---------- blocos de código com numeração ---------- */
+function codeBlock(code, tag='CÓDIGO-FONTE'){
+  const lines=code.split('\n');
+  let inner='';
+  lines.forEach((ln,i)=>{
+    inner += '<span class="ln" style="animation-delay:'+(i*55)+'ms"><span class="no">'+(i+1)+'</span><span class="lc">'+(ln===''?' ':hl(ln))+'</span></span>';
+  });
+  return '<div class="code"><span class="code-tag">'+tag+'</span>'+inner+'</div>';
+}
+
+/* ---------- transição de cena ---------- */
+function clearScreen(){ cleanup(); screenEl().innerHTML=''; window.scrollTo(0,0); }
+
+/* ---------- BOOT ---------- */
+const LOGO =
+'    ██      ████    ██    ██      ████\n'+
+'    ██     ██  ██   ██    ██     ██  ██\n'+
+'    ██     ████████  ██    ██    ████████\n'+
+'██  ██    ██    ██  ██    ██    ██    ██\n'+
+' ████     ██    ██  ██    ██    ██    ██';
+const BOOTLINES=[
+'JAVA://TERMINAL v1.0.4 — TERMINAL DE TREINAMENTO',
+'ACADÊMIA SYSTEMS · build 1989.10',
+'',
+'> montando bibliotecas .......... [OK]',
+'> compilador javac .............. [OK]',
+'> núcleos de memória ............ [3/3]',
+'> máquina de café virtual ....... [OK]',
+'',
+'ATENÇÃO, ESTAGIÁRIO: as bibliotecas de conhecimento',
+'desta máquina foram corrompidas. Restaure-as completando',
+'as missões das SEMANAS 1 a 9: fundamentos, seleção e',
+'iteração, vetores e matrizes — e sobreviva ao GRAU B.',''
+];
+function showBoot(){
+  clearScreen(); phase='boot'; bootSkip=false; sess=null; renderHUD();
+  status('inicializando sistema...');
+  screenEl().innerHTML =
+    '<div class="boot"><pre class="ascii">'+esc(LOGO)+'</pre>'+
+    '<div id="bootLines"></div>'+
+    '<div class="dim small">[clique ou tecle qualquer coisa para acelerar]</div></div>';
+  let i=0;
+  function dumpAll(){
+    const box=$('#bootLines'); if(!box) return;
+    box.innerHTML=BOOTLINES.map(l=>'<div class="bl">'+(l===''?'&nbsp;':esc(l))+'</div>').join('');
+    later(askName, 350);
+  }
+  function next(){
+    if(bootSkip){ dumpAll(); return; }
+    if(i>=BOOTLINES.length){ later(askName, 500); return; }
+    const box=$('#bootLines'); if(!box) return;
+    const d=document.createElement('div'); d.className='bl';
+    d.innerHTML = BOOTLINES[i]===''?'&nbsp;':esc(BOOTLINES[i]);
+    box.appendChild(d); sfx.tick(); i++;
+    later(next, 135);
+  }
+  next();
+}
+
+/* ---------- cadastro do nome (entrada de dados, literalmente) ---------- */
+function askName(){
+  if(phase==='name') return;
+  phase='name'; renderHUD(); status('aguardando identificação...');
+  const scr=screenEl();
+  scr.insertAdjacentHTML('beforeend',
+    '<div style="max-width:600px;margin:4px auto 0">'+
+    '<div class="prompt" id="nameIntro"></div>'+
+    '<div class="answer-line" id="nameLine"><span class="ps1">CADASTRO&gt;</span>'+
+    '<span class="mirror"><span id="mName"></span><span class="caret"></span></span></div>'+
+    '<div id="nameErr" class="errc small" style="min-height:1.4em"></div></div>');
+  typeRich($('#nameIntro'), 'Identifique-se, estagiário. Qual é o seu nome?');
+  const inp=document.createElement('input');
+  inp.className='ghost'; inp.maxLength=16; inp.autocomplete='off'; inp.spellcheck=false;
+  $('#nameLine').appendChild(inp);
+  setTimeout(()=>inp.focus(),50);
+  $('#nameLine').onclick=()=>inp.focus();
+  inp.addEventListener('input', ()=>{ $('#mName').textContent=inp.value; if(inp.value.length%2) sfx.key(); });
+  inp.addEventListener('keydown', e=>{
+    if(e.key!=='Enter') return;
+    const nome=inp.value.trim();
+    if(!nome){
+      sfx.err(); flash('flash-err');
+      $('#nameLine').classList.add('shake'); setTimeout(()=>$('#nameLine').classList.remove('shake'),450);
+      $('#nameErr').textContent='ERRO: variável "nome" não inicializada. Tente novamente.';
+      return;
+    }
+    S.nome=nome; save(); sfx.ok(); showWelcome();
+  });
+}
+function showWelcome(){
+  clearScreen(); phase='welcome'; renderHUD();
+  screenEl().innerHTML =
+    '<div class="okc small">&gt; cadastro concluído</div>'+
+    '<div class="prompt" id="welTxt" style="margin-top:14px;max-width:640px"></div>'+
+    '<div class="q-actions"><button class="tbtn" id="welGo">[ENTER] ACESSAR TERMINAL</button></div>';
+  typeRich($('#welTxt'),
+    'Acesso concedido, '+S.nome+'. Você entrou no terminal de treinamento da disciplina. Complete os 4 módulos de avaliação, acumule suas notas (GA 1–3 + GRAU B) e restaure as bibliotecas de conhecimento. Que o compilador esteja com você.',
+    ()=>later(()=>{},0));
+  $('#welGo').onclick=showMenu;
+}
+
+/* ---------- menu ---------- */
+function showMenu(){
+  clearScreen(); phase='menu'; sess=null; current=null; renderHUD();
+  status('terminal pronto. selecione uma missão.');
+  const notaOf = m => {
+    const poss=m.qs.length*100, pts=S.melhor[m.id];
+    return pts>0 ? Math.min(m.val, pts/poss*m.val) : null;
+  };
+  let rows='';
+  MODS.forEach((m,i)=>{
+    const n=notaOf(m);
+    rows+='<button class="mrow" data-i="'+i+'">'+
+      '<span class="mk">['+(i+1)+']</span><span class="msem">'+m.sem+'</span>'+
+      '<span class="mname">'+m.nome+'</span><span class="dots"></span>'+
+      '<span class="mval">'+(m.boss?'GB':'GA')+' '+fmt(m.val)+'</span>'+
+      '<span class="mst '+(n!=null?'ok':'')+'">'+(n!=null?fmt(n):'· · ·')+'</span></button>';
+  });
+  rows+='<button class="mrow" data-i="gc"><span class="mk">[5]</span><span class="msem">SEMANA 9</span>'+
+    '<span class="mname">GRAU C — DESAFIO INFINITO</span><span class="dots"></span>'+
+    '<span class="mval">SOBREVIVÊNCIA</span><span class="mst '+(S.gcRec>0?'ok':'')+'">'+(S.gcRec>0?S.gcRec+' pts':'· · ·')+'</span></button>';
+  screenEl().innerHTML =
+    '<div class="dim small" style="margin-bottom:14px">// olá, '+esc(S.nome)+'. o compilador aguarda suas instruções:</div>'+
+    '<div class="menu">'+rows+'</div>'+
+    '<div class="menu-foot">[1-4] módulos de avaliação · [5] desafio GC · [M] manual · [B] boletim · [N] trocar estagiário</div>';
+  $$('.mrow').forEach(b=> b.onclick=()=>{ const i=b.dataset.i; sfx.sel(); i==='gc'?startGC():showIntro(+i); });
+}
+function showIntro(i){
+  clearScreen(); phase='intro'; currentIntro=i; renderHUD();
+  const m=MODS[i];
+  status('missão carregada: '+m.nome);
+  const rules = m.boss
+    ? 'REGRAS: 6 missões · 3 núcleos · TIMER DE 40s por missão · sem dicas · nota máxima GB '+fmt(m.val)
+    : 'REGRAS: '+m.qs.length+' missões · 3 núcleos de memória · acertos de primeira rendem bônus de streak · nota máxima '+fmt(m.val);
+  screenEl().innerHTML =
+    '<div class="meta"><span class="hl">MISSÃO '+(i+1)+'</span><span>'+m.sem+'</span><span>'+m.qs.length+' MISSÕES</span></div>'+
+    '<div class="prompt" style="font-size:1.3rem">'+m.nome+'</div>'+
+    '<div class="prompt" id="introTxt" style="font-weight:400;font-size:.98rem;color:var(--dim);max-width:640px"></div>'+
+    '<div class="small" style="color:var(--amber-dim);margin:6px 0 18px">'+rules+'</div>'+
+    '<div class="q-actions"><button class="tbtn" id="introGo">[ENTER] INICIAR MISSÃO</button>'+
+    '<button class="tbtn" id="introBack">[ESC] VOLTAR</button></div>';
+  typeRich($('#introTxt'), m.intro);
+  $('#introGo').onclick=()=>startMod(i);
+  $('#introBack').onclick=showMenu;
+  if(m.boss) later(sfx.boss, 300);
+}
+
+/* ---------- início de módulo ---------- */
+function startMod(i){
+  const m=MODS[i];
+  sess={ mi:i, boss:!!m.boss, fila:shuffle(m.qs), idx:0, vidas:3, pts:0, streak:0, maxStreak:0, acertos:0 };
+  showQ();
+}
+function startGC(){
+  sess={ gc:true, mi:null, boss:false, fila:shuffle(GC_BASE), idx:0, vidas:3, pts:0, streak:0, maxStreak:0, acertos:0 };
+  showQ();
+}
+
+/* ---------- barra de progresso ASCII ---------- */
+function pbar(done,total){
+  const w=Math.min(10,total);
+  const f=Math.round(done/total*w);
+  return '['+'■'.repeat(f)+'□'.repeat(w-f)+']';
+}
+
+/* ---------- renderização da questão ---------- */
+function showQ(){
+  clearScreen(); phase='quiz'; renderHUD();
+  const s=sess, q=s.fila[s.idx];
+  current={ q, firstTry:true, hint:false, time:40, ans:[], pool:null, tries:0 };
+  if(q.t==='order'){
+    let sh=shuffle(q.lines.map((_,i)=>i));
+    if(sh.every((v,i)=>v===i)) sh=shuffle(sh);
+    current.pool=sh; current.ans=[];
+  }
+  status('compilando missão '+(s.idx+1)+'...');
+
+  let meta='<div class="meta"><span class="hl">'+(s.gc?('GC · NÍVEL '+(s.idx+1)):'MISSÃO '+(s.idx+1)+'/'+s.fila.length)+'</span>'+
+    '<span>'+pbar(s.idx, s.fila.length)+'</span>';
+  if(s.gc) meta+='<span>origem: '+q.src+'</span><span>acertos: '+s.acertos+'</span>';
+  else     meta+='<span>'+MODS[s.mi].sem+'</span>';
+  if(s.boss) meta+='<span class="timer" id="tWrap"><span>TEMPO</span><span class="bar" id="tBar"></span><span class="tnum" id="tNum">40s</span></span>';
+  meta+='</div>';
+
+  let html=meta+'<div class="prompt" id="qPrompt"></div>';
+  if(q.code) html+=codeBlock(q.code, q.t==='gap'?'COMPLETE A LACUNA':'CÓDIGO-FONTE');
+
+  if(q.t==='mc'){
+    html+='<div class="opts">'+q.opts.map((o,i)=>
+      '<button class="opt" data-i="'+i+'"><span class="k">['+String.fromCharCode(49+i)+']</span><span>'+rich(o)+'</span></button>').join('')+'</div>';
+  }
+  else if(q.t==='gap'){
+    html+='<div class="gap-opts">'+q.opts.map((o,i)=>
+      '<button class="gchip" data-i="'+i+'">'+hl(o)+'</button>').join('')+'</div>';
+  }
+  else if(q.t==='out'){
+    html+='<div class="answer-line" id="ansLine"><span class="ps1">SAÍDA&gt;</span>'+
+      '<span class="mirror"><span id="mVal"></span><span class="caret"></span></span></div>'+
+      '<div class="q-actions"><input class="ghost" id="ansIn" autocomplete="off" spellcheck="false">'+
+      (s.gc?'':'<button class="tbtn" id="btnHint">[H] DICA (-30 pts)</button>')+
+      '<button class="tbtn" id="btnGo">[ENTER] COMPILAR</button></div>';
+  }
+  else if(q.t==='order'){
+    html+='<div class="order-cols">'+
+      '<div class="ord-box"><div class="ord-head">linhas disponíveis — clique para usar</div><div id="ordPool"></div></div>'+
+      '<div class="ord-box"><div class="ord-head">sua solução — clique para devolver</div><div id="ordAns"></div></div></div>'+
+      '<div class="q-actions"><button class="tbtn" id="ordGo" disabled>[ENTER] COMPILAR</button>'+
+      '<button class="tbtn" id="ordUndo">[BACKSPACE] DESFAZER</button></div>';
+  }
+  screenEl().innerHTML=html;
+  typeRich($('#qPrompt'), q.q);
+
+  if(q.t==='mc'){ $$('.opt').forEach(b=> b.onclick=()=>submitMC(+b.dataset.i)); }
+  if(q.t==='gap'){ $$('.gchip').forEach(b=> b.onclick=()=>submitGap(+b.dataset.i)); }
+  if(q.t==='out'){
+    const inp=$('#ansIn');
+    setTimeout(()=>inp.focus(),120);
+    $('#ansLine').onclick=()=>inp.focus();
+    inp.addEventListener('input', ()=>{ $('#mVal').textContent=inp.value; if(inp.value.length%2) sfx.key(); });
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') submitOut(); });
+    $('#btnGo').onclick=submitOut;
+    if($('#btnHint')) $('#btnHint').onclick=useHint;
+  }
+  if(q.t==='order'){ renderOrd(); $('#ordGo').onclick=confirmOrder; $('#ordUndo').onclick=undoOrd; }
+  if(s.boss) every(()=>tickTimer(), 100);
+}
+function tickTimer(){
+  if(!current||phase!=='quiz') return;
+  current.time-=0.1;
+  const w=$('#tWrap'); if(!w) return;
+  const n=Math.max(0,Math.ceil(current.time));
+  $('#tNum').textContent=n+'s';
+  const f=Math.ceil(current.time/40*12);
+  $('#tBar').textContent='▓'.repeat(f)+'░'.repeat(12-f);
+  w.classList.toggle('warn', current.time<10);
+  if(current.time<=0){
+    current.time=0; sess.vidas--; sess.streak=0; renderHUD(); sfx.err(); flash('flash-err');
+    if(sess.vidas<=0){ showFail(); }
+    else{ status('tempo esgotado. núcleo perdido.','err'); showExplain(false,'TEMPO ESGOTADO'); }
+  }
+}
+
+/* ---------- respostas ---------- */
+function useHint(){
+  if(phase!=='quiz'||current.hint) return;
+  current.hint=true; sfx.sel();
+  const ex=qExplain(); // garante área
+  const h=document.createElement('div');
+  h.className='ex-text hint'; h.innerHTML=rich(current.q.dica);
+  screenEl().appendChild(h); status('dica exibida — a resposta valerá menos pontos.');
+}
+function calcPts(){
+  let base, bonus=0;
+  if(sess.gc){ if(current.firstTry) sess.streak++; else sess.streak=0; base=10+Math.max(0,sess.streak-1)*5; sess.pts+=base; }
+  else{
+    if(current.firstTry){ sess.streak++; sess.acertos++; sess.maxStreak=Math.max(sess.maxStreak,sess.streak); }
+    else sess.streak=0;
+    base=current.firstTry?100:60;
+    if(current.hint) base=Math.max(30,base-30);
+    bonus=(current.firstTry&&sess.streak>1)?(sess.streak-1)*25:0;
+    sess.pts+=base+bonus;
+  }
+  sess.maxStreak=Math.max(sess.maxStreak,sess.streak);
+  return base+bonus;
+}
+function lockOpts(){
+  $$('.opt,.gchip,.oline').forEach(b=>{ if(!b.classList.contains('correct')) b.classList.add('dead'); });
+}
+function submitMC(i){
+  if(phase!=='quiz') return;
+  const q=current.q, btn=$$('.opt')[i];
+  if(i===q.ok){
+    btn.classList.add('correct'); lockOpts(); sfx.ok(); flash('flash-ok');
+    const pts=calcPts(); flyPts('+'+pts); status('compilado com sucesso.','ok'); renderHUD();
+    showExplain(true,null,pts);
+  }else{
+    btn.classList.add('wrong','dead'); wrongAttempt();
+  }
+}
+function submitGap(i){
+  if(phase!=='quiz') return;
+  const q=current.q, btn=$$('.gchip')[i];
+  const slot=document.querySelector('.gap');
+  slot.innerHTML=hl(q.opts[i]);
+  if(i===q.ok){
+    btn.classList.add('correct'); lockOpts(); sfx.ok(); flash('flash-ok');
+    const pts=calcPts(); flyPts('+'+pts); status('compilado com sucesso.','ok'); renderHUD();
+    showExplain(true,null,pts);
+  }else{
+    btn.classList.add('wrong','dead');
+    setTimeout(()=>{ slot.innerHTML='░░░░'; },450);
+    wrongAttempt();
+  }
+}
+function submitOut(){
+  if(phase!=='quiz') return;
+  const inp=$('#ansIn'), val=norm(inp.value);
+  if(!val){ $('#ansLine').classList.add('shake'); setTimeout(()=>$('#ansLine').classList.remove('shake'),450); return; }
+  const q=current.q;
+  if(q.ans.map(norm).includes(val)){
+    $('#mVal').textContent=inp.value; inp.blur();
+    $('#ansLine').style.borderColor='var(--ok)';
+    sfx.ok(); flash('flash-ok');
+    const pts=calcPts(); flyPts('+'+pts); status('saída correta. compilado com sucesso.','ok'); renderHUD();
+    showExplain(true,null,pts);
+  }else{
+    sfx.err(); flash('flash-err');
+    $('#ansLine').classList.add('shake'); setTimeout(()=>$('#ansLine').classList.remove('shake'),450);
+    wrongAttempt(()=>{ inp.value=''; $('#mVal').textContent=''; inp.focus(); });
+  }
+}
+function wrongAttempt(after){
+  current.tries++; sess.vidas--; sess.streak=0; renderHUD();
+  sfx.life(); flash('flash-err');
+  if(sess.vidas<=0){ showFail(); return; }
+  current.firstTry=false;
+  status('resposta errada. núcleo perdido — restam '+sess.vidas+'. tente novamente.','err');
+  if(after) after();
+}
+
+/* ---------- ordenar linhas ---------- */
+function renderOrd(){
+  const q=current.q;
+  $('#ordPool').innerHTML=current.pool.map(k=>
+    '<button class="oline" data-k="'+k+'"><span class="no">['+(k+1)+']</span><span class="lc">'+hl(q.lines[k])+'</span></button>').join('')
+    ||'<div class="oph">▸ todas as linhas em uso</div>';
+  $('#ordAns').innerHTML=current.ans.map(k=>
+    '<button class="oline" data-k="'+k+'"><span class="no">'+(current.ans.indexOf(k)+1)+'.</span><span class="lc">'+hl(q.lines[k])+'</span></button>').join('')
+    || Array.from({length:q.lines.length},()=>'<div class="oph">▸ aguardando linha…</div>').join('');
+  $('#ordGo').disabled=current.ans.length!==q.lines.length;
+  $$('#ordPool .oline').forEach(b=>b.onclick=()=>{ sfx.sel(); current.ans.push(+b.dataset.k); current.pool=current.pool.filter(x=>x!==+b.dataset.k); renderOrd(); });
+  $$('#ordAns .oline').forEach(b=>b.onclick=()=>{ sfx.sel(); current.pool.push(+b.dataset.k); current.ans=current.ans.filter(x=>x!==+b.dataset.k); renderOrd(); });
+}
+function undoOrd(){ if(!current.ans.length) return; sfx.sel(); current.pool.push(current.ans.pop()); renderOrd(); }
+function confirmOrder(){
+  if(phase!=='quiz'||current.ans.length!==current.q.lines.length) return;
+  const q=current.q;
+  if(current.ans.every((v,i)=>v===i)){
+    lockOpts(); sfx.ok(); flash('flash-ok');
+    const pts=calcPts(); flyPts('+'+pts); status('algoritmo montado. compilado com sucesso.','ok'); renderHUD();
+    showExplain(true,null,pts);
+  }else{
+    sfx.err(); flash('flash-err'); wrongAttempt(()=>{
+      let sh=shuffle(q.lines.map((_,i)=>i));
+      if(sh.every((v,i)=>v===i)) sh=shuffle(sh);
+      current.pool=sh; current.ans=[]; renderOrd();
+    });
+  }
+}
+
+/* ---------- painel de explicação ---------- */
+function qExplain(){ return; }
+function showExplain(ok, extra, pts){
+  phase='explain'; lockOpts(); cleanup(); renderHUD();
+  const q=current.q;
+  let head = ok ? '&gt;&gt; CORRETO — COMPILADO COM SUCESSO'
+                : '&gt;&gt; '+(extra||'ERRADO')+' — COMPILAÇÃO FALHOU';
+  let log = ok
+    ? '$ javac Missao.java\n<b>[OK]</b> 0 erros, 0 avisos — biblioteca restaurada.'
+    : '$ javac Missao.java\nMissao.java:'+(3+current.tries)+': <b>error:</b> resposta incompatível com o esperado.\n<b>1 erro</b>';
+  let inner='<div class="explain '+(ok?'ok':'err')+'">'+
+    '<div class="ex-head">'+head+'</div>'+
+    '<div class="ex-log">'+esc(log)+'</div>';
+  if(ok){
+    let extraPts=[];
+    if(!sess.gc&&pts!=null) extraPts.push('+'+pts+' PTS'+(sess.streak>1?' · STREAK x'+sess.streak:''));
+    if(sess.gc) extraPts.push('+'+pts+' PTS'+(sess.streak>1?' · STREAK x'+sess.streak:''));
+    if(sess.boss&&current.time>0) extraPts.push(Math.ceil(current.time)+'s restantes');
+    if(extraPts.length) inner+='<div class="ex-pts">'+extraPts.join(' · ')+'</div>';
+  }else{
+    let corr;
+    if(q.t==='out') corr='saída correta: "'+q.ans[0]+'"';
+    else if(q.t==='order') corr='ordem correta:\n'+q.lines.map((l,i)=>'  '+(i+1)+'. '+l).join('\n');
+    else corr='resposta correta: '+q.opts[q.ok];
+    inner+='<div class="ex-correct" style="white-space:pre-wrap">'+esc(corr)+'</div>';
+  }
+  inner+='<div class="ex-text">'+rich(q.ex)+'</div>'+
+    '<button class="tbtn" id="exGo">[ENTER] '+(sess.gc?'PRÓXIMO NÍVEL':'PRÓXIMA MISSÃO')+'</button></div>';
+  screenEl().insertAdjacentHTML('beforeend', inner);
+  const box=screenEl().lastElementChild;
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  $('#exGo').onclick=nextQ;
+}
+function nextQ(){
+  sess.idx++;
+  if(sess.gc && sess.idx>=sess.fila.length){ sess.fila=sess.fila.concat(shuffle(GC_BASE)); }
+  if(!sess.gc && sess.idx>=sess.fila.length){ showResult(); return; }
+  showQ();
+}
+
+/* ---------- falha do módulo ---------- */
+function showFail(){
+  clearScreen(); phase='fail'; sess.vidas=0; renderHUD();
+  sfx.boss(); flash('flash-err'); status('segfault. módulo abortado.','err');
+  const nome = sess.gc ? 'GRAU C' : MODS[sess.mi].nome;
+  screenEl().innerHTML =
+    '<div class="meta"><span class="errc">ERRO FATAL</span></div>'+
+    '<div class="prompt" style="font-size:1.4rem;color:var(--err)">== SEGMENTATION FAULT ==</div>'+
+    '<div class="prompt" style="font-weight:400;color:var(--dim)">Os 3 núcleos de memória se esgotaram durante <b style="color:var(--text)">'+nome+'</b>.<br>O progresso deste módulo foi descartado.<br><br>Dica do sistema: abra o MANUAL [M], revise a teoria e volte mais forte. O compilador respeita quem tenta de novo.</div>'+
+    '<div class="q-actions">'+
+    (sess.gc?'<button class="tbtn" id="fMenu">[ENTER] VOLTAR AO MENU</button>'
+            :'<button class="tbtn" id="fRetry">[R] REINICIAR MÓDULO</button><button class="tbtn" id="fMenu">[ESC] MENU</button>')+
+    '</div>';
+  if(!sess.gc) $('#fRetry').onclick=()=>startMod(sess.mi);
+  $('#fMenu').onclick=showMenu;
+}
+
+/* ---------- resultado do módulo ---------- */
+function showResult(){
+  cleanup(); phase='result'; renderHUD(); sfx.win();
+  if(sess.gc){ endGC(); return; }
+  const m=MODS[sess.mi], poss=sess.fila.length*100;
+  const nota=Math.min(m.val, sess.pts/poss*m.val);
+  if(sess.pts>S.melhor[m.id]) S.melhor[m.id]=sess.pts;
+  save();
+  const allDone = MODS.every(x=>S.melhor[x.id]>0);
+  screenEl().innerHTML =
+    '<div class="meta"><span class="hl">MÓDULO CONCLUÍDO</span><span>'+m.sem+'</span><span>'+m.nome+'</span></div>'+
+    '<div class="result-box">'+
+      '<div class="rb-title">› RELATÓRIO DE COMPILAÇÃO</div>'+
+      '<div>NOTA <span class="rb-nota" id="notaVal">'+fmt(0)+'</span> <span class="dim">/ '+fmt(m.val)+'</span></div>'+
+      '<div class="rb-stats">acertos de primeira: <b class="okc">'+sess.acertos+'/'+sess.fila.length+'</b><br>'+
+      'streak máximo: <b class="amber">x'+sess.maxStreak+'</b> · pontos: <b class="amber">'+sess.pts+'</b></div>'+
+      '<div class="q-actions" style="margin-top:16px">'+
+      (sess.boss&&allDone?'<button class="tbtn" id="rbBol" style="color:var(--ok);border-color:var(--ok)">[V] VER BOLETIM FINAL</button>':'')+
+      '<button class="tbtn" id="rbGo">[ENTER] VOLTAR AO MENU</button></div></div>';
+  status('módulo concluído. bibliotecas parcialmente restauradas.','ok');
+  const el=$('#notaVal'); let t=0;
+  every(()=>{ t=Math.min(1,t+0.03); el.textContent=fmt(nota*t); if(t>=1){ el.textContent=fmt(nota); cleanup(); } },30);
+  $('#rbGo').onclick=showMenu;
+  if($('#rbBol')) $('#rbBol').onclick=showBoletim;
+}
+function endGC(){
+  const novo=sess.pts>S.gcRec;
+  if(novo) S.gcRec=sess.pts;
+  save();
+  screenEl().innerHTML =
+    '<div class="meta"><span class="hl">SEMANA 9</span><span>GRAU C — DESAFIO INFINITO</span></div>'+
+    '<div class="prompt" style="font-size:1.3rem;color:var(--cyan)">== DESAFIO ENCERRADO ==</div>'+
+    '<div class="result-box" style="border-color:var(--cyan)">'+
+      '<div class="rb-title">› RELATÓRIO DE SOBREVIVÊNCIA</div>'+
+      '<div class="rb-stats">níveis superados: <b class="okc">'+sess.acertos+'</b><br>'+
+      'pontos: <b class="amber">'+sess.pts+'</b>'+(novo?' <b class="okc">← NOVO RECORDE!</b>':'')+'<br>'+
+      'recorde da máquina: <b class="amber">'+S.gcRec+' pts</b></div>'+
+      '<div class="q-actions" style="margin-top:16px"><button class="tbtn" id="rbGo">[ENTER] VOLTAR AO MENU</button></div></div>';
+  status(novo?'novo recorde registrado na memória ROM.':'desafio encerrado.','ok');
+  $('#rbGo').onclick=showMenu;
+}
+
+/* ---------- boletim ---------- */
+function showBoletim(){
+  clearScreen(); phase='boletim'; renderHUD(); status('consultando secretaria acadêmica...');
+  let total=0, rows='';
+  MODS.forEach((m,i)=>{
+    const poss=m.qs.length*100, pts=S.melhor[m.id];
+    const n = pts>0 ? Math.min(m.val, pts/poss*m.val) : null;
+    if(n!=null) total+=n;
+    rows+='<div class="brow"><span class="dim">'+(m.boss?'GB ':'GA'+(i+1))+'</span><span>'+m.nome+'</span><span class="dots"></span>'+
+      '<span class="bval">'+(n!=null?fmt(n)+' / '+fmt(m.val):'—')+'</span></div>';
+  });
+  const gcRow='<div class="brow"><span class="dim">GC </span><span>DESAFIO INFINITO (recorde)</span><span class="dots"></span><span class="bval">'+(S.gcRec>0?S.gcRec+' pts':'—')+'</span></div>';
+  let conceito;
+  if(total>=17) conceito='ARQUITETO(A) DE SOFTWARE';
+  else if(total>=13.5) conceito='DESENVOLVEDOR(A) PLENO(A)';
+  else if(total>=9.5) conceito='DESENVOLVEDOR(A) JÚNIOR';
+  else if(total>0) conceito='ESTAGIÁRIO(A) EM EVOLUÇÃO';
+  else conceito='REGISTRO EM BRANCO — comece pela Semana 1';
+  screenEl().innerHTML =
+    '<div class="meta"><span class="hl">BOLETIM ACADÊMICO</span><span>'+esc(S.nome)+'</span></div>'+
+    rows+gcRow+
+    '<div style="border-top:1px dashed var(--line2);margin:12px 0;max-width:560px"></div>'+
+    '<div class="brow"><span>TOTAL (GA×3 + GB)</span><span class="dots"></span><span class="bval">'+fmt(total)+' / 19,0</span></div>'+
+    '<div class="concept">CONCEITO: '+conceito+'</div>'+
+    '<div class="q-actions" style="margin-top:18px"><button class="tbtn" id="bolGo">[ESC] VOLTAR AO MENU</button></div>';
+}
+function resetAll(){
+  S=freshS(''); save(); showBoot();
+}
+
+/* ---------- manual ---------- */
+let manualOpen=false;
+function openManual(){
+  manualOpen=true; $('#manualWrap').classList.remove('hidden'); sfx.sel();
+}
+function closeManual(){ manualOpen=false; $('#manualWrap').classList.add('hidden'); }
+ $('#manualBody').innerHTML = MANUAL.map(s=>'<div class="man-sec">'+s[0]+'</div><pre>'+hl(s[1])+'</pre>').join('');
+ $('#manualClose').onclick=closeManual;
+ $('#manualWrap').addEventListener('click', e=>{ if(e.target.id==='manualWrap') closeManual(); });
+
+/* ---------- botões do HUD ---------- */
+ $('#btnManual').onclick=()=>manualOpen?closeManual():openManual();
+ $('#btnSom').onclick=()=>{ S.som=!S.som; save(); renderHUD(); if(S.som) sfx.sel(); };
+ $('#btnBoletim').onclick=showBoletim;
+ $('#btnMenu').onclick=escToMenu;
+function escToMenu(){
+  if(manualOpen){ closeManual(); return; }
+  if(phase==='quiz'||phase==='explain'){
+    const now=Date.now();
+    if(now-menuArm<2500){ menuArm=0; showMenu(); }
+    else{ menuArm=now; status('clique [MENU] de novo para ABANDONAR a missão atual.','err'); }
+    return;
+  }
+  if(phase==='boot'||phase==='name'||phase==='welcome'){ showMenu(); return; }
+  showMenu();
+}
+
+/* ---------- teclado global ---------- */
+document.addEventListener('keydown', e=>{
+  initAudio();
+  if(manualOpen){ if(e.key==='Escape') closeManual(); return; }
+  if(e.target && e.target.tagName==='INPUT') return;
+  const k=e.key;
+  if(phase==='boot'){ bootSkip=true; return; }
+  if(phase==='name'){ const i=$('.ghost'); if(i) i.focus(); return; }
+  if(phase==='welcome'){ if(k==='Enter') showMenu(); return; }
+  if(phase==='menu'){
+    if(k>='1'&&k<='4') showIntro(+k-1);
+    else if(k==='5') startGC();
+    else if(k.toLowerCase()==='m') openManual();
+    else if(k.toLowerCase()==='b') showBoletim();
+    else if(k.toLowerCase()==='n'){
+      const now=Date.now();
+      if(now-resetArm<2500){ resetArm=0; resetAll(); }
+      else{ resetArm=now; status('tecle [N] de novo para APAGAR o cadastro e as notas.','err'); }
+    }
+    return;
+  }
+  if(phase==='intro'){
+    if(k==='Enter') startMod(currentIntro);
+    else if(k==='Escape') showMenu();
+    return;
+  }
+  if(phase==='quiz'){
+    const q=current&&current.q; if(!q) return;
+    const dig = '1234'.indexOf(k) >= 0 ? +k : ('abcd'.indexOf(k.toLowerCase()) >= 0 ? 'abcd'.indexOf(k.toLowerCase()) : null);
+    if((q.t==='mc'||q.t==='gap') && dig!=null && dig<q.opts.length){ q.t==='mc'?submitMC(dig):submitGap(dig); return; }
+    if(q.t==='out'){ const i=$('#ansIn'); if(i) i.focus(); return; }
+    if(q.t==='order'){
+      if(/^[1-9]$/.test(k)){ const pos=+k-1; if(pos<current.pool.length){ sfx.sel(); current.ans.push(current.pool.splice(pos,1)[0]); renderOrd(); } return; }
+      if(k==='Enter'){ confirmOrder(); return; }
+      if(k==='Backspace'){ e.preventDefault(); undoOrd(); return; }
+    }
+    return;
+  }
+  if(phase==='explain'){ if(k==='Enter') nextQ(); return; }
+  if(phase==='result'||phase==='boletim'||phase==='fail'){
+    if(k==='Escape'){ showMenu(); return; }
+    if(k==='Enter'){
+      const b=$('#rbGo')||$('#bolGo')||$('#fMenu')||$('#fRetry'); if(b) b.click();
+    }
+    if(phase==='fail'&&(k==='r'||k==='R')){ const b=$('#fRetry'); if(b) b.click(); }
+    if(phase==='result'&&(k==='v'||k==='V')){ const b=$('#rbBol'); if(b) b.click(); }
+    return;
+  }
+});
+document.addEventListener('pointerdown', e=>{ if(phase==='boot') bootSkip=true; });
+
+/* ---------- start ---------- */
+renderHUD();
+showBoot();
+</script>
+</body>
+</html>
