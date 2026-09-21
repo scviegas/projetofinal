@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📘 Tutorial Java — Programação Acadêmica</title>
+
+<!-- Highlight.js (syntax highlighting) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+
+<style>
+/* ============ VARIÁVEIS & RESET ============ */
+:root{
+  --bg:#0f1420; --bg2:#161d2e; --card:#1c2438; --card2:#222c45;
+  --txt:#e8ecf4; --txt2:#9aa7bd; --muted:#6b7891;
+  --orange:#f89820; --blue:#5382a1; --accent:#ffb347;
+  --green:#4ade80; --red:#f87171; --yellow:#facc15; --purple:#c084fc;
+  --border:#2a3550;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--txt);line-height:1.7;
+}
+
+/* ============ BARRA DE PROGRESSO ============ */
+#progress{position:fixed;top:0;left:0;height:4px;width:0%;
+  background:linear-gradient(90deg,var(--orange),var(--accent));
+  z-index:1000;transition:width .1s}
+
+/* ============ HEADER ============ */
+header{
+  position:sticky;top:0;z-index:900;
+  background:rgba(15,20,32,.92);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  padding:14px 24px;display:flex;align-items:center;gap:14px;
+}
+header h1{font-size:1.15rem;font-weight:700}
+header h1 span{color:var(--orange)}
+#menuBtn{display:none;background:none;border:1px solid var(--border);
+  color:var(--txt);font-size:1.2rem;border-radius:8px;padding:4px 12px;cursor:pointer}
+
+/* ============ LAYOUT ============ */
+.layout{display:flex;max-width:1400px;margin:0 auto}
+nav#sidebar{
+  width:270px;flex-shrink:0;position:sticky;top:70px;height:calc(100vh - 70px);
+  overflow-y:auto;padding:24px 16px;border-right:1px solid var(--border);
+}
+nav#sidebar h3{font-size:.75rem;text-transform:uppercase;letter-spacing:1px;
+  color:var(--muted);margin:18px 0 8px 12px}
+nav#sidebar a{
+  display:block;padding:8px 12px;border-radius:8px;text-decoration:none;
+  color:var(--txt2);font-size:.9rem;transition:.2s;border-left:3px solid transparent;
+}
+nav#sidebar a:hover{background:var(--card);color:var(--txt)}
+nav#sidebar a.active{background:var(--card2);color:var(--accent);border-left-color:var(--orange)}
+main{flex:1;min-width:0;padding:32px 40px 80px;max-width:1000px}
+
+/* ============ TIPOGRAFIA ============ */
+section{margin-bottom:70px;scroll-margin-top:80px}
+.week-tag{display:inline-block;background:linear-gradient(90deg,var(--orange),var(--accent));
+  color:#1a1205;font-weight:800;font-size:.78rem;padding:4px 14px;border-radius:20px;
+  margin-bottom:10px;letter-spacing:.5px}
+h2{font-size:1.9rem;margin-bottom:8px;padding-bottom:12px;
+  border-bottom:2px solid var(--border)}
+h2 .icon{margin-right:8px}
+h3{font-size:1.3rem;margin:36px 0 12px;color:var(--accent)}
+h4{font-size:1.05rem;margin:22px 0 8px;color:var(--txt)}
+p{margin-bottom:12px;color:var(--txt)}
+ul,ol{margin:0 0 14px 26px;color:var(--txt)}
+li{margin-bottom:6px}
+strong{color:#fff}
+
+/* ============ CALLOUTS ============ */
+.callout{border-radius:var(--radius);padding:14px 18px;margin:16px 0;
+  border-left:4px solid;display:flex;gap:10px;align-items:flex-start;font-size:.95rem}
+.callout .emoji{font-size:1.2rem;line-height:1.4}
+.callout.warn{background:#2d2410;border-color:var(--yellow)}
+.callout.tip{background:#12301f;border-color:var(--green)}
+.callout.danger{background:#331a1a;border-color:var(--red)}
+.callout.info{background:#16263a;border-color:var(--blue)}
+
+/* ============ CÓDIGO ============ */
+.code-block{position:relative;margin:18px 0;border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--border);background:#282c34}
+.code-block .code-header{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 14px;background:#21252b;border-bottom:1px solid #353b45}
+.code-block .code-header span{font-size:.75rem;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px}
+.copy-btn{background:var(--card2);color:var(--txt2);border:1px solid var(--border);
+  border-radius:6px;padding:3px 12px;font-size:.75rem;cursor:pointer;transition:.2s}
+.copy-btn:hover{background:var(--orange);color:#1a1205;border-color:var(--orange)}
+pre{margin:0!important;overflow-x:auto}
+pre code.hljs{background:transparent!important;padding:16px!important;font-size:.88rem;
+  font-family:'Cascadia Code','Fira Code',Consolas,monospace}
+
+/* ============ TABELAS ============ */
+.table-wrap{overflow-x:auto;margin:16px 0;border-radius:var(--radius);
+  border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:500px}
+th{background:var(--card2);color:var(--accent);text-align:left;padding:11px 14px;
+  font-weight:700;border-bottom:2px solid var(--orange)}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--txt2)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,179,71,.05)}
+td code, p code, li code, h4 code{
+  background:#2a3550;color:var(--accent);padding:2px 7px;border-radius:5px;
+  font-family:Consolas,monospace;font-size:.85em;white-space:nowrap}
+
+/* ============ CARDS / GRID ============ */
+.grid{display:grid;gap:16px;margin:18px 0}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.ex-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px;transition:.25s}
+.ex-card:hover{transform:translateY(-3px);border-color:var(--orange);
+  box-shadow:0 8px 24px rgba(248,152,32,.12)}
+.ex-card .badge{display:inline-block;font-size:.7rem;font-weight:700;
+  padding:3px 10px;border-radius:12px;margin-bottom:10px}
+.badge.done{background:#12301f;color:var(--green)}
+.badge.todo{background:#3a2a10;color:var(--yellow)}
+.badge.eval{background:#331a1a;color:var(--red)}
+.ex-card h4{margin:0 0 8px;font-size:1rem}
+.ex-card p{font-size:.88rem;color:var(--txt2);margin:0}
+
+/* ============ CHECKLIST ============ */
+.checklist{list-style:none;margin-left:0}
+.checklist li{padding:8px 0 8px 36px;position:relative;color:var(--txt2)}
+.checklist li::before{content:"☐";position:absolute;left:6px;color:var(--orange);font-size:1.1rem}
+
+/* ============ VIDEO CARDS ============ */
+.video-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;display:flex;gap:16px;align-items:flex-start}
+.video-card .play{font-size:2rem}
+.video-card h4{margin:0 0 6px;color:var(--txt)}
+.video-card p{margin:0;font-size:.85rem;color:var(--txt2)}
+.video-card .search-tag{display:inline-block;margin-top:10px;background:#2a3550;
+  color:var(--accent);padding:3px 10px;border-radius:6px;font-size:.75rem;
+  font-family:Consolas,monospace}
+
+/* ============ MATRIX VISUAL ============ */
+.matrix-visual{background:#21252b;border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px;margin:16px 0;overflow-x:auto}
+.matrix-visual table{min-width:400px;font-family:Consolas,monospace}
+.matrix-visual td,.matrix-visual th{border:1px solid #353b45;text-align:center;padding:8px 16px}
+.matrix-visual th{background:var(--card2);color:var(--muted);font-size:.8rem;border-bottom:1px solid #353b45}
+.matrix-visual td{color:var(--txt);background:#282c34}
+.matrix-visual .hl{color:var(--orange);font-weight:700;background:#3a2a10}
+
+/* ============ BOTÃO TOPO / FOOTER ============ */
+#toTop{position:fixed;bottom:28px;right:28px;width:48px;height:48px;border-radius:50%;
+  background:var(--orange);color:#1a1205;border:none;font-size:1.3rem;cursor:pointer;
+  opacity:0;pointer-events:none;transition:.3s;z-index:800;
+  box-shadow:0 4px 16px rgba(248,152,32,.4)}
+#toTop.show{opacity:1;pointer-events:auto}
+#toTop:hover{transform:translateY(-4px)}
+footer{border-top:1px solid var(--border);padding:32px;text-align:center;color:var(--muted);font-size:.85rem}
+
+/* ============ RESPONSIVO ============ */
+@media(max-width:900px){
+  #menuBtn{display:block}
+  nav#sidebar{position:fixed;left:-290px;top:0;height:100vh;z-index:950;
+    background:var(--bg2);transition:left .3s;padding-top:70px}
+  nav#sidebar.open{left:0;box-shadow:8px 0 30px rgba(0,0,0,.5)}
+  main{padding:24px 20px 60px}
+  h2{font-size:1.5rem}
+}
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:940}
+#overlay.show{display:block}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<header>
+  <button id="menuBtn">☰</button>
+  <h1>📘 Tutorial <span>Java</span> — Programação Acadêmica</h1>
+</header>
+
+<div id="overlay"></div>
+
+<div class="layout">
+
+<!-- ===================== SIDEBAR ===================== -->
+<nav id="sidebar">
+  <h3>Programação</h3>
+  <a href="#semana1">🟦 Semana 1 — Fundamentos</a>
+  <a href="#semana2">🟦 Semana 2 — Exercícios</a>
+  <a href="#semana3">🟦 Semana 3 — Seleção/Iteração</a>
+  <a href="#semana4">🟦 Semana 4 — Exercícios</a>
+  <a href="#semana5">🟦 Semana 5 — Vetores/Matrizes</a>
+  <a href="#semana6">🟦 Semana 6 — Exercícios</a>
+  <a href="#semana7">🟦 Semana 7 — Revisão</a>
+  <h3>Extra</h3>
+  <a href="#videos">🎬 Vídeos & Recursos</a>
+  <a href="#como-estudar">🧭 Como Estudar</a>
+</nav>
+
+<!-- ===================== MAIN ===================== -->
+<main>
+
+<!-- ==================== SEMANA 1 ==================== -->
+<section id="semana1">
+  <span class="week-tag">SEMANA 1</span>
+  <h2><span class="icon">🧱</span>Fundamentos de Programação</h2>
+  <p>Dados e Tipagem • Variáveis e Constantes • Expressões Aritméticas • Interatividade (Entrada e Saída)</p>
+
+  <h3>1.1 Dados e Tipagem</h3>
+  <p>Java é <strong>estaticamente tipada</strong>: toda variável precisa ter seu tipo declarado e esse tipo não muda durante a execução.</p>
+
+  <h4>Tipos primitivos</h4>
+  <div class="table-wrap"><table>
+    <tr><th>Tipo</th><th>Tamanho</th><th>Armazena</th><th>Exemplo</th></tr>
+    <tr><td><code>byte</code></td><td>1 byte</td><td>Inteiros de -128 a 127</td><td><code>byte idade = 25;</code></td></tr>
+    <tr><td><code>short</code></td><td>2 bytes</td><td>Inteiros de -32.768 a 32.767</td><td><code>short ano = 2024;</code></td></tr>
+    <tr><td><code>int</code></td><td>4 bytes</td><td>Inteiros (~ ±2,1 bilhões)</td><td><code>int pop = 214000000;</code></td></tr>
+    <tr><td><code>long</code></td><td>8 bytes</td><td>Inteiros muito grandes</td><td><code>long hab = 8000000000L;</code></td></tr>
+    <tr><td><code>float</code></td><td>4 bytes</td><td>Decimais (~7 dígitos)</td><td><code>float preco = 19.99f;</code></td></tr>
+    <tr><td><code>double</code></td><td>8 bytes</td><td>Decimais (~15 dígitos)</td><td><code>double pi = 3.14159;</code></td></tr>
+    <tr><td><code>char</code></td><td>2 bytes</td><td><strong>Um único</strong> caractere</td><td><code>char letra = 'A';</code></td></tr>
+    <tr><td><code>boolean</code></td><td>—</td><td>Apenas <code>true</code> ou <code>false</code></td><td><code>boolean ativo = true;</code></td></tr>
+  </table></div>
+
+  <div class="callout warn"><span class="emoji">⚠️</span><div>
+    <code>float</code> precisa do sufixo <code>f</code> e <code>long</code> do sufixo <code>L</code>.
+    <code>char</code> usa <strong>aspas simples</strong> <code>'A'</code>; <code>String</code> (classe, não primitivo) usa <strong>aspas duplas</strong> <code>"Olá"</code>.
+  </div></div>
+
+  <div class="code-block"><div class="code-header"><span>ExemploTipos.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">public class ExemploTipos {
+    public static void main(String[] args) {
+        int idade = 20;                 // número inteiro
+        double altura = 1.75;           // número decimal
+        char inicial = 'M';             // um caractere
+        boolean estudante = true;       // verdadeiro/falso
+        String nome = "Maria";          // texto (classe, não primitivo)
+
+        System.out.println("Nome: " + nome);
+        System.out.println("Idade: " + idade);
+        System.out.println("Altura: " + altura);
+        System.out.println("Inicial: " + inicial);
+        System.out.println("É estudante? " + estudante);
+    }
+}</code></pre></div>
+
+  <h3>1.2 Variáveis e Constantes</h3>
+
+  <h4>🔧 Variável — valor que PODE mudar</h4>
+  <div class="code-block"><div class="code-header"><span>Sintaxe</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">tipo nomeDaVariavel = valorInicial;
+
+int notaFinal = 85;
+notaFinal = 90;   // ✅ pode mudar — é variável</code></pre></div>
+
+  <div class="callout info"><span class="emoji">📏</span><div>
+    <strong>Regras de nomenclatura (camelCase):</strong> não começa com número (<code>2nota</code> ❌), sem espaços
+    (<code>minha nota</code> ❌), sem palavra reservada (<code>int int;</code> ❌). Convenção: primeira palavra minúscula,
+    demais com inicial maiúscula (<code>notaFinal</code> ✅).
+  </div></div>
+
+  <h4>🔒 Constante — valor FIXO (<code>final</code>)</h4>
+  <div class="code-block"><div class="code-header"><span>Sintaxe</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">final double PI = 3.14159;
+final int MAXIMO_TENTATIVAS = 3;
+final String NOME_INSTITUICAO = "UniPampa";
+
+PI = 3.14;  // ❌ ERRO de compilação! Constante não muda</code></pre></div>
+
+  <div class="callout tip"><span class="emoji">💡</span><div>
+    Use <strong>constante</strong> para valores fixos (PI, limite de vagas, taxa de juros). Use
+    <strong>variável</strong> para tudo que se altera (contador, saldo, nota digitada).
+  </div></div>
+
+  <h3>1.3 Expressões Aritméticas</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Operador</th><th>Significado</th><th>Exemplo</th><th>Resultado</th></tr>
+    <tr><td><code>+</code></td><td>Soma</td><td><code>7 + 2</code></td><td><code>9</code></td></tr>
+    <tr><td><code>-</code></td><td>Subtração</td><td><code>7 - 2</code></td><td><code>5</code></td></tr>
+    <tr><td><code>*</code></td><td>Multiplicação</td><td><code>7 * 2</code></td><td><code>14</code></td></tr>
+    <tr><td><code>/</code></td><td>Divisão</td><td><code>7 / 2</code></td><td><code>3</code> ⚠️</td></tr>
+    <tr><td><code>%</code></td><td>Resto (módulo)</td><td><code>7 % 2</code></td><td><code>1</code></td></tr>
+  </table></div>
+
+  <div class="callout danger"><span class="emoji">🚨</span><div>
+    <strong>Pegadinha clássica — divisão de inteiros:</strong> <code>7 / 2</code> dá <code>3</code>, pois o resto é descartado!
+  </div></div>
+
+  <div class="code-block"><div class="code-header"><span>Divisao.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">int a = 7, b = 2;
+System.out.println(a / b);          // 3  (divide inteiro e descarta o resto!)
+
+System.out.println(a / (double) b); // 3.5 (converte antes de dividir)
+System.out.println(7.0 / 2);        // 3.5 (basta UM operando ser decimal)
+
+// O operador % é muito útil:
+System.out.println(10 % 3);   // 1  → 10 dividido por 3 sobra 1
+// numero % 2 == 0  → verifica se é PAR (veremos na Semana 3)</code></pre></div>
+
+  <h4>Precedência (ordem de avaliação)</h4>
+  <ol>
+    <li><code>()</code> parênteses</li>
+    <li><code>*</code> <code>/</code> <code>%</code> (da esquerda para a direita)</li>
+    <li><code>+</code> <code>-</code> (da esquerda para a direita)</li>
+  </ol>
+
+  <h4>Atribuição composta e incremento</h4>
+  <div class="code-block"><div class="code-header"><span>Operadores.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">int pontos = 10;
+pontos += 5;    // equivale a pontos = pontos + 5  → 15
+pontos -= 3;    // → 12
+pontos *= 2;    // → 24
+pontos /= 4;    // → 6
+pontos++;       // soma 1 → 7
+pontos--;       // subtrai 1 → 6</code></pre></div>
+
+  <h4>Casting (conversão de tipos)</h4>
+  <div class="code-block"><div class="code-header"><span>Casting.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">// Conversão automática (widening) — sem perda
+int inteiro = 10;
+double decimal = inteiro;        // 10.0 ✅ automático
+
+// Conversão forçada (narrowing) — pode perder informação!
+double nota = 8.75;
+int notaArredondada = (int) nota;  // 8 ⚠️ TRUNCA, não arredonda</code></pre></div>
+
+  <h4>Classe Math (funções matemáticas prontas)</h4>
+  <div class="code-block"><div class="code-header"><span>Math.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">Math.pow(2, 3)     // 8.0    → potência
+Math.sqrt(25)      // 5.0    → raiz quadrada
+Math.abs(-7)       // 7      → valor absoluto
+Math.max(3, 9)     // 9      → maior valor
+Math.min(3, 9)     // 3      → menor valor
+Math.round(8.6)    // 9      → arredonda
+Math.PI            // 3.14159... (constante)</code></pre></div>
+
+  <h3>1.4 Interatividade (Entrada e Saída)</h3>
+
+  <h4>Saída de dados</h4>
+  <div class="table-wrap"><table>
+    <tr><th>Especificador</th><th>Uso</th><th>Exemplo</th></tr>
+    <tr><td><code>%d</code></td><td>inteiros</td><td><code>printf("Idade: %d", 20)</code></td></tr>
+    <tr><td><code>%f</code></td><td>decimais</td><td><code>printf("Nota: %f", 8.5)</code></td></tr>
+    <tr><td><code>%.2f</code></td><td>decimal com 2 casas</td><td><code>printf("R$ %.2f", 19.99)</code></td></tr>
+    <tr><td><code>%s</code></td><td>texto</td><td><code>printf("Olá, %s!", nome)</code></td></tr>
+    <tr><td><code>%n</code></td><td>quebra de linha</td><td>igual <code>\n</code></td></tr>
+  </table></div>
+
+  <h4>Entrada de dados — Classe Scanner</h4>
+  <div class="code-block"><div class="code-header"><span>Leitura.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;   // SEMPRE no topo do arquivo!
+
+public class Leitura {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+
+        System.out.print("Digite seu nome: ");
+        String nome = teclado.nextLine();        // lê texto inteiro
+
+        System.out.print("Digite sua idade: ");
+        int idade = teclado.nextInt();           // lê inteiro
+
+        System.out.print("Digite sua altura: ");
+        double altura = teclado.nextDouble();    // lê decimal
+
+        System.out.printf("%nOlá, %s! Você tem %d anos e %.2f m de altura.%n",
+                          nome, idade, altura);
+
+        teclado.close();   // boa prática: fechar o Scanner
+    }
+}</code></pre></div>
+
+  <div class="table-wrap"><table>
+    <tr><th>Método do Scanner</th><th>Lê</th></tr>
+    <tr><td><code>nextInt()</code></td><td>número inteiro</td></tr>
+    <tr><td><code>nextDouble()</code></td><td>número decimal</td></tr>
+    <tr><td><code>next()</code></td><td><strong>uma palavra</strong></td></tr>
+    <tr><td><code>nextLine()</code></td><td><strong>a linha inteira</strong> (inclusive espaços)</td></tr>
+  </table></div>
+
+  <div class="callout warn"><span class="emoji">⚠️</span><div>
+    <strong>Pegadinha famosa:</strong> <code>nextInt()</code> não consome a tecla Enter. Se usar
+    <code>nextInt()</code> e depois <code>nextLine()</code>, este vai "engolir" o Enter vazio.
+    Solução: coloque um <code>teclado.nextLine();</code> extra depois do <code>nextInt()</code>.
+  </div></div>
+</section>
+
+<!-- ==================== SEMANA 2 ==================== -->
+<section id="semana2">
+  <span class="week-tag">SEMANA 2 — GA 3,0 pts</span>
+  <h2><span class="icon">✏️</span>Exercícios Resolvidos</h2>
+
+  <div class="grid grid-3">
+    <div class="ex-card"><span class="badge done">RESOLVIDO</span><h4>🌡️ Conversor de Temperatura</h4><p>Converte °C → °F usando expressão aritmética.</p></div>
+    <div class="ex-card"><span class="badge done">RESOLVIDO</span><h4>⭕ Área e Perímetro</h4><p>Círculo com constante PI e classe Math.</p></div>
+    <div class="ex-card"><span class="badge todo">TREINE SOZINHO</span><h4>📊 Média de Notas</h4><p>Leia duas notas e calcule a média com 2 casas.</p></div>
+    <div class="ex-card"><span class="badge todo">TREINE SOZINHO</span><h4>💰 Cálculo de Salário</h4><p>Salário bruto, desconto de 10% INSS e líquido.</p></div>
+  </div>
+
+  <h4>Exercício 1 — Conversor de temperatura</h4>
+  <div class="code-block"><div class="code-header"><span>ConversorTemperatura.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;
+
+public class ConversorTemperatura {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+
+        System.out.print("Digite a temperatura em °C: ");
+        double celsius = teclado.nextDouble();
+
+        double fahrenheit = (celsius * 9 / 5) + 32;
+
+        System.out.printf("%.1f °C = %.1f °F%n", celsius, fahrenheit);
+        teclado.close();
+    }
+}</code></pre></div>
+
+  <h4>Exercício 2 — Área e perímetro do círculo</h4>
+  <div class="code-block"><div class="code-header"><span>Circulo.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;
+
+public class Circulo {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        final double PI = 3.14159;   // constante!
+
+        System.out.print("Raio do círculo: ");
+        double raio = teclado.nextDouble();
+
+        double area = PI * Math.pow(raio, 2);
+        double perimetro = 2 * PI * raio;
+
+        System.out.printf("Área: %.2f | Perímetro: %.2f%n", area, perimetro);
+        teclado.close();
+    }
+}</code></pre></div>
+</section>
+
+<!-- ==================== SEMANA 3 ==================== -->
+<section id="semana3">
+  <span class="week-tag">SEMANA 3</span>
+  <h2><span class="icon">🔀</span>Seleção e Iteração</h2>
+  <p>Expressões booleanas/relacionais/lógicas • if, if-else, else-if • while e for</p>
+
+  <h3>3.1 Expressões Booleanas, Relacionais e Lógicas</h3>
+  <p>O tipo <code>boolean</code> só guarda <code>true</code> ou <code>false</code> — é a base de toda decisão.</p>
+
+  <h4>Operadores relacionais (comparação)</h4>
+  <div class="table-wrap"><table>
+    <tr><th>Operador</th><th>Significado</th><th>Exemplo</th><th>Resultado</th></tr>
+    <tr><td><code>==</code></td><td>igual a</td><td><code>5 == 5</code></td><td><code>true</code></td></tr>
+    <tr><td><code>!=</code></td><td>diferente de</td><td><code>5 != 3</code></td><td><code>true</code></td></tr>
+    <tr><td><code>&gt;</code></td><td>maior que</td><td><code>5 &gt; 3</code></td><td><code>true</code></td></tr>
+    <tr><td><code>&lt;</code></td><td>menor que</td><td><code>5 &lt; 3</code></td><td><code>false</code></td></tr>
+    <tr><td><code>&gt;=</code></td><td>maior ou igual</td><td><code>5 &gt;= 5</code></td><td><code>true</code></td></tr>
+    <tr><td><code>&lt;=</code></td><td>menor ou igual</td><td><code>4 &lt;= 5</code></td><td><code>true</code></td></tr>
+  </table></div>
+
+  <div class="callout danger"><span class="emoji">🚨</span><div>
+    <code>==</code> <strong>compara</strong>; <code>=</code> <strong>atribui</strong>! <code>if (x = 5)</code> é erro — o certo é <code>if (x == 5)</code>.
+  </div></div>
+
+  <h4>Operadores lógicos (combinam condições)</h4>
+  <div class="table-wrap"><table>
+    <tr><th>Operador</th><th>Nome</th><th>Resultado</th></tr>
+    <tr><td><code>&amp;&amp;</code></td><td>E (AND)</td><td><code>true</code> só se <strong>ambas</strong> forem verdadeiras</td></tr>
+    <tr><td><code>||</code></td><td>OU (OR)</td><td><code>true</code> se <strong>pelo menos uma</strong> for verdadeira</td></tr>
+    <tr><td><code>!</code></td><td>NÃO (NOT)</td><td><strong>inverte</strong> o valor</td></tr>
+  </table></div>
+
+  <h4>Tabela-verdade do <code>&amp;&amp;</code></h4>
+  <div class="table-wrap"><table>
+    <tr><th>A</th><th>B</th><th>A &amp;&amp; B</th></tr>
+    <tr><td>🟢 V</td><td>🟢 V</td><td>🟢 <strong>V</strong></td></tr>
+    <tr><td>🟢 V</td><td>🔴 F</td><td>🔴 F</td></tr>
+    <tr><td>🔴 F</td><td>🟢 V</td><td>🔴 F</td></tr>
+    <tr><td>🔴 F</td><td>🔴 F</td><td>🔴 F</td></tr>
+  </table></div>
+
+  <div class="code-block"><div class="code-header"><span>Logica.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">int idade = 20;
+boolean temCarteira = true;
+
+// Pode dirigir? Precisa das DUAS condições
+boolean podeDirigir = (idade >= 18) && temCarteira;   // true
+
+// Invertendo com !
+boolean descanso = false;
+System.out.println(!descanso);   // true (o ! inverteu)</code></pre></div>
+
+  <div class="callout tip"><span class="emoji">💡</span><div>
+    <strong>Avaliação de curto-circuito:</strong> no <code>&amp;&amp;</code>, se a primeira condição já é falsa, a Java
+    <strong>nem avalia</strong> a segunda. Ex.: <code>if (denominador != 0 &amp;&amp; 10/denominador &gt; 2)</code> —
+    se denominador for 0, a divisão nem acontece. ✅ Seguro!
+  </div></div>
+
+  <h3>3.2 if, if-else e else-if</h3>
+
+  <h4>if simples — executa SÓ SE a condição for verdadeira</h4>
+  <div class="code-block"><div class="code-header"><span>Sintaxe</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">if (nota >= 60) {
+    System.out.println("Aprovado! 🎉");
+}</code></pre></div>
+
+  <h4>if-else — escolhe entre DOIS caminhos</h4>
+  <div class="code-block"><div class="code-header"><span>Sintaxe</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">if (numero % 2 == 0) {
+    System.out.println("É par");
+} else {
+    System.out.println("É ímpar");
+}</code></pre></div>
+
+  <h4>else-if — cadeia de decisões (UM entre vários)</h4>
+  <div class="code-block"><div class="code-header"><span>ConceitoNota.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;
+
+public class ConceitoNota {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+
+        System.out.print("Digite a nota (0 a 100): ");
+        int nota = teclado.nextInt();
+
+        if (nota >= 90) {
+            System.out.println("Conceito A");
+        } else if (nota >= 75) {
+            System.out.println("Conceito B");
+        } else if (nota >= 60) {
+            System.out.println("Conceito C");
+        } else {
+            System.out.println("Reprovado");
+        }
+        teclado.close();
+    }
+}</code></pre></div>
+
+  <div class="callout tip"><span class="emoji">💡</span><div>
+    A Java avalia <strong>de cima para baixo</strong> e para no primeiro <code>if</code> verdadeiro —
+    por isso não precisamos escrever <code>nota &gt;= 75 &amp;&amp; nota &lt; 90</code>.
+  </div></div>
+
+  <div class="callout danger"><span class="emoji">❌</span><div>
+    <strong>Erros comuns:</strong><br>
+    <code>if (nota &gt;= 60);</code> ← ponto-e-vírgula "come" o if!<br>
+    <code>if (nota = 60)</code> ← atribuição em vez de comparação<br>
+    Sem chaves, só a 1ª linha pertence ao if ⚠️
+  </div></div>
+
+  <h3>3.3 while e for</h3>
+
+  <h4>while — repete ENQUANTO a condição for verdadeira</h4>
+  <div class="code-block"><div class="code-header"><span>While.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">int contador = 1;
+while (contador <= 5) {
+    System.out.println("Contador: " + contador);
+    contador++;   // ⚠️ sem isso, loop infinito!
+}</code></pre></div>
+
+  <div class="callout info"><span class="emoji">🔢</span><div><strong>3 elementos essenciais:</strong>
+    1️⃣ Inicialização (<code>int contador = 1;</code>) • 2️⃣ Condição de parada (<code>contador &lt;= 5</code>) •
+    3️⃣ Atualização (<code>contador++</code>)
+  </div></div>
+
+  <h4>do-while — executa PELO MENOS UMA VEZ (teste no final)</h4>
+  <div class="code-block"><div class="code-header"><span>Menu.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;
+
+public class Menu {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        int opcao;
+
+        do {
+            System.out.println("1- Continuar | 0- Sair");
+            System.out.print("Opção: ");
+            opcao = teclado.nextInt();
+        } while (opcao != 0);
+
+        System.out.println("Programa encerrado.");
+        teclado.close();
+    }
+}</code></pre></div>
+
+  <h4>for — ideal quando sabemos QUANTAS repetições</h4>
+  <div class="code-block"><div class="code-header"><span>For.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">// Conta de 1 até 10
+for (int i = 1; i <= 10; i++) {
+    System.out.println(i);
+}
+
+// Contagem regressiva
+for (int i = 10; i >= 1; i--) {
+    System.out.println(i + "...");
+}
+System.out.println("Lançar! 🚀");</code></pre></div>
+
+  <h4>break e continue</h4>
+  <div class="code-block"><div class="code-header"><span>BreakContinue.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">for (int i = 1; i <= 10; i++) {
+    if (i == 5) break;         // encerra o loop TODO
+    if (i == 2) continue;      // pula para a próxima volta
+    System.out.println(i);     // imprime: 1, 3, 4
+}</code></pre></div>
+
+  <h4>Laços aninhados — tabuada</h4>
+  <div class="code-block"><div class="code-header"><span>Tabuada.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">for (int tabuada = 1; tabuada <= 3; tabuada++) {
+    System.out.println("--- Tabuada do " + tabuada + " ---");
+    for (int i = 1; i <= 10; i++) {
+        System.out.println(tabuada + " x " + i + " = " + (tabuada * i));
+    }
+}</code></pre></div>
+
+  <div class="callout tip"><span class="emoji">💡</span><div>
+    <strong>while ou for?</strong> Use <code>for</code> quando sabe o número de repetições; use <code>while</code>
+    quando depende de uma condição do usuário (ex.: "digite 0 para sair").
+  </div></div>
+</section>
+
+<!-- ==================== SEMANA 4 ==================== -->
+<section id="semana4">
+  <span class="week-tag">SEMANA 4 — GA 3,0 pts</span>
+  <h2><span class="icon">🏋️</span>Exercícios Resolvidos</h2>
+
+  <h4>Exercício 1 — Ler números até digitar 0 e somar (while)</h4>
+  <div class="code-block"><div class="code-header"><span>SomaNumeros.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;
+
+public class SomaNumeros {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        int soma = 0;
+        int numero;
+
+        System.out.print("Digite um número (0 para sair): ");
+        numero = teclado.nextInt();
+
+        while (numero != 0) {
+            soma += numero;
+            System.out.print("Digite outro (0 para sair): ");
+            numero = teclado.nextInt();
+        }
+
+        System.out.println("Soma total: " + soma);
+        teclado.close();
+    }
+}</code></pre></div>
+
+  <h4>Exercício 2 — Maior de 5 números (for + if)</h4>
+  <div class="code-block"><div class="code-header"><span>MaiorNumero.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;
+
+public class MaiorNumero {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        int maior = Integer.MIN_VALUE;   // menor valor possível
+
+        for (int i = 1; i <= 5; i++) {
+            System.out.print("Digite o " + i + "º número: ");
+            int n = teclado.nextInt();
+            if (n > maior) {
+                maior = n;
+            }
+        }
+
+        System.out.println("O maior número é: " + maior);
+        teclado.close();
+    }
+}</code></pre></div>
+
+  <h4>Exercício 3 — Senha com 3 tentativas (for + equals)</h4>
+  <div class="code-block"><div class="code-header"><span>Senha.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;
+
+public class Senha {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        final String SENHA_CORRETA = "java123";
+        boolean acertou = false;
+
+        for (int tentativa = 1; tentativa <= 3; tentativa++) {
+            System.out.print("Senha: ");
+            String senha = teclado.next();
+
+            if (senha.equals(SENHA_CORRETA)) {   // ⚠️ String compara com .equals()!
+                acertou = true;
+                break;
+            }
+            System.out.println("Errada! Tentativas restantes: " + (3 - tentativa));
+        }
+
+        System.out.println(acertou ? "Acesso liberado ✅" : "Bloqueado ❌");
+        teclado.close();
+    }
+}</code></pre></div>
+
+  <div class="grid grid-3">
+    <div class="ex-card"><span class="badge todo">DESAFIO 1</span><h4>Even/Odd Counter</h4><p>Leia 10 números e conte quantos são pares e ímpares.</p></div>
+    <div class="ex-card"><span class="badge todo">DESAFIO 2</span><h4>🔢 Fatorial</h4><p>Calcule N! (ex.: 5! = 5×4×3×2×1 = 120).</p></div>
+    <div class="ex-card"><span class="badge todo">DESAFIO 3</span><h4>3️⃣5️⃣ Divisíveis</h4><p>Números de 1 a 100 divisíveis por 3 E por 5.</p></div>
+  </div>
+</section>
+
+<!-- ==================== SEMANA 5 ==================== -->
+<section id="semana5">
+  <span class="week-tag">SEMANA 5</span>
+  <h2><span class="icon">📦</span>Estruturas de Dados Homogêneas</h2>
+  <p>Vetores (arrays unidimensionais) • Matrizes (arrays bidimensionais)</p>
+
+  <h3>5.1 Vetores (arrays unidimensionais)</h3>
+  <p>Um vetor guarda <strong>vários valores do mesmo tipo</strong> sob um único nome, acessados por <strong>índice</strong>.</p>
+
+  <div class="callout danger"><span class="emoji">⚠️</span><div>
+    <strong>O índice começa em 0!</strong> Um vetor de tamanho 5 tem índices <code>0, 1, 2, 3, 4</code>.
+    Acessar <code>v[5]</code> gera <code>ArrayIndexOutOfBoundsException</code> 💥
+  </div></div>
+
+  <div class="code-block"><div class="code-header"><span>Declaracao.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">// Forma 1: criar vazio (valores padrão: 0, 0.0, false)
+int[] notas = new int[5];
+
+// Forma 2: criar já preenchido
+int[] idades = {18, 22, 19, 25, 20};
+
+// Acessar e modificar (sempre com o índice)
+idades[0] = 21;                    // muda o 1º elemento
+System.out.println(idades[2]);     // imprime o 3º elemento → 19
+System.out.println(idades.length); // tamanho → 5</code></pre></div>
+
+  <h4>Percorrendo o vetor</h4>
+  <div class="code-block"><div class="code-header"><span>Percorrendo.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">// Com for clássico (quando precisa do índice)
+for (int i = 0; i < vetor.length; i++) {
+    System.out.println("Posição " + i + ": " + vetor[i]);
+}
+
+// Com for-each (quando só precisa do valor)
+for (int valor : vetor) {
+    System.out.println(valor);
+}</code></pre></div>
+
+  <h4>Algoritmos clássicos com vetores</h4>
+  <div class="code-block"><div class="code-header"><span>OperacoesVetor.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;
+
+public class OperacoesVetor {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        double[] notas = new double[5];
+
+        // 1) PREENCHER
+        for (int i = 0; i < notas.length; i++) {
+            System.out.print("Nota " + (i + 1) + ": ");
+            notas[i] = teclado.nextDouble();
+        }
+
+        // 2) SOMA E MÉDIA
+        double soma = 0;
+        for (int i = 0; i < notas.length; i++) {
+            soma += notas[i];
+        }
+        double media = soma / notas.length;
+        System.out.printf("Média: %.2f%n", media);
+
+        // 3) MAIOR VALOR E SUA POSIÇÃO
+        double maior = notas[0];
+        int posMaior = 0;
+        for (int i = 1; i < notas.length; i++) {
+            if (notas[i] > maior) {
+                maior = notas[i];
+                posMaior = i;
+            }
+        }
+        System.out.println("Maior nota: " + maior + " (posição " + posMaior + ")");
+
+        // 4) CONTAGEM com condição
+        int acimaDaMedia = 0;
+        for (double nota : notas) {
+            if (nota > media) {
+                acimaDaMedia++;
+            }
+        }
+        System.out.println("Notas acima da média: " + acimaDaMedia);
+
+        teclado.close();
+    }
+}</code></pre></div>
+
+  <h4>Busca linear</h4>
+  <div class="code-block"><div class="code-header"><span>Busca.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">int[] numeros = {4, 8, 15, 16, 23, 42};
+int procurado = 15;
+int posicao = -1;   // -1 = "não encontrado"
+
+for (int i = 0; i < numeros.length; i++) {
+    if (numeros[i] == procurado) {
+        posicao = i;
+        break;   // achou, pode parar
+    }
+}
+
+if (posicao != -1) {
+    System.out.println("Encontrado na posição " + posicao);
+} else {
+    System.out.println("Não encontrado");
+}</code></pre></div>
+
+  <h3>5.2 Matrizes (arrays bidimensionais)</h3>
+  <p>Uma matriz é um <strong>vetor de vetores</strong> — organizada em <strong>linhas e colunas</strong>.</p>
+
+  <div class="code-block"><div class="code-header"><span>Matriz.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">int[][] matriz = new int[3][4];   // 3 linhas, 4 colunas
+
+int[][] vendas = {
+    {100, 200, 150},     // linha 0
+    {300, 250, 400},     // linha 1
+    {50,  90,  120}      // linha 2
+};
+
+vendas[1][2] = 500;          // linha 1, coluna 2
+System.out.println(vendas[0][0]);  // 100 (canto superior esquerdo)
+
+// Tamanhos:
+// matriz.length       → número de LINHAS
+// matriz[0].length    → número de COLUNAS</code></pre></div>
+
+  <h4>Visualização da matriz <code>vendas</code></h4>
+  <div class="matrix-visual"><table>
+    <tr><th></th><th>col 0</th><th>col 1</th><th>col 2</th></tr>
+    <tr><th>linha 0</th><td class="hl">100</td><td>200</td><td>150</td></tr>
+    <tr><th>linha 1</th><td>300</td><td>250</td><td class="hl">400</td></tr>
+    <tr><th>linha 2</th><td>50</td><td>90</td><td>120</td></tr>
+  </table></div>
+  <p style="color:var(--txt2);font-size:.85rem">→ <code style="background:#3a2a10">vendas[0][0]</code> = 100 e <code style="background:#3a2a10">vendas[1][2]</code> = 400 (destacados em laranja)</p>
+
+  <h4>Percorrendo — sempre com FOR ANINHADO</h4>
+  <div class="code-block"><div class="code-header"><span>PercorreMatriz.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">int[][] m = {
+    {1, 2, 3},
+    {4, 5, 6},
+    {7, 8, 9}
+};
+
+// for clássico (com índices)
+for (int i = 0; i < m.length; i++) {          // cada linha
+    for (int j = 0; j < m[i].length; j++) {   // cada coluna
+        System.out.print(m[i][j] + "\t");
+    }
+    System.out.println();   // quebra de linha ao fim de cada linha
+}
+
+// for-each aninhado
+for (int[] linha : m) {
+    for (int valor : linha) {
+        System.out.print(valor + " ");
+    }
+    System.out.println();
+}</code></pre></div>
+
+  <h4>Exemplo completo — soma de linhas e diagonais</h4>
+  <div class="code-block"><div class="code-header"><span>AnaliseMatriz.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">public class AnaliseMatriz {
+    public static void main(String[] args) {
+        int[][] m = {
+            {5, 3, 1},
+            {9, 7, 2},
+            {4, 6, 8}
+        };
+
+        // Soma de cada linha
+        for (int i = 0; i < m.length; i++) {
+            int somaLinha = 0;
+            for (int j = 0; j < m[i].length; j++) {
+                somaLinha += m[i][j];
+            }
+            System.out.println("Soma da linha " + i + ": " + somaLinha);
+        }
+
+        // Diagonal principal (onde i == j)
+        int somaDiagonal = 0;
+        for (int i = 0; i < m.length; i++) {
+            somaDiagonal += m[i][i];   // m[0][0], m[1][1], m[2][2]
+        }
+        System.out.println("Diagonal principal: " + somaDiagonal);
+    }
+}</code></pre></div>
+</section>
+
+<!-- ==================== SEMANA 6 ==================== -->
+<section id="semana6">
+  <span class="week-tag">SEMANA 6 — GA 3,0 pts</span>
+  <h2><span class="icon">📊</span>Exercícios Resolvidos</h2>
+
+  <h4>Exercício 1 — Estatísticas de um vetor</h4>
+  <div class="code-block"><div class="code-header"><span>EstatisticasVetor.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">import java.util.Scanner;
+
+public class EstatisticasVetor {
+    public static void main(String[] args) {
+        Scanner teclado = new Scanner(System.in);
+        int[] v = new int[8];
+
+        for (int i = 0; i < v.length; i++) {
+            System.out.print("Número " + (i + 1) + ": ");
+            v[i] = teclado.nextInt();
+        }
+
+        int soma = 0, pares = 0, impares = 0;
+        int maior = v[0], menor = v[0];
+
+        for (int i = 0; i < v.length; i++) {
+            soma += v[i];
+            if (v[i] % 2 == 0) pares++; else impares++;
+            if (v[i] > maior) maior = v[i];
+            if (v[i] < menor) menor = v[i];
+        }
+
+        System.out.println("Soma: " + soma);
+        System.out.printf("Média: %.2f%n", (double) soma / v.length);
+        System.out.println("Pares: " + pares + " | Ímpares: " + impares);
+        System.out.println("Maior: " + maior + " | Menor: " + menor);
+        teclado.close();
+    }
+}</code></pre></div>
+
+  <h4>Exercício 2 — Inverter um vetor</h4>
+  <div class="code-block"><div class="code-header"><span>InverteVetor.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">public class InverteVetor {
+    public static void main(String[] args) {
+        int[] v = {1, 2, 3, 4, 5};
+        int[] invertido = new int[v.length];
+
+        for (int i = 0; i < v.length; i++) {
+            invertido[i] = v[v.length - 1 - i];   // pega de trás para frente
+        }
+
+        System.out.print("Original:   ");
+        for (int x : v) System.out.print(x + " ");
+        System.out.print("\nInvertido:  ");
+        for (int x : invertido) System.out.print(x + " ");
+    }
+}</code></pre></div>
+
+  <h4>Exercício 3 — Soma de colunas da matriz</h4>
+  <div class="code-block"><div class="code-header"><span>SomaColunas.java</span><button class="copy-btn">📋 Copiar</button></div>
+<pre><code class="language-java">public class SomaColunas {
+    public static void main(String[] args) {
+        int[][] m = {
+            {10, 20, 30},
+            {40, 50, 60},
+            {70, 80, 90}
+        };
+
+        for (int j = 0; j < m[0].length; j++) {     // fixa a COLUNA
+            int soma = 0;
+            for (int i = 0; i < m.length; i++) {    // varre as LINHAS
+                soma += m[i][j];
+            }
+            System.out.println("Soma da coluna " + j + ": " + soma);
+        }
+    }
+}</code></pre></div>
+
+  <div class="grid grid-3">
+    <div class="ex-card"><span class="badge todo">DESAFIO 1</span><h4>📉 Abaixo da Média</h4><p>Leia 10 notas e mostre quantas ficaram abaixo de 6.</p></div>
+    <div class="ex-card"><span class="badge todo">DESAFIO 2</span><h4>🔎 Busca na Matriz</h4><p>Procure um valor em 3×3 e informe linha e coluna.</p></div>
+    <div class="ex-card"><span class="badge todo">DESAFIO 3</span><h4>✖️ Tabuada 10×10</h4><p>Gere a tabuada completa em uma matriz 10×10.</p></div>
+  </div>
+</section>
+
+<!-- ==================== SEMANA 7 ==================== -->
+<section id="semana7">
+  <span class="week-tag">SEMANA 7</span>
+  <h2><span class="icon">🧠</span>Revisão Geral</h2>
+
+  <h3>📋 Cola rápida (cheat sheet)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Conceito</th><th>Sintaxe essencial</th></tr>
+    <tr><td>Variável</td><td><code>int x = 10;</code></td></tr>
+    <tr><td>Constante</td><td><code>final double PI = 3.14;</code></td></tr>
+    <tr><td>Entrada</td><td><code>Scanner s = new Scanner(System.in); int n = s.nextInt();</code></td></tr>
+    <tr><td>Saída</td><td><code>System.out.printf("%.2f%n", valor);</code></td></tr>
+    <tr><td>Condição</td><td><code>if (cond) {...} else if {...} else {...}</code></td></tr>
+    <tr><td>Repetição fixa</td><td><code>for (int i = 0; i &lt; n; i++) {...}</code></td></tr>
+    <tr><td>Repetição por condição</td><td><code>while (cond) {...}</code></td></tr>
+    <tr><td>Vetor</td><td><code>int[] v = new int[10]; v.length</code></td></tr>
+    <tr><td>Matriz</td><td><code>int[][] m = new int[3][4]; m[i][j]</code></td></tr>
+  </table></div>
+
+  <h3>❌ Top 8 erros que derrubam na prova</h3>
+  <div class="callout danger"><span class="emoji">🏆</span><div>
+    <strong>1.</strong> <code>7 / 2</code> dá <code>3</code> (divisão inteira!) → use <code>7.0 / 2</code><br>
+    <strong>2.</strong> <code>=</code> em vez de <code>==</code> dentro do <code>if</code><br>
+    <strong>3.</strong> Esquecer <code>contador++</code> no <code>while</code> → loop infinito<br>
+    <strong>4.</strong> Índice vai de <code>0</code> a <code>length - 1</code> (acessar <code>v[length]</code> = crash)<br>
+    <strong>5.</strong> <code>String</code> compara-se com <code>.equals()</code>, <strong>não</strong> com <code>==</code><br>
+    <strong>6.</strong> Esquecer o <code>import java.util.Scanner;</code><br>
+    <strong>7.</strong> <code>nextInt()</code> seguido de <code>nextLine()</code> sem o <code>nextLine()</code> extra<br>
+    <strong>8.</strong> Matriz: <code>m.length</code> é <strong>linhas</strong>, <code>m[i].length</code> é <strong>colunas</strong>
+  </div></div>
+
+  <h3>✅ Checklist: pronto para o Grau B?</h3>
+  <ul class="checklist">
+    <li>Declarar variáveis de todos os tipos e constantes com <code>final</code></li>
+    <li>Prever o resultado de expressões com precedência e casting</li>
+    <li>Ler dados com Scanner e formatar saída com printf</li>
+    <li>Escrever condições com <code>&amp;&amp;</code>, <code>||</code>, <code>!</code> e cadeias if/else-if</li>
+    <li>Escolher entre <code>for</code>, <code>while</code> e <code>do-while</code> e explicar por quê</li>
+    <li>Preencher, percorrer, somar e buscar em um vetor</li>
+    <li>Percorrer uma matriz com for aninhado (linhas × colunas)</li>
+    <li>Identificar os 8 erros clássicos acima em um código</li>
+  </ul>
+
+  <div class="callout tip"><span class="emoji">💪</span><div>
+    <strong>🏆 Exercício-mestre (tudo junto):</strong> Leia as notas de uma turma de N alunos (N lido do teclado),
+    armazene em um vetor. Calcule a média, mostre quantos ficaram acima da média, a maior nota e sua posição.
+    Se a média da turma for ≥ 60, mostre "Turma aprovada", senão "Turma em recuperação". Use constantes onde fizer sentido.
+    <br><br>Esse exercício mistura: Scanner, vetor, <code>for</code>, média, maior valor, contagem e <code>if-else</code>. Se conseguir, está pronto! 🚀
+  </div></div>
+</section>
+
+<!-- ==================== VÍDEOS ==================== -->
+<section id="videos">
+  <span class="week-tag">RECURSOS</span>
+  <h2><span class="icon">🎬</span>Vídeos e Recursos Recomendados</h2>
+  <p>Busque pelos títulos/tags indicados no YouTube — todas as fontes são confiáveis:</p>
+
+  <div class="grid grid-2">
+    <div class="video-card"><span class="play">▶️</span><div>
+      <h4>Curso em Vídeo — Gustavo Guanabara</h4>
+      <p>Playlist "Curso de Java Básico" — didática excelente, em PT-BR. Ideal para iniciantes.</p>
+      <span class="search-tag">🔍 "Curso em Vídeo Java aula variáveis"</span>
+    </div></div>
+    <div class="video-card"><span class="play">▶️</span><div>
+      <h4>Loiane Groner</h4>
+      <p>Playlist "Java Básico" — conteúdo estruturado e completo, PT-BR.</p>
+      <span class="search-tag">🔍 "Loiane Java básico"</span>
+    </div></div>
+    <div class="video-card"><span class="play">▶️</span><div>
+      <h4>DevDojo — Maratona Java</h4>
+      <p>Aprofundamento e boas práticas, PT-BR.</p>
+      <span class="search-tag">🔍 "Maratona Java DevDojo"</span>
+    </div></div>
+    <div class="video-card"><span class="play">▶️</span><div>
+      <h4>Bro Code (inglês)</h4>
+      <p>"Java Full Course for free" — curso completo com legendas.</p>
+      <span class="search-tag">🔍 "Java full course Bro Code"</span>
+    </div></div>
+  </div>
+
+  <div class="callout info"><span class="emoji">🔍</span><div>
+    <strong>Buscas diretas que funcionam bem:</strong><br>
+    <code>"Java estruturas de decisão if else Curso em Vídeo"</code><br>
+    <code>"Java laços de repetição while for Curso em Vídeo"</code><br>
+    <code>"Java vetores arrays Curso em Vídeo"</code> • <code>"Java matrizes bidimensionais"</code>
+  </div></div>
+</section>
+
+<!-- ==================== COMO ESTUDAR ==================== -->
+<section id="como-estudar">
+  <span class="week-tag">MÉTODO</span>
+  <h2><span class="icon">🧭</span>Como Estudar com Este Tutorial</h2>
+  <ol>
+    <li><strong>Semana a semana:</strong> leia a teoria → <strong>digite</strong> os exemplos (não copie e cole!) → modifique-os.</li>
+    <li><strong>Regra de ouro:</strong> programação se aprende errando. Rode o código, quebre-o, entenda o erro.</li>
+    <li><strong>Antes do Grau B (Semana 8):</strong> refaça os exercícios das Semanas 2, 4 e 6 sem consultar as soluções.</li>
+    <li><strong>Antes do Grau C (Semana 9):</strong> foque no exercício-mestre da revisão e nos "erros clássicos".</li>
+  </ol>
+</section>
+
+</main>
+</div><!-- /layout -->
+
+<button id="toTop" title="Voltar ao topo">↑</button>
+
+<footer>
+  📘 Tutorial Java — Fundamentos, Seleção/Iteração e Estruturas de Dados<br>
+  Bons estudos e boa prova! ☕🚀
+</footer>
+
+<script>
+// ===== Syntax highlighting =====
+hljs.highlightAll();
+
+// ===== Barra de progresso de leitura =====
+const progress = document.getElementById('progress');
+const toTop = document.getElementById('toTop');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  progress.style.width = pct + '%';
+  toTop.classList.toggle('show', h.scrollTop > 500);
+  highlightNav();
+});
+
+// ===== Botão voltar ao topo =====
+toTop.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+
+// ===== Menu ativo por scroll =====
+const navLinks = document.querySelectorAll('#sidebar a');
+const sections = [...navLinks].map(a => document.querySelector(a.getAttribute('href')));
+function highlightNav(){
+  let idx = 0;
+  sections.forEach((s, i) => {
+    if (s && s.getBoundingClientRect().top < 140) idx = i;
+  });
+  navLinks.forEach((a, i) => a.classList.toggle('active', i === idx));
+}
+highlightNav();
+
+// ===== Menu mobile =====
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+document.getElementById('menuBtn').addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+});
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+});
+navLinks.forEach(a => a.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+}));
+
+// ===== Botão copiar código =====
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const code = btn.closest('.code-block').querySelector('code').innerText;
+    navigator.clipboard.writeText(code).then(() => {
+      const old = btn.textContent;
+      btn.textContent = '✅ Copiado!';
+      setTimeout(() => btn.textContent = old, 1800);
+    });
+  });
+});
+</script>
+</body>
+</html>
