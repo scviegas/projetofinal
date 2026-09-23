@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 Missão Referencial — Edição Tech</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:#0b0f1e;color:#e2e8f0;min-height:100vh;
+    background-image:radial-gradient(circle at 15% 20%,rgba(168,85,247,.15),transparent 40%),
+                     radial-gradient(circle at 85% 80%,rgba(34,211,238,.12),transparent 40%);
+  }
+  .hidden{display:none!important}
+  .container{max-width:1000px;margin:0 auto;padding:24px 16px 80px}
+
+  /* ===== HUD ===== */
+  #hud{
+    position:sticky;top:0;z-index:50;
+    background:rgba(11,15,30,.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid rgba(255,255,255,.08);
+    padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .hud-theme{font-weight:700;background:linear-gradient(90deg,#22d3ee,#a855f7);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hud-xp{font-weight:800;color:#22d3ee}
+  .hud-lvl{font-size:.85rem;background:rgba(168,85,247,.2);border:1px solid rgba(168,85,247,.4);
+    padding:2px 10px;border-radius:99px}
+  .hud-badges{display:flex;gap:4px;font-size:1.1rem}
+  .hud-badges span{opacity:.2;transition:.3s}
+  .hud-badges span.on{opacity:1;filter:drop-shadow(0 0 6px rgba(34,211,238,.8))}
+  #xpbar{flex:1 1 140px;height:10px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;min-width:120px}
+  #xpfill{height:100%;width:0%;background:linear-gradient(90deg,#22d3ee,#a855f7);border-radius:99px;transition:width .6s}
+  .btn-mini{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#e2e8f0;
+    padding:6px 14px;border-radius:99px;cursor:pointer;font-size:.85rem}
+  .btn-mini:hover{background:rgba(34,211,238,.2)}
+
+  /* ===== TELAS ===== */
+  h1.title{font-size:clamp(1.6rem,4vw,2.6rem);text-align:center;margin:26px 0 6px;
+    background:linear-gradient(90deg,#22d3ee,#a855f7,#22d3ee);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .subtitle{text-align:center;color:#94a3b8;margin-bottom:26px}
+  .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+    border-radius:16px;padding:20px;transition:.25s;cursor:pointer}
+  .card:hover{transform:translateY(-4px);border-color:#22d3ee;
+    box-shadow:0 0 24px rgba(34,211,238,.25)}
+  .grid{display:grid;gap:14px}
+  .grid.themes{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .theme-ico{font-size:2.2rem}
+  .theme-name{font-weight:700;margin:8px 0 4px}
+  .theme-desc{font-size:.82rem;color:#94a3b8}
+  .howto{margin-top:30px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);
+    border-radius:16px;padding:20px}
+  .howto h3{margin-bottom:10px;color:#c084fc}
+  .howto li{margin:6px 0 6px 18px;color:#cbd5e1;font-size:.92rem}
+
+  /* ===== MAPA ===== */
+  .week-title{margin:26px 0 12px;display:flex;align-items:center;gap:10px;font-size:1.05rem}
+  .week-title b{background:rgba(34,211,238,.15);border:1px solid rgba(34,211,238,.4);
+    padding:3px 12px;border-radius:99px;font-size:.8rem;color:#22d3ee}
+  .phase{display:flex;align-items:center;gap:14px;margin-bottom:10px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+    border-radius:14px;padding:14px 18px;cursor:pointer;transition:.25s}
+  .phase:hover:not(.locked){border-color:#a855f7;box-shadow:0 0 18px rgba(168,85,247,.25);transform:translateX(6px)}
+  .phase.locked{opacity:.4;cursor:not-allowed}
+  .phase.done{border-color:rgba(34,211,238,.5)}
+  .phase .p-ico{font-size:1.7rem}
+  .phase .p-title{font-weight:700}
+  .phase .p-meta{font-size:.78rem;color:#94a3b8;margin-top:2px}
+  .phase .p-status{margin-left:auto;font-size:1.3rem}
+  .p-num{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:800;background:linear-gradient(135deg,#22d3ee,#a855f7);color:#0b0f1e;flex-shrink:0}
+  .boss{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.4)}
+  .boss:hover:not(.locked){border-color:#ef4444;box-shadow:0 0 18px rgba(239,68,68,.3)}
+
+  /* ===== JOGO ===== */
+  .phase-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:22px 0 14px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px 20px}
+  .phase-head .p-ico{font-size:2rem}
+  .phase-head h2{font-size:1.2rem}
+  .phase-head .p-meta{color:#94a3b8;font-size:.85rem}
+  .phase-head .btn-mini{margin-left:auto}
+  .prog{font-size:.85rem;color:#22d3ee;font-weight:700}
+  .q-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:22px;margin-bottom:12px}
+  .q-text{font-weight:700;font-size:1.05rem;margin-bottom:14px}
+  .opt{display:block;width:100%;text-align:left;background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 16px;margin-bottom:8px;
+    color:#e2e8f0;cursor:pointer;font-size:.95rem;transition:.2s}
+  .opt:hover:not(:disabled){border-color:#22d3ee;background:rgba(34,211,238,.1)}
+  .opt.right{border-color:#22d3ee;background:rgba(34,211,238,.25);box-shadow:0 0 14px rgba(34,211,238,.35)}
+  .opt.wrong{border-color:#ef4444;background:rgba(239,68,68,.2)}
+  .opt:disabled{cursor:default;opacity:.75}
+  .src-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .src{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;
+    padding:16px;cursor:pointer;transition:.2s;font-size:.92rem}
+  .src:hover:not(.off){border-color:#a855f7;transform:translateY(-3px)}
+  .src .tag{display:inline-block;font-size:.68rem;padding:2px 8px;border-radius:99px;margin-top:8px;
+    background:rgba(255,255,255,.08);color:#94a3b8}
+  .src.good{border-color:#22d3ee;background:rgba(34,211,238,.18)}
+  .src.bad{border-color:#ef4444;background:rgba(239,68,68,.18)}
+  .src.off{cursor:default;opacity:.8}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .chip{background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.5);border-radius:99px;
+    padding:7px 14px;cursor:pointer;font-size:.85rem;transition:.2s}
+  .chip:hover{background:rgba(168,85,247,.35)}
+  .chip.sel{background:#a855f7;color:#0b0f1e;font-weight:700}
+  .axis{background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.25);border-radius:14px;
+    padding:14px;min-height:110px;cursor:pointer;transition:.2s}
+  .axis:hover{border-color:#22d3ee;background:rgba(34,211,238,.06)}
+  .axis h4{font-size:.85rem;color:#22d3ee;margin-bottom:8px}
+  .axis .put{display:inline-block;background:rgba(34,211,238,.2);border-radius:99px;
+    padding:4px 10px;font-size:.78rem;margin:3px 3px 0 0}
+  .gap-zone{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:14px;
+    padding:18px;min-height:90px;font-size:1.05rem;line-height:2;margin-bottom:16px}
+  .gap-zone b{background:rgba(34,211,238,.25);padding:4px 10px;border-radius:8px;margin:0 4px}
+
+  .result{text-align:center;padding:36px 22px}
+  .result .big{font-size:3rem}
+  .result h3{font-size:1.4rem;margin:10px 0}
+  .result .gain{font-size:1.6rem;font-weight:800;color:#22d3ee;margin:10px 0}
+  .btn{display:inline-block;margin:16px 6px 0;padding:12px 26px;border:none;border-radius:99px;
+    font-size:1rem;font-weight:700;cursor:pointer;color:#0b0f1e;
+    background:linear-gradient(90deg,#22d3ee,#a855f7);transition:.2s}
+  .btn:hover{transform:scale(1.05);box-shadow:0 0 22px rgba(34,211,238,.5)}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.3);color:#e2e8f0}
+
+  /* ===== vitória ===== */
+  .victory{text-align:center;padding:50px 20px}
+  .victory .trophy{font-size:5rem;animation:float 2.5s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-14px)}}
+  .v-stars{font-size:1.6rem;letter-spacing:6px;margin:10px 0}
+  .vb{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.15);border-radius:99px;padding:8px 16px;margin:5px}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+  .shake{animation:shake .35s}
+  @keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+  .pop{animation:pop .35s ease-out}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);
+    background:linear-gradient(90deg,#0e7490,#6b21a8);padding:12px 26px;border-radius:99px;
+    font-weight:700;z-index:99;transition:.4s;box-shadow:0 8px 30px rgba(0,0,0,.5);white-space:nowrap}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  .confetti{position:fixed;top:-50px;font-size:1.4rem;z-index:98;animation:fall linear forwards;pointer-events:none}
+  @keyframes fall{to{transform:translateY(115vh) rotate(720deg)}}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- HUD -->
+<header id="hud" class="hidden">
+  <span class="hud-theme" id="hudTheme"></span>
+  <span class="hud-xp" id="hudXP">0 XP</span>
+  <div id="xpbar"><div id="xpfill"></div></div>
+  <span class="hud-lvl" id="hudLvl">🔰 Novato</span>
+  <div class="hud-badges" id="hudBadges"></div>
+  <button class="btn-mini" onclick="goMap()">🗺️ Mapa</button>
+</header>
+
+<!-- TELA INICIAL -->
+<section id="screen-start" class="container">
+  <h1 class="title">🎮 MISSÃO REFERENCIAL</h1>
+  <p class="subtitle">Semanas 7 &amp; 8 — Referencial Teórico e Trabalhos Relacionados · Edição Temas Tech</p>
+  <div class="grid themes" id="themeGrid"></div>
+  <div class="howto">
+    <h3>📜 Como jogar</h3>
+    <ul>
+      <li>Escolha o <b>tema tecnológico</b> do seu projeto e receba missões de 2 semanas.</li>
+      <li>8 fases no total: minijogos de fontes, quizzes, mapa de conceitos, matriz comparativa e montagem do <b>gap</b>.</li>
+      <li>Erros custam XP! Acumule até <b>1600 XP</b>, desbloqueie 5 badges e derrote o <b>Dragão Acadêmico 🐉</b>.</li>
+      <li>O progresso é salvo automaticamente no navegador.</li>
+    </ul>
+    <div id="continueBox"></div>
+  </div>
+</section>
+
+<!-- MAPA -->
+<section id="screen-map" class="container hidden">
+  <h1 class="title">🗺️ Mapa da Trilha</h1>
+  <p class="subtitle">Complete as fases em ordem para liberar as próximas</p>
+  <div id="mapContent"></div>
+</section>
+
+<!-- JOGO -->
+<section id="screen-game" class="container hidden">
+  <div id="gameContent"></div>
+</section>
+
+<!-- VITÓRIA -->
+<section id="screen-victory" class="container hidden">
+  <div class="victory" id="victoryContent"></div>
+</section>
+
+<script>
+/* ================= DADOS ================= */
+const THEMES = {
+  ia:    {ico:'🤖', name:'Inteligência Artificial',          desc:'ML, deep learning, NLP e visão computacional',                    gap:'explicabilidade das decisões dos modelos'},
+  iot:   {ico:'📡', name:'Internet das Coisas (IoT)',       desc:'Sensores, ESP32, MQTT e cidades inteligentes',                    gap:'segurança dos dispositivos de borda'},
+  sec:   {ico:'🔐', name:'Cibersegurança',                   desc:'Criptografia, detecção de intrusão e phishing',                   gap:'conscientização de usuários em pequenas empresas'},
+  chain: {ico:'⛓️', name:'Blockchain',                       desc:'Contratos inteligentes e rastreabilidade',                        gap:'escalabilidade com baixo consumo de energia'},
+  arvr:  {ico:'🥽', name:'Realidade Aumentada e Virtual',    desc:'Imersão, simulação e gamificação',                                gap:'avaliação de aprendizagem em ambientes imersivos'},
+  cloud: {ico:'☁️', name:'Computação em Nuvem & DevOps',     desc:'Containers, CI/CD e microsserviços',                              gap:'otimização de custos em arquiteturas híbridas'}
+};
+
+const PHASES = [
+  {id:'f1', week:7, ico:'🔎', title:'Caça às Fontes',              base:300, desc:'Encontre as 6 fontes qualificadas (evite as armadilhas!)'},
+  {id:'f2', week:7, ico:'🧹', title:'O Filtro Sábio',              base:150, desc:'Quiz sobre critérios de inclusão/exclusão'},
+  {id:'f3', week:7, ico:'🗺️', title:'Mapa dos Conceitos',          base:150, desc:'Aloque os 12 conceitos nos eixos temáticos'},
+  {id:'b1', week:7, ico:'👹', title:'CHEFE: Guardião da Base',     base:200, desc:'Quiz de citações ABNT e plágio', boss:true},
+  {id:'f4', week:8, ico:'📡', title:'Radar de Pesquisadores',      base:200, desc:'Encontre os 4 trabalhos relacionados ao SEU tema'},
+  {id:'f5', week:8, ico:'🧮', title:'A Matriz da Verdade',         base:200, desc:'Quiz sobre o quadro comparativo'},
+  {id:'f6', week:8, ico:'🕵️', title:'Caça ao Gap',                 base:100, desc:'Monte a frase mágica da lacuna de pesquisa'},
+  {id:'bf', week:8, ico:'🐉', title:'CHEFE FINAL: Dragão Acadêmico', base:300, desc:'Quiz final de 5 perguntas — defesa do trabalho', boss:true}
+];
+
+const BADGES = {
+  f1:{ico:'🎯', name:'Caçador de Fontes'},
+  f3:{ico:'🧩', name:'Arquiteto de Conceitos'},
+  b1:{ico:'📚', name:'Mestre das Citações'},
+  f6:{ico:'🕵️', name:'Detetive de Lacunas'},
+  bf:{ico:'🐉', name:'Matador do Dragão'}
+};
+
+const F1_SOURCES = [
+  {t:'Deep Learning na saúde — IEEE Access, 2023', ok:true,  xp:30, tag:'Artigo recente'},
+  {t:'Blog "Tudo sobre IA" — autoria desconhecida', ok:false, tag:'⚠️ Armadilha'},
+  {t:'Livro: Inteligência Artificial — Russell & Norvig', ok:true, xp:15, tag:'Clássico'},
+  {t:'Wikipédia: "Machine Learning"', ok:false, tag:'⚠️ Armadilha'},
+  {t:'IoT e cidades inteligentes — SciELO, 2024', ok:true, xp:30, tag:'Artigo recente'},
+  {t:'PDF anônimo compartilhado em fórum', ok:false, tag:'⚠️ Armadilha'},
+  {t:'Cibersegurança em IoT — Periódico Qualis A1, 2022', ok:true, xp:20, tag:'Qualis A'},
+  {t:'Story de rede social sobre blockchain', ok:false, tag:'⚠️ Armadilha'},
+  {t:'Blockchain — ACM Computing Surveys, 2021', ok:true, xp:20, tag:'Qualis A'},
+  {t:'Tese de doutorado (USP, 2023) — Computação em nuvem', ok:true, xp:30, tag:'Tese'}
+];
+
+const F3 = {
+  eixos:['📚 Conceitos Fundamentais','🛠️ Tecnologias & Ferramentas','🧪 Métodos','🌍 Aplicações & Contexto'],
+  itens:[
+    {t:'Aprendizado de máquina', e:0},{t:'Privacidade de dados', e:0},{t:'Sistemas distribuídos', e:0},
+    {t:'TensorFlow', e:1},{t:'Raspberry Pi', e:1},{t:'Smart contracts', e:1},
+    {t:'Revisão sistemática', e:2},{t:'Experimento controlado', e:2},{t:'Estudo de caso', e:2},
+    {t:'Saúde 4.0', e:3},{t:'Cidades inteligentes', e:3},{t:'Indústria 4.0', e:3}
+  ]
+};
+
+const F4_RELATED = {
+  ia:    {ok:['Chatbot com NLP para atendimento (2023)','Rede convolucional para diagnóstico por imagem (2022)','Sistema de recomendação com ML (2024)','Agente inteligente para roteirização logística (2021)'],
+          no:['Planilha de controle de estoque','Site institucional de escola','Jogo de celular casual','Brinquedo eletrônico simples']},
+  iot:   {ok:['Monitoramento de temperatura com ESP32 (2023)','Sensores para cidades inteligentes (2022)','Agricultura de precisão com drones (2024)','Casa inteligente com MQTT (2021)'],
+          no:['Jogo de corrida casual','Site de notícias esportivas','Calculadora online','Currículo em PDF']},
+  sec:   {ok:['Detecção de intrusão com Machine Learning (2023)','Criptografia pós-quântica (2022)','Análise de campanhas de phishing (2024)','Autenticação multifator em bancos (2021)'],
+          no:['Blog de receitas culinárias','Editor de fotos simples','App de lista de tarefas','Jogo de futebol virtual']},
+  chain: {ok:['Contratos inteligentes em Ethereum (2023)','Rastreabilidade de cadeia de suprimentos (2022)','Carteira digital com verificação (2024)','Votação eletrônica com blockchain (2021)'],
+          no:['Loja virtual convencional','Agenda de contatos','Planilha financeira','App de previsão do tempo']},
+  arvr:  {ok:['Treinamento médico em VR (2023)','AR para ensino de anatomia (2022)','Simulador industrial imersivo (2024)','Reabilitação física com gamificação em VR (2021)'],
+          no:['App de rede social','Portal de compras online','Sistema de RH desktop','Blog de viagens']},
+  cloud: {ok:['Orquestração de contêineres com Kubernetes (2023)','Pipelines de CI/CD em times ágeis (2022)','Migração de sistemas legados para nuvem (2024)','Observabilidade de microsserviços (2021)'],
+          no:['Site estático pessoal','HD externo de backups','Jogo 2D simples','Pasta de fotos compartilhada']}
+};
+
+const QUIZZES = {
+  f2:[
+    {q:'1/3 · Qual é um critério de INCLUSÃO válido para selecionar fontes?', o:['Publicado em periódico/conferência nos últimos 5 anos','Ser o primeiro resultado do Google','Ter um título bonito','Ter muitos compartilhamentos'], a:0},
+    {q:'2/3 · Para que serve a Ficha de Leitura?', o:['Organizar objetivo, método, conceitos e citações com página','Decorar o artigo de cabeça','Evitar precisar ler o texto','Impressionar o professor'], a:0},
+    {q:'3/3 · Encontrei uma fonte sem autoria clara. O que fazer?', o:['Descartar ou usar apenas com fortes ressalvas','Citar como "Anônimo" sem verificar','Copiar o texto do mesmo jeito','Inventar um autor plausível'], a:0}
+  ],
+  b1:[
+    {q:'1/3 · Como citar corretamente pelo ABNT no corpo do texto?', o:['(SILVA, 2022)','(Silva, 2022)','(silva 22)','{Silva: 2022}'], a:0},
+    {q:'2/3 · Uma citação direta com mais de 3 linhas deve:', o:['Ter recuo de 4 cm, fonte menor e dispensa aspas','Ficar em negrito no meio do parágrafo','Usar aspas simples dentro do parágrafo','Ser omitida da lista de referências'], a:0},
+    {q:'3/3 · Configura plágio:', o:['Copiar trechos sem citar, mesmo trocando algumas palavras','Parafrasear citando o autor original','Citar dado estatístico indicando a fonte','Usar uma ideia comum de domínio público'], a:0}
+  ],
+  f5:[
+    {q:'1/3 · Qual coluna da matriz comparativa NÃO pode faltar?', o:['"Diferença para o meu trabalho"','"Preço do artigo"','"Cor da capa do periódico"','"Número de páginas"'], a:0},
+    {q:'2/3 · A matriz comparativa serve para:', o:['Comparar abordagens e revelar a lacuna (gap) da pesquisa','Enfeitar o trabalho visualmente','Aumentar a quantidade de páginas','Substituir o referencial teórico'], a:0},
+    {q:'3/3 · Qual a quantidade ideal de trabalhos relacionados na matriz?', o:['De 4 a 6','Nenhum — basta opinião própria','Apenas 1','Todos os artigos da internet'], a:0}
+  ],
+  bf:[
+    {q:'1/5 · O Referencial Teórico serve para:', o:['Fundamentar os conceitos que sustentam a pesquisa','Encher páginas do trabalho','Listar todos os livros já escritos sobre tudo','Expor apenas opiniões pessoais'], a:0},
+    {q:'2/5 · "Trabalhos Relacionados" se diferencia do referencial porque:', o:['Analisa estudos que atacaram problema semelhante ao seu','Copia a introdução de outras monografias','Lista apenas ferramentas e softwares','Apresenta o cronograma do projeto'], a:0},
+    {q:'3/5 · O "gap" de pesquisa é:', o:['A lacuna ainda não resolvida pelos trabalhos existentes','O espaço entre as margens da folha','Um erro de digitação no resumo','O número total de referências'], a:0},
+    {q:'4/5 · Qual fonte é mais confiável para embasar o trabalho?', o:['Periódico revisado por pares','Blog anônimo','Comentário em fórum','Post em rede social'], a:0},
+    {q:'5/5 · Na defesa, ao comparar trabalhos relacionados, devo destacar:', o:['As limitações deles e como meu trabalho é diferente','Que todos os autores estão errados','Que não li nenhum deles','Apenas os títulos, sem análise'], a:0}
+  ]
+};
+
+/* ================= ESTADO ================= */
+let state = {theme:null, xp:0, phaseDone:{}, badges:[]};
+let cur = {id:null, base:0, score:0, found:0, placed:0, mounted:0, next:0};
+const MAXXP = 1600;
+
+/* ================= UTILS ================= */
+const $ = s => document.querySelector(s);
+const shuffle = a => {const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2600);}
+function level(xp){return xp>=1600?'🐉 Lenda':xp>=1200?'🏆 Mestre':xp>=800?'🔬 Pesquisador':xp>=400?'📘 Aprendiz':'🔰 Novato';}
+
+function saveGame(){try{localStorage.setItem('missaoRef',JSON.stringify(state));}catch(e){}}
+function loadGame(){try{const s=localStorage.getItem('missaoRef');return s?JSON.parse(s):null;}catch(e){return null;}}
+
+function addXP(n){
+  state.xp=Math.min(MAXXP,state.xp+n);
+  $('#hudXP').textContent=state.xp+' XP';
+  $('#xpfill').style.width=(state.xp/MAXXP*100)+'%';
+  $('#hudLvl').textContent=level(state.xp);
+  saveGame();
+}
+function renderBadges(){
+  $('#hudBadges').innerHTML=Object.keys(BADGES).map(id=>
+    `<span class="${state.badges.includes(id)?'on':''}" title="${BADGES[id].name}">${BADGES[id].ico}</span>`).join('');
+}
+function refreshHUD(){
+  $('#hudTheme').textContent=THEMES[state.theme].ico+' '+THEMES[state.theme].name;
+  addXP(0); renderBadges();
+}
+
+function show(id){['screen-start','screen-map','screen-game','screen-victory'].forEach(s=>$('#'+s).classList.add('hidden'));$('#'+id).classList.remove('hidden');}
+
+/* ================= TELA INICIAL ================= */
+function renderStart(){
+  $('#themeGrid').innerHTML=Object.entries(THEMES).map(([k,t])=>
+    `<div class="card" onclick="startGame('${k}')">
+       <div class="theme-ico">${t.ico}</div>
+       <div class="theme-name">${t.name}</div>
+       <div class="theme-desc">${t.desc}</div>
+     </div>`).join('');
+  const save=loadGame();
+  $('#continueBox').innerHTML = (save && save.theme) ?
+    `<button class="btn" style="margin-top:14px" onclick="continueGame()">▶️ Continuar partida salva (${save.xp} XP)</button>
+     <button class="btn ghost" onclick="resetGame()">🗑️ Novo jogo</button>` : '';
+}
+function startGame(k){state={theme:k,xp:0,phaseDone:{},badges:[]};saveGame();refreshHUD();goMap();toast('🚀 Missão iniciada: '+THEMES[k].name);}
+function continueGame(){const s=loadGame();if(s){state=s;refreshHUD();goMap();}}
+function resetGame(){try{localStorage.removeItem('missaoRef');}catch(e){}renderStart();toast('🗑️ Progresso apagado');}
+
+/* ================= MAPA ================= */
+function phaseLocked(i){return i>0 && !state.phaseDone[PHASES[i-1].id];}
+function renderMap(){
+  let html='', w=0;
+  PHASES.forEach((p,i)=>{
+    if(p.week!==w){w=p.week;html+=`<div class="week-title"><b>SEMANA ${w}</b> ${w===7?'— Referencial Teórico':'— Trabalhos Relacionados'}</div>`;}
+    const locked=phaseLocked(i), done=!!state.phaseDone[p.id];
+    html+=`<div class="phase ${locked?'locked':''} ${done?'done':''} ${p.boss?'boss':''}" ${locked?'':`onclick="openPhase('${p.id}')"`}>
+      <div class="p-num">${i+1}</div>
+      <div class="p-ico">${p.ico}</div>
+      <div><div class="p-title">${p.title}</div><div class="p-meta">${p.desc} · até ${p.base} XP</div></div>
+      <div class="p-status">${done?'✅':locked?'🔒':'▶️'}</div>
+    </div>`;
+  });
+  $('#mapContent').innerHTML=html;
+}
+function goMap(){show('screen-map');renderMap();}
+
+/* ================= ABERTURA DE FASE ================= */
+function openPhase(id){
+  const p=PHASES.find(x=>x.id===id);
+  cur={id, base:p.base, score:0, found:0, placed:0, mounted:0, next:0};
+  show('screen-game');
+  $('#gameContent').innerHTML=`
+    <div class="phase-head">
+      <div class="p-ico">${p.ico}</div>
+      <div><h2>${p.title}</h2><div class="p-meta">${p.desc}</div></div>
+      <span class="prog" id="phaseProg"></span>
+      <button class="btn-mini" onclick="goMap()">✖ Sair</button>
+    </div>
+    <div id="phaseBody"></div>`;
+  ({f1:phase1, f2:()=>quiz('f2'), f3:phase3, b1:()=>quiz('b1'),
+    f4:phase4, f5:()=>quiz('f5'), f6:phase6, bf:()=>quiz('bf')})[id]();
+}
+
+function prog(txt){const el=$('#phaseProg');if(el)el.textContent=txt;}
+function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
+
+/* ================= FIM DE FASE ================= */
+function completePhase(){
+  const id=cur.id, base=cur.base, p=PHASES.find(x=>x.id===id);
+  let gain=0, again=false;
+  if(state.phaseDone[id]){again=true;}
+  else{
+    gain=Math.max(Math.round(base*0.4), Math.min(Math.round(cur.score), base));
+    state.phaseDone[id]=true;
+    addXP(gain);
+  }
+  const b=BADGES[id];
+  if(b && !state.badges.includes(id)){state.badges.push(id);renderBadges();toast(b.ico+' Badge desbloqueada: '+b.name);}
+  saveGame();
+  if(id==='bf'){victory();return;}
+  $('#gameContent').insertAdjacentHTML('beforeend',`
+    <div class="result pop">
+      <div class="big">${p.boss?'👹💀':'🏆'}</div>
+      <h3>${p.boss?'Chefe derrotado!':'Fase concluída!'}</h3>
+      <div class="gain">${again?'⚠️ Modo revisão — sem XP adicional':'+'+gain+' XP'}</div>
+      <div style="color:#94a3b8;font-size:.9rem">Desempenho na fase: ${Math.max(0,Math.round(cur.score))} pts</div>
+      <button class="btn" onclick="goMap()">🗺️ Voltar ao mapa</button>
+      <button class="btn ghost" onclick="openPhase('${id}')">🔁 Jogar de novo</button>
+    </div>`);
+  if(!again)toast('✨ +'+gain+' XP — '+p.title);
+}
+
+/* ================= FASE 1 — CAÇA ÀS FONTES ================= */
+function phase1(){
+  const total=F1_SOURCES.filter(s=>s.ok).length;
+  prog(`Fontes boas: 0/${total}`);
+  $('#phaseBody').innerHTML=`<div class="src-grid">${shuffle(F1_SOURCES).map((s,i)=>
+    `<div class="src" id="src${i}" onclick="pickSrc(${i},${s.ok},${s.xp||0})">
+       📄 ${s.t}<br><span class="tag">${s.ok?s.tag:s.tag}</span>
+     </div>`).join('')}</div>`;
+  cur.total=total;
+}
+function pickSrc(i,ok,xp){
+  const el=$('#src'+i); if(el.classList.contains('off'))return;
+  el.classList.add('off', ok?'good':'bad');
+  if(ok){cur.score+=xp;cur.found++;toast('✅ Fonte qualificada! +'+xp+' pts');}
+  else{cur.score=Math.max(-200,cur.score-15);toast('❌ Armadilha! −15 pts');shake(el);}
+  prog(`Fontes boas: ${cur.found}/${cur.total}`);
+  if(cur.found===cur.total)setTimeout(completePhase,600);
+}
+
+/* ================= QUIZZES GENÉRICOS ================= */
+function quiz(key){
+  const list=QUIZZES[key], perQ=Math.round(cur.base/list.length);
+  cur.qi=0; cur.qlist=list; cur.perQ=perQ;
+  prog(`Pergunta 1/${list.length}`);
+  renderQ();
+}
+function renderQ(){
+  const q=cur.qlist[cur.qi];
+  $('#phaseBody').innerHTML=`<div class="q-box pop">
+    <div class="q-text">${q.q}</div>
+    ${shuffle(q.o.map((t,i)=>({t,correct:i===q.a}))).map(o=>
+      `<button class="opt" onclick="answer(this,${o.correct})">${o.t}</button>`).join('')}
+  </div>`;
+}
+function answer(btn,correct){
+  document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+  if(correct){cur.score+=cur.perQ;btn.classList.add('right');toast('✅ Correto! +'+cur.perQ+' pts');}
+  else{cur.score-=15;btn.classList.add('wrong');
+    document.querySelectorAll('.opt').forEach(b=>{if(!b.classList.contains('wrong'))b.classList.add('right');});
+    toast('❌ Erro! −15 pts');}
+  cur.qi++;
+  prog(`Pergunta ${Math.min(cur.qi+1,cur.qlist.length)}/${cur.qlist.length}`);
+  setTimeout(()=>{cur.qi<cur.qlist.length?renderQ():completePhase();},1100);
+}
+
+/* ================= FASE 3 — MAPA DE CONCEITOS ================= */
+let selItem=null;
+function phase3(){
+  selItem=null; cur.left=shuffle(F3.itens);
+  $('#phaseBody').innerHTML=`
+    <p style="color:#94a3b8;font-size:.88rem;margin-bottom:12px">👆 Selecione um conceito e depois clique no eixo correto.</p>
+    <div class="chips" id="chips"></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))" id="axes">
+      ${F3.eixos.map((e,i)=>`<div class="axis" onclick="dropAxis(${i})"><h4>${e}</h4><div id="ax${i}"></div></div>`).join('')}
+    </div>`;
+  renderChips();
+}
+function renderChips(){
+  $('#chips').innerHTML=cur.left.length?cur.left.map((it,i)=>
+    `<span class="chip ${selItem===i?'sel':''}" onclick="selChip(${i})">${it.t}</span>`).join(''):'';
+}
+function selChip(i){selItem=(selItem===i?null:i);renderChips();}
+function dropAxis(a){
+  if(cur.left.length===0)return;
+  if(selItem===null){toast('☝️ Selecione um conceito primeiro');return;}
+  const it=cur.left[selItem];
+  if(it.e===a){
+    $('#ax'+a).insertAdjacentHTML('beforeend',`<span class="put">${it.t}</span>`);
+    cur.left.splice(selItem,1);selItem=null;cur.score+=12;cur.placed++;
+    toast('✅ Eixo correto! +12 pts');
+    renderChips();prog(`Conceitos alocados: ${cur.placed}/12`);
+    if(cur.placed===12)setTimeout(completePhase,500);
+  }else{cur.score-=15;toast('❌ Eixo errado! −15 pts');shake($('#ax'+a).parentElement);}
+}
+
+/* ================= FASE 4 — RADAR ================= */
+function phase4(){
+  const th=THEMES[state.theme];
+  const data=F4_RELATED[state.theme];
+  const cards=shuffle([...data.ok.map(t=>({t,ok:true})),...data.no.map(t=>({t,ok:false}))]);
+  cur.cards=cards;
+  prog(`Relacionados: 0/4`);
+  $('#phaseBody').innerHTML=`<p style="color:#94a3b8;font-size:.88rem;margin-bottom:12px">
+    Tema do seu projeto: <b style="color:#22d3ee">${th.ico} ${th.name}</b> — clique nos 4 trabalhos que REALMENTE atacam um problema parecido com o seu.</p>
+    <div class="src-grid">${cards.map((c,i)=>
+    `<div class="src" id="rad${i}" onclick="pickRad(${i})">🔍 ${c.t}</div>`).join('')}</div>`;
+}
+function pickRad(i){
+  const el=$('#rad'+i); if(el.classList.contains('off'))return;
+  const c=cur.cards[i];
+  el.classList.add('off',c.ok?'good':'bad');
+  if(c.ok){cur.score+=40;cur.found++;toast('✅ Trabalho relacionado! +40 pts');}
+  else{cur.score=Math.max(-200,cur.score-15);toast('❌ Fora do escopo! −15 pts');shake(el);}
+  prog(`Relacionados: ${cur.found}/4`);
+  if(cur.found===4)setTimeout(completePhase,600);
+}
+
+/* ================= FASE 6 — CAÇA AO GAP ================= */
+function phase6(){
+  const th=THEMES[state.theme];
+  cur.blocks=[
+    'Embora os trabalhos de',
+    'Silva (2023) e Costa (2024)',
+    'tenham avançado em '+th.name+',',
+    'ainda há uma lacuna quanto a',
+    th.gap+',',
+    'o que este trabalho se propõe a enfrentar.'
+  ];
+  cur.shuffled=shuffle(cur.blocks.map((t,i)=>({t,i})));
+  prog('Blocos: 0/6');
+  $('#phaseBody').innerHTML=`
+    <p style="color:#94a3b8;font-size:.88rem;margin-bottom:12px">🧩 Clique nos blocos na ordem correta para montar a frase do gap.</p>
+    <div class="gap-zone" id="gapZone"><span style="color:#64748b">A frase aparecerá aqui...</span></div>
+    <div class="chips" id="gapChips">
+      ${cur.shuffled.map((b,k)=>`<span class="chip" id="gb${k}" onclick="gapPick(${k})">${b.t}</span>`).join('')}
+    </div>`;
+}
+function gapPick(k){
+  const chip=$('#gb'+k); if(chip.style.visibility==='hidden')return;
+  const b=cur.shuffled[k];
+  if(b.i===cur.mounted){
+    chip.style.visibility='hidden';
+    const zone=$('#gapZone');
+    if(cur.mounted===0)zone.innerHTML='';
+    zone.innerHTML+=`<b>${b.t}</b> `;
+    cur.score+=17;cur.mounted++;
+    toast('🧩 '+cur.mounted+'/6 blocos!');
+    prog('Blocos: '+cur.mounted+'/6');
+    if(cur.mounted===6)setTimeout(completePhase,500);
+  }else{cur.score-=15;toast('❌ Ordem errada! −15 pts');shake(chip);}
+}
+
+/* ================= VITÓRIA ================= */
+function victory(){
+  addXP(0);
+  const pct=Math.round(state.xp/MAXXP*100);
+  const stars=pct>=85?5:pct>=70?4:pct>=55?3:2;
+  const grade=pct>=85?'🌟 A+ — Trabalho publicável!':pct>=70?'🥇 A — Referencial sólido!':pct>=55?'🥈 B — Bom, mas revise as fontes':'🥉 C — Refaça algumas fases';
+  show('screen-victory');
+  $('#victoryContent').innerHTML=`
+    <div class="trophy">🏆</div>
+    <h1 class="title">MISSÃO CUMPRIDA!</h1>
+    <p class="subtitle">O Dragão Acadêmico foi derrotado — Referencial Teórico e Trabalhos Relacionados concluídos!</p>
+    <div class="v-stars">${'⭐'.repeat(stars)}${'☆'.repeat(5-stars)}</div>
+    <div style="font-size:1.5rem;font-weight:800;color:#22d3ee">${state.xp} / ${MAXXP} XP (${pct}%)</div>
+    <p style="margin:8px 0 18px;font-weight:700">${grade}</p>
+    <div>${Object.entries(BADGES).map(([id,b])=>
+      `<span class="vb" style="${state.badges.includes(id)?'':'opacity:.3'}">${b.ico} ${b.name}</span>`).join('')}</div>
+    <div style="margin-top:24px">
+      <button class="btn" onclick="goMap()">🗺️ Revisar mapa</button>
+      <button class="btn ghost" onclick="resetGame();renderStart();show('screen-start');$('#hud').classList.add('hidden');$('#hud').classList.remove('hidden') && 0">🔁 Novo jogo</button>
+    </div>`;
+  celebrate();
+  toast('🐉 '+level(state.xp)+' — Parabéns!');
+}
+function celebrate(){
+  const em=['🎉','✨','🥳','🏆','💫','🎊'];
+  for(let i=0;i<40;i++){
+    const s=document.createElement('span');
+    s.className='confetti';s.textContent=em[Math.floor(Math.random()*em.length)];
+    s.style.left=Math.random()*100+'vw';
+    s.style.animationDuration=(2.2+Math.random()*2)+'s';
+    s.style.animationDelay=Math.random()*.8+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),5200);
+  }
+}
+
+/* ================= BOOT ================= */
+renderStart();
+</script>
+</body>
+</html>
