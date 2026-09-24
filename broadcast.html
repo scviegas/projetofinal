@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMURF — Simulador de Ataque a Broadcast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0c0b; --panel:#0e1210; --line:#1c221f; --line2:#262d29;
+    --tx:#e6ebe7; --dim:#8a948d; --dimmer:#5f6a63;
+    --amber:#ffb454; --red:#ff5148; --green:#5bc98c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--tx);
+    font-family:'IBM Plex Mono',monospace;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+    padding:13px 22px; border-bottom:1px solid var(--line); flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:14px}
+  .brand svg{width:30px;height:30px;flex:none}
+  h1{font-size:19px; font-weight:700; letter-spacing:.14em}
+  h1 em{font-style:normal; color:var(--amber); font-weight:500; font-size:13px; margin-left:6px; letter-spacing:.1em}
+  .sub{font-size:9px; letter-spacing:.22em; color:var(--dim); margin-top:3px}
+  .status{
+    display:flex; align-items:center; gap:10px; border:1px solid var(--line2);
+    padding:9px 16px; font-size:10.5px; letter-spacing:.16em; font-weight:600;
+  }
+  .status .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
+  .status.warn .dot{background:var(--amber); animation:blink 1s infinite}
+  .status.crit .dot{background:var(--red); animation:blink .45s infinite}
+  .status.warn{color:var(--amber)} .status.crit{color:var(--red)}
+  .status .clock{color:var(--dimmer); font-weight:400; letter-spacing:.1em; border-left:1px solid var(--line2); padding-left:10px}
+  @keyframes blink{50%{opacity:.25}}
+
+  /* ---------- barra de controle ---------- */
+  .controlbar{
+    display:flex; align-items:center; gap:24px; flex-wrap:wrap;
+    padding:11px 22px; border-bottom:1px solid var(--line);
+  }
+  .param label{
+    display:flex; justify-content:space-between; gap:14px;
+    font-size:9px; letter-spacing:.18em; color:var(--dim); margin-bottom:5px;
+  }
+  .param label b{color:var(--amber); font-weight:600; letter-spacing:.06em}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:160px; height:18px; background:transparent; cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:2px; background:#2b332e}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:11px; height:11px; margin-top:-4.5px;
+    background:var(--tx); border:1px solid var(--bg);
+  }
+  input[type=range]:hover::-webkit-slider-thumb{background:var(--amber)}
+  input[type=range]::-moz-range-track{height:2px; background:#2b332e}
+  input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:0;background:var(--tx);border:none}
+  input[type=range]:hover::-moz-range-thumb{background:var(--amber)}
+  .sep{width:1px; height:30px; background:var(--line2)}
+  .btn{
+    display:inline-flex; align-items:center; gap:9px;
+    font-family:inherit; font-size:10.5px; font-weight:600; letter-spacing:.16em;
+    padding:10px 17px; background:transparent; border:1px solid var(--line2);
+    color:var(--tx); cursor:pointer; transition:background .15s,border-color .15s,color .15s;
+    white-space:nowrap;
+  }
+  .btn svg{width:12px;height:12px;flex:none}
+  .btn:disabled{opacity:.32; cursor:default}
+  .btn.danger{border-color:#5a2b26; color:#ff8a7e}
+  .btn.danger:hover:not(:disabled){background:rgba(255,81,72,.09)}
+  .btn.danger.stop{border-color:#6b4a1f; color:var(--amber)}
+  .btn.safe{border-color:#274a37; color:var(--green)}
+  .btn.safe:hover:not(:disabled){background:rgba(91,201,140,.09)}
+  .btn.safe.ready{animation:ready 1.2s infinite}
+  @keyframes ready{0%,100%{box-shadow:0 0 0 0 rgba(91,201,140,0)}50%{box-shadow:0 0 0 4px rgba(91,201,140,.13)}}
+  .btn.ghost{color:var(--dim)} .btn.ghost:hover{color:var(--tx); border-color:#3a443e}
+
+  /* ---------- corpo ---------- */
+  main{flex:1; display:flex; min-height:0}
+  .stage{flex:1; position:relative; background:var(--bg); min-width:0}
+  #net{position:absolute; inset:0; width:100%; height:100%; display:block}
+  .corner{position:absolute; width:13px; height:13px; pointer-events:none; z-index:2}
+  .corner::before,.corner::after{content:""; position:absolute; background:#39423c}
+  .corner::before{width:100%; height:1px} .corner::after{width:1px; height:100%}
+  .c-tl{top:10px; left:10px} .c-tr{top:10px; right:10px; transform:scaleX(-1)}
+  .c-bl{bottom:10px; left:10px; transform:scaleY(-1)} .c-br{bottom:10px; right:10px; transform:scale(-1)}
+  .hud{position:absolute; font-size:8.5px; letter-spacing:.22em; color:var(--dimmer); pointer-events:none; z-index:2}
+  .hud.tl{top:16px; left:36px} .hud.tr{top:16px; right:36px}
+  .legend{
+    position:absolute; bottom:14px; left:36px; display:flex; gap:18px; align-items:center;
+    font-size:8.5px; letter-spacing:.14em; color:var(--dim); pointer-events:none; z-index:2;
+  }
+  .legend i{width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:0}
+  .hud.br{bottom:14px; right:36px; color:var(--amber); opacity:.85}
+
+  /* ---------- lateral ---------- */
+  aside{width:346px; border-left:1px solid var(--line); display:flex; flex-direction:column; min-height:0; background:var(--panel)}
+  .panel{border-bottom:1px solid var(--line); padding:12px 16px}
+  .panel h2{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:9px; font-weight:600; letter-spacing:.22em; color:#75807a; margin-bottom:10px;
+  }
+  .panel h2 b{color:var(--amber); font-weight:600; letter-spacing:.05em; font-size:11px}
+  #chart{width:100%; height:112px; display:block}
+  .meter{margin-bottom:11px}
+  .meter:last-child{margin-bottom:0}
+  .meter-top{display:flex; justify-content:space-between; font-size:9.5px; letter-spacing:.1em; color:var(--dim); margin-bottom:5px}
+  .meter-top b{color:var(--tx); font-weight:600}
+  .meter-top b.warn{color:var(--amber)} .meter-top b.crit{color:var(--red)}
+  .bar{position:relative; height:6px; background:#141a16; border:1px solid var(--line2)}
+  .bar i{position:absolute; top:0; left:0; bottom:0; width:0%; background:var(--green); transition:width .12s linear}
+  .bar i.warn{background:var(--amber)} .bar i.crit{background:var(--red)}
+  .lossrow{display:flex; justify-content:space-between; font-size:9.5px; letter-spacing:.1em; color:var(--dim); margin-top:2px}
+  .lossrow b{color:var(--tx); font-weight:600}
+  .rows{display:flex; flex-direction:column; gap:7px; font-size:10px}
+  .row{display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px dotted #1f2622; padding-bottom:6px}
+  .row:last-child{border-bottom:none; padding-bottom:0}
+  .row span{color:#7d877f; letter-spacing:.1em}
+  .row b{color:var(--tx); font-weight:500}
+  .row b.hot{color:var(--amber)}
+  .log-panel{flex:1; min-height:0; display:flex; flex-direction:column; border-bottom:none}
+  #log{flex:1; overflow-y:auto; font-size:10px; line-height:1.8; padding-right:4px; min-height:80px}
+  #log::-webkit-scrollbar{width:7px} #log::-webkit-scrollbar-track{background:transparent}
+  #log::-webkit-scrollbar-thumb{background:#242b27}
+  .lg-line{white-space:normal; word-break:break-word}
+  .lg-line time{color:#525c55; margin-right:9px}
+  .lg-info{color:#9aa69f} .lg-net{color:#7fbf9a} .lg-attack{color:var(--amber)}
+  .lg-warn{color:#ffc46b} .lg-crit{color:var(--red)} .lg-mitig{color:var(--green)} .lg-ids{color:#ffd27a}
+
+  footer{
+    padding:9px 22px; border-top:1px solid var(--line);
+    font-size:9px; letter-spacing:.06em; color:#66706a; line-height:1.7;
+    display:flex; gap:30px; flex-wrap:wrap;
+  }
+  footer b{color:var(--amber); letter-spacing:.16em; margin-right:8px; font-weight:600}
+  footer .m b{color:var(--green)}
+
+  @media (max-width:1060px){
+    body{overflow:auto; height:auto; min-height:100%}
+    main{flex-direction:column}
+    .stage{min-height:440px; height:60vh}
+    aside{width:auto; border-left:none; border-top:1px solid var(--line); flex-direction:row; flex-wrap:wrap}
+    .panel{flex:1 1 250px; border-right:1px solid var(--line)}
+    .log-panel{flex:1 1 100%; max-height:230px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 30 30" fill="none" stroke="#ffb454" stroke-width="1.6">
+      <circle cx="15" cy="15" r="2.6" fill="#ffb454" stroke="none"/>
+      <path d="M9.5 20.5a7.8 7.8 0 0 1 0-11M20.5 9.5a7.8 7.8 0 0 1 0 11"/>
+      <path d="M6.2 23.8a12.4 12.4 0 0 1 0-17.6M23.8 6.2a12.4 12.4 0 0 1 0 17.6"/>
+    </svg>
+    <div>
+      <h1>SMURF<em>/ LAB·01</em></h1>
+      <div class="sub">SIMULADOR DE ATAQUE A BROADCAST — AMPLIFICAÇÃO ICMP</div>
+    </div>
+  </div>
+  <div class="status" id="statusBox">
+    <span class="dot"></span>
+    <span id="statusText">SISTEMA EM REPOUSO</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+</header>
+
+<div class="controlbar">
+  <div class="param">
+    <label>HOSTS NA REDE <b id="hostsVal">24</b></label>
+    <input type="range" id="hostsRange" min="8" max="48" value="24">
+  </div>
+  <div class="param">
+    <label>TAXA DO ATACANTE <b id="rateVal">40 pps</b></label>
+    <input type="range" id="rateRange" min="5" max="120" value="40">
+  </div>
+  <div class="param">
+    <label>PAYLOAD ICMP <b id="payVal">512 B</b></label>
+    <input type="range" id="payRange" min="64" max="1420" step="4" value="512">
+  </div>
+  <div class="sep"></div>
+  <button class="btn danger" id="btnAttack">
+    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 4l14 8-14 8z"/></svg>
+    INICIAR ATAQUE
+  </button>
+  <button class="btn safe" id="btnMitigate" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6z"/></svg>
+    APLICAR MITIGAÇÃO
+  </button>
+  <button class="btn ghost" id="btnReset">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 12a9 9 0 1 0 3-6.7M6 2v4h4"/></svg>
+    REINICIAR
+  </button>
+</div>
+
+<main>
+  <div class="stage" id="stage">
+    <canvas id="net"></canvas>
+    <div class="corner c-tl"></div><div class="corner c-tr"></div>
+    <div class="corner c-bl"></div><div class="corner c-br"></div>
+    <div class="hud tl">TOPOLOGIA · SEGMENTO 10.0.0.0/24 · BROADCAST 10.0.0.255</div>
+    <div class="hud tr">SIMULAÇÃO LOCAL · CANVAS</div>
+    <div class="legend">
+      <span><i style="background:#ffb454"></i>ECHO REQUEST (ORIGEM FORJADA)</span>
+      <span><i style="background:#ff5148"></i>ECHO REPLY ×N</span>
+      <span><i style="background:#5bc98c"></i>TRÁFEGO LEGÍTIMO</span>
+    </div>
+    <div class="hud br" id="ampHud">AMPLIFICAÇÃO ×24</div>
+  </div>
+
+  <aside>
+    <section class="panel">
+      <h2>TRÁFEGO DE ENTRADA — VÍTIMA <b id="mbpsNow">0.00 Mbps</b></h2>
+      <canvas id="chart"></canvas>
+    </section>
+    <section class="panel">
+      <h2>ESTADO DA VÍTIMA <span style="letter-spacing:.1em">CAP 8.0 Mbps</span></h2>
+      <div class="meter">
+        <div class="meter-top"><span>UTILIZAÇÃO DO ENLACE</span><b id="utilVal">0%</b></div>
+        <div class="bar"><i id="utilBar"></i></div>
+      </div>
+      <div class="meter">
+        <div class="meter-top"><span>FILA / BUFFER</span><b id="queueVal">0%</b></div>
+        <div class="bar"><i id="queueBar"></i></div>
+      </div>
+      <div class="lossrow"><span>PACOTES LEGÍTIMOS PERDIDOS</span><b id="lossVal">0 pps</b></div>
+    </section>
+    <section class="panel">
+      <h2>TELEMETRIA</h2>
+      <div class="rows">
+        <div class="row"><span>PACOTES DE ATAQUE RECEBIDOS</span><b id="cRx">0</b></div>
+        <div class="row"><span>DESCARTADOS NA VÍTIMA</span><b id="cDrop" class="hot">0</b></div>
+        <div class="row"><span>LEGÍTIMOS PERDIDOS (TOTAL)</span><b id="cLost">0</b></div>
+        <div class="row"><span>FATOR DE AMPLIFICAÇÃO</span><b id="cAmp">×24</b></div>
+        <div class="row"><span>TEMPO SOB ATAQUE</span><b id="cTime">00:00</b></div>
+      </div>
+    </section>
+    <section class="panel log-panel">
+      <h2>REGISTRO DE EVENTOS</h2>
+      <div id="log"></div>
+    </section>
+  </aside>
+</main>
+
+<footer>
+  <span><b>VETOR</b>O ataque Smurf envia ICMP echo-request ao endereço de broadcast (10.0.0.255) com IP de origem forjado pelo da vítima — cada host da rede responde, multiplicando o tráfego ×N contra o alvo.</span>
+  <span class="m"><b>MITIGAÇÃO</b>Desativar directed-broadcast na borda (<i>no ip directed-broadcast</i>) e aplicar ACL negando echo ao endereço de broadcast.</span>
+</footer>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+const stage = $('stage'), cv = $('net'), ctx = cv.getContext('2d');
+const chart = $('chart'), cx = chart.getContext('2d');
+const logEl = $('log');
+
+const CAP = 8;          // capacidade do enlace da vítima (Mbps)
+const LEGIT_PPS = 25;   // tráfego legítimo nominal
+const COL = {
+  req:'#ffb454', reply:'#ff5148', legit:'#5bc98c', drop:'#77817b',
+  ok:'#5bc98c', warn:'#ffb454', crit:'#ff5148',
+  node:'#101513', edge:'rgba(255,255,255,.10)', faint:'rgba(255,255,255,.05)',
+  stroke:'#39423c', txt:'#8a948d'
+};
+
+// ---------- estado ----------
+const sim = {
+  attacking:false, mitigated:false, detected:false, recoverLogged:false,
+  rate:40, payload:512, hostCount:24,
+  particles:[], waves:[], fx:[],
+  accAtk:0, accL:0,
+  smoothMbps:0, utilSmooth:0,
+  stats:{rx:0, drop:0, legitLost:0, elapsed:0},
+  lossPPS:0, time:0, mitigateAt:0, warned:false, critLogged:false
+};
+const net = { atk:{}, rtr:{}, sw:{}, victim:{}, hosts:[] };
+const view = { w:0, h:0, dpr:1 };
+const samples = [];
+let sampleAcc = 0;
+
+// ---------- utilidades ----------
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const fmtInt = n=>Math.floor(n).toLocaleString('pt-BR');
+const fmtT = s=>{ s=Math.floor(s); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); };
+function qp(a,c,b,t){ const u=1-t; return { x:u*u*a.x+2*u*t*c.x+t*t*b.x, y:u*u*a.y+2*u*t*c.y+t*t*b.y }; }
+function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+
+// ---------- layout da topologia ----------
+function layout(){
+  const W=view.w, H=view.h; if(!W||!H) return;
+  net.atk    = { x:64,       y:H*0.5 };
+  net.rtr    = { x:W*0.235,  y:H*0.5 };
+  net.sw     = { x:W*0.415, y:H*0.5 };
+  net.victim = { x:W-112,    y:H*0.5, pulse:0 };
+
+  const n = sim.hostCount;
+  const zx0 = net.sw.x + 78, zx1 = net.victim.x - 118;
+  let cols = clamp(Math.ceil(Math.sqrt(n*1.8)), 3, 9);
+  let rows = Math.ceil(n/cols);
+  const gy = rows>1 ? Math.min(62, (H-150)/(rows-1)) : 0;
+  const gx = cols>1 ? (zx1-zx0)/(cols-1) : 0;
+  const y0 = H*0.5 - gy*(rows-1)/2;
+  net.hosts = [];
+  for(let i=0;i<n;i++){
+    const r = Math.floor(i/cols), c = i%cols;
+    const inRow = Math.min(cols, n - r*cols);
+    const x = (cols>1 && inRow>1) ? zx0 + gx*(c + (cols-inRow)/2) : (zx0+zx1)/2;
+    const h = { x, y:y0 + gy*r, f:0 };
+    // curva determinística host→vítima (teia de convergência)
+    const mx=(h.x+net.victim.x)/2, my=(h.y+net.victim.y)/2;
+    const dx=net.victim.x-h.x, dy=net.victim.y-h.y, L=Math.hypot(dx,dy)||1;
+    const off=(Math.random()<.5?-1:1)*(26+Math.random()*54);
+    h.cp = { x:mx + (-dy/L)*off, y:my + (dx/L)*off };
+    net.hosts.push(h);
+  }
+}
+
+// ---------- resize ----------
+function resize(){
+  view.dpr = Math.min(2, window.devicePixelRatio||1);
+  view.w = stage.clientWidth; view.h = stage.clientHeight;
+  cv.width = view.w*view.dpr; cv.height = view.h*view.dpr;
+  ctx.setTransform(view.dpr,0,0,view.dpr,0,0);
+  const cw=chart.clientWidth, ch=chart.clientHeight;
+  chart.width=cw*view.dpr; chart.height=ch*view.dpr;
+  cx.setTransform(view.dpr,0,0,view.dpr,0,0);
+  layout();
+}
+window.addEventListener('resize', resize);
+
+// ---------- log ----------
+function log(type,msg){
+  const d=document.createElement('div');
+  d.className='lg-line lg-'+type;
+  d.innerHTML='<time>'+fmtT(sim.time)+'</time>'+msg;
+  logEl.appendChild(d);
+  while(logEl.children.length>90) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ---------- partículas ----------
+function addP(a,b,cp,dur,col,kind){
+  if(sim.particles.length>1100) return;
+  sim.particles.push({a,b,cp,dur,col,kind,t:0,px:a.x,py:a.y});
+}
+function spawnReq(){
+  const j=()=> (Math.random()-.5)*10;
+  addP(net.atk, net.rtr, {x:(net.atk.x+net.rtr.x)/2, y:(net.atk.y+net.rtr.y)/2+j()},
+    dist(net.atk,net.rtr)/360, COL.req, 'req1');
+}
+function spawnLegit(){
+  const h=net.hosts[(Math.random()*net.hosts.length)|0]; if(!h) return;
+  addP(h, net.victim, {x:(h.x+net.victim.x)/2, y:(h.y+net.victim.y)/2+(Math.random()-.5)*46},
+    dist(h,net.victim)/400, COL.legit, 'legit');
+}
+function arrive(p){
+  if(p.kind==='req1'){
+    if(sim.mitigated){ sim.fx.push({x:net.rtr.x+6, y:net.rtr.y-6, age:0}); }
+    else addP(net.rtr, net.sw, {x:(net.rtr.x+net.sw.x)/2, y:(net.rtr.y+net.sw.y)/2+(Math.random()-.5)*12},
+      dist(net.rtr,net.sw)/360, COL.req, 'req2');
+  } else if(p.kind==='req2'){
+    let mR=0; for(const h of net.hosts) mR=Math.max(mR, dist(net.sw,h));
+    sim.waves.push({x:net.sw.x, y:net.sw.y, r:8, maxR:mR+26, fired:new Set()});
+  } else if(p.kind==='reply'){
+    net.victim.pulse=1;
+  } else if(p.kind==='legit'){
+    const ch=clamp((sim.utilSmooth-1)/1.6, 0, .92);
+    if(sim.utilSmooth>1 && Math.random()<ch) sim.fx.push({x:net.victim.x-4, y:net.victim.y-14, age:0});
+  }
+}
+
+// ---------- update ----------
+function update(dt){
+  // spawns visuais (cada partícula representa um lote de pacotes reais)
+  if(sim.attacking){
+    sim.accAtk += dt*Math.min(sim.rate,16);
+    while(sim.accAtk>=1){ sim.accAtk--; spawnReq(); }
+  }
+  sim.accL += dt*6;
+  while(sim.accL>=1){ sim.accL--; spawnLegit(); }
+
+  // ondas de broadcast
+  for(const w of sim.waves){
+    w.r += 560*dt;
+    net.hosts.forEach((h,i)=>{
+      if(!w.fired.has(i) && dist(net.sw,h)<=w.r){
+        w.fired.add(i); h.f=1;
+        addP(h, net.victim, h.cp, dist(h,net.victim)/430, COL.reply, 'reply');
+      }
+    });
+  }
+  sim.waves = sim.waves.filter(w=>w.r<w.maxR);
+
+  // partículas
+  for(const p of sim.particles){
+    p.px=qp(p.a,p.cp,p.b,p.t).x; p.py=qp(p.a,p.cp,p.b,p.t).y;
+    p.t += dt/p.dur;
+    if(p.t>=1){ p.dead=true; arrive(p); }
+  }
+  sim.particles = sim.particles.filter(p=>!p.dead);
+  for(const f of sim.fx) f.age+=dt;
+  sim.fx = sim.fx.filter(f=>f.age<0.5);
+  for(const h of net.hosts) h.f=Math.max(0,h.f-dt*3);
+  net.victim.pulse=Math.max(0,net.victim.pulse-dt*2.4);
+
+  // telemetria real (fórmulas, independente do visual)
+  const atkPPS = sim.attacking && !sim.mitigated ? sim.rate*sim.hostCount : 0;
+  const inPPS  = atkPPS + LEGIT_PPS*(sim.hostCount/24);
+  const mbps   = inPPS*sim.payload*8/1e6;
+  sim.smoothMbps += (mbps-sim.smoothMbps)*(1-Math.exp(-dt/0.5));
+  sim.utilSmooth += (mbps/CAP - sim.utilSmooth)*(1-Math.exp(-dt/0.6));
+
+  if(sim.attacking){ sim.stats.elapsed+=dt; sim.stats.rx+=atkPPS*dt; }
+  const drops = Math.max(0, inPPS - CAP*1.05);
+  if(drops>0) sim.stats.drop += drops*dt;
+  sim.lossPPS = sim.utilSmooth>1 ? LEGIT_PPS*(sim.hostCount/24)*clamp((sim.utilSmooth-1)/1.5,0,.95) : 0;
+  sim.stats.legitLost += sim.lossPPS*dt;
+
+  // detecção por IDS
+  if(sim.attacking && !sim.detected && sim.stats.elapsed>2.2){
+    sim.detected=true;
+    btnMitigate.disabled=false; btnMitigate.classList.add('ready');
+    log('ids','Assinatura confirmada: ICMP echo-request → 10.0.0.255 com origem forjada. Mitigação disponível.');
+  }
+  if(sim.attacking && !sim.warned && sim.utilSmooth>0.7 && sim.utilSmooth<=1){
+    sim.warned=true; log('warn','Utilização da vítima em '+Math.round(sim.utilSmooth*100)+'% — degradação de serviço.');
+  }
+  if(sim.attacking && !sim.critLogged && sim.utilSmooth>1){
+    sim.critLogged=true;
+    log('crit','VÍTIMA SATURADA — enlace acima da capacidade, pacotes legítimos sendo descartados.');
+  }
+  if(sim.mitigated && !sim.recoverLogged && sim.time-sim.mitigateAt>2.5 && sim.utilSmooth<0.5){
+    sim.recoverLogged=true;
+    log('net','Vítima recuperada — tráfego nominal restabelecido. Directed-broadcast permanece desativado.');
+  }
+}
+
+// ---------- render ----------
+let dotPattern=null;
+function makeDots(){
+  const c=document.createElement('canvas'); c.width=c.height=26;
+  const g=c.getContext('2d'); g.fillStyle='rgba(230,235,231,.05)'; g.fillRect(13,13,1.4,1.4);
+  dotPattern=ctx.createPattern(c,'repeat');
+}
+function line(a,b,style,w){
+  ctx.strokeStyle=style; ctx.lineWidth=w||1;
+  ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+}
+function arrow(x1,y1,x2,y2,col){
+  ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=1.3;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const ang=Math.atan2(y2-y1,x2-x1);
+  ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-5*Math.cos(ang-.5), y2-5*Math.sin(ang-.5));
+  ctx.lineTo(x2-5*Math.cos(ang+.5), y2-5*Math.sin(ang+.5));
+  ctx.closePath(); ctx.fill();
+}
+function label(x,y,txt,col,size,align){
+  ctx.fillStyle=col||COL.txt; ctx.font=(size||9)+'px "IBM Plex Mono",monospace';
+  ctx.textAlign=align||'center'; ctx.fillText(txt,x,y);
+}
+const stateCol=()=> sim.utilSmooth>1?COL.crit : sim.utilSmooth>0.7?COL.warn : COL.ok;
+
+function render(){
+  const W=view.w, H=view.h;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=dotPattern||'#000'; ctx.fillRect(0,0,W,H);
+
+  // arestas fixas
+  line(net.atk,net.rtr,COL.edge); line(net.rtr,net.sw,COL.edge);
+  for(const h of net.hosts) line(net.sw,h,COL.faint);
+
+  // teia de convergência host→vítima
+  const webA = sim.attacking||sim.utilSmooth>0.12 ? 0.04+0.07*Math.min(1,sim.utilSmooth) : 0;
+  if(webA>0){
+    ctx.strokeStyle='rgba(255,81,72,'+webA+')'; ctx.lineWidth=1;
+    for(const h of net.hosts){
+      ctx.beginPath(); ctx.moveTo(h.x,h.y);
+      ctx.quadraticCurveTo(h.cp.x,h.cp.y,net.victim.x,net.victim.y); ctx.stroke();
+    }
+  }
+
+  // ondas de broadcast
+  for(const w of sim.waves){
+    const a=clamp(1-w.r/w.maxR,0,1);
+    ctx.strokeStyle='rgba(255,180,84,'+(0.55*a)+')'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.arc(w.x,w.y,w.r,0,TAU); ctx.stroke();
+  }
+
+  // partículas + rastro
+  for(const p of sim.particles){
+    const pos=qp(p.a,p.cp,p.b,Math.min(1,p.t));
+    ctx.strokeStyle=p.col; ctx.globalAlpha=.35; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(p.px,p.py); ctx.lineTo(pos.x,pos.y); ctx.stroke();
+    ctx.globalAlpha=1; ctx.fillStyle=p.col;
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,p.kind==='reply'?2.2:2.8,0,TAU); ctx.fill();
+  }
+
+  // FX de descarte (X)
+  for(const f of sim.fx){
+    const a=1-f.age/0.5; ctx.strokeStyle='rgba(119,129,123,'+a+')'; ctx.lineWidth=1.4;
+    ctx.beginPath();
+    ctx.moveTo(f.x-4,f.y-4); ctx.lineTo(f.x+4,f.y+4);
+    ctx.moveTo(f.x+4,f.y-4); ctx.lineTo(f.x-4,f.y+4); ctx.stroke();
+  }
+
+  // ---- nós ----
+  // atacante
+  {
+    const a=net.atk, act=sim.attacking;
+    if(act){
+      ctx.save(); ctx.strokeStyle='rgba(255,180,84,.5)'; ctx.lineWidth=1;
+      ctx.setLineDash([4,5]); ctx.lineDashOffset=-sim.time*22;
+      ctx.beginPath(); ctx.arc(a.x,a.y,21,0,TAU); ctx.stroke(); ctx.restore();
+    }
+    ctx.fillStyle=COL.node; ctx.strokeStyle=act?COL.req:COL.stroke; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.arc(a.x,a.y,14,0,TAU); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle=act?COL.req:'#6b766f'; ctx.lineWidth=1.6;
+    ctx.beginPath();
+    ctx.moveTo(a.x,a.y-5.5); ctx.lineTo(a.x+5.5,a.y+4.5); ctx.lineTo(a.x-5.5,a.y+4.5); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(a.x,a.y-2); ctx.lineTo(a.x,a.y+1.2); ctx.stroke();
+    ctx.fillStyle=act?COL.req:'#6b766f'; ctx.fillRect(a.x-0.8,a.y+2.2,1.6,1.6);
+    label(a.x,a.y-30,'ATACANTE',act?COL.req:COL.txt,9);
+    label(a.x,a.y+38,'203.0.113.66','#5f6a63',8.5);
+  }
+  // roteador
+  {
+    const r=net.rtr;
+    ctx.fillStyle=COL.node; ctx.strokeStyle=COL.stroke; ctx.lineWidth=1.3;
+    ctx.beginPath(); ctx.arc(r.x,r.y,15,0,TAU); ctx.fill(); ctx.stroke();
+    arrow(r.x-8,r.y-3.5,r.x+8,r.y-3.5,'#cfd8d2');
+    arrow(r.x+8,r.y+3.5,r.x-8,r.y+3.5,'#cfd8d2');
+    if(sim.mitigated){
+      ctx.strokeStyle='rgba(91,201,140,'+(0.35+0.2*Math.sin(sim.time*2))+')';
+      ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(r.x,r.y,20,0,TAU); ctx.stroke();
+    }
+    label(r.x,r.y-26,'GW · 10.0.0.1',COL.txt,9);
+    label(r.x,r.y+36, sim.mitigated?'DIRECTED-BROADCAST OFF':'DIRECTED-BROADCAST ON',
+      sim.mitigated?COL.ok:'rgba(255,180,84,.75)',8);
+  }
+  // switch
+  {
+    const s=net.sw;
+    ctx.fillStyle=COL.node; ctx.strokeStyle=COL.stroke; ctx.lineWidth=1.3;
+    ctx.fillRect(s.x-21,s.y-11,42,22); ctx.strokeRect(s.x-21,s.y-11,42,22);
+    for(let i=0;i<4;i++){
+      const x=s.x-12+i*8, up=i%2===0;
+      ctx.strokeStyle='#cfd8d2'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(x,up?s.y+4:s.y-4); ctx.lineTo(x,up?s.y-4:s.y+4); ctx.stroke();
+      ctx.beginPath();
+      if(up){ ctx.moveTo(x-2.5,s.y-1.5); ctx.lineTo(x,s.y-4.5); ctx.lineTo(x+2.5,s.y-1.5); }
+      else  { ctx.moveTo(x-2.5,s.y+1.5); ctx.lineTo(x,s.y+4.5); ctx.lineTo(x+2.5,s.y+1.5); }
+      ctx.stroke();
+    }
+    label(s.x,s.y-22,'SW-CORE',COL.txt,9);
+  }
+  // hosts
+  for(const h of net.hosts){
+    ctx.fillStyle='#1a211d'; ctx.strokeStyle=COL.stroke; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(h.x,h.y,5.5,0,TAU); ctx.fill(); ctx.stroke();
+    if(h.f>0){
+      ctx.strokeStyle='rgba(255,81,72,'+(h.f*.85)+')'; ctx.lineWidth=1.3;
+      ctx.beginPath(); ctx.arc(h.x,h.y,5.5+(1-h.f)*9,0,TAU); ctx.stroke();
+    }
+  }
+  // vítima
+  {
+    const v=net.victim, sc=stateCol(), u=Math.min(1,sim.utilSmooth);
+    const sat=sim.utilSmooth>1, ox=sat?(Math.random()-.5)*2.6:0, oy=sat?(Math.random()-.5)*2.6:0;
+    ctx.save(); ctx.translate(v.x+ox,v.y+oy);
+    ctx.strokeStyle='#232a26'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(0,0,28,0,TAU); ctx.stroke();
+    if(u>0.005){
+      ctx.strokeStyle=sc; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(0,0,28,-Math.PI/2,-Math.PI/2+TAU*u); ctx.stroke();
+    }
+    if(v.pulse>0){
+      ctx.strokeStyle='rgba(255,81,72,'+(v.pulse*.5)+')'; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(0,0,22+(1-v.pulse)*16,0,TAU); ctx.stroke();
+    }
+    ctx.fillStyle=COL.node; ctx.strokeStyle=sc; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(0,0,21,0,TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle=sc; ctx.font='600 11px "IBM Plex Mono",monospace'; ctx.textAlign='center';
+    ctx.fillText(Math.round(sim.utilSmooth*100)+'%',0,4);
+    ctx.restore();
+    label(v.x,v.y-40,'VÍTIMA',sat?COL.crit:COL.txt,9);
+    label(v.x,v.y+50,'10.0.0.10','#5f6a63',8.5);
+  }
+}
+
+// ---------- gráfico ----------
+function drawChart(){
+  const w=chart.clientWidth, h=chart.clientHeight; if(!w) return;
+  cx.clearRect(0,0,w,h);
+  const N=240;
+  const maxV=Math.max(CAP*1.25, samples.length?Math.max(...samples)*1.15:1);
+  const yOf=v=>h - clamp(v/maxV,0,1)*(h-6) - 3;
+  // grade
+  cx.strokeStyle='rgba(255,255,255,.055)'; cx.lineWidth=1;
+  [0.25,0.5,0.75].forEach(f=>{ const y=yOf(maxV*f); cx.beginPath(); cx.moveTo(0,y); cx.lineTo(w,y); ctx.moveTo(0,y); cx.stroke(); });
+  // capacidade
+  const yCap=yOf(CAP);
+  cx.strokeStyle='rgba(255,255,255,.22)'; cx.setLineDash([3,4]);
+  cx.beginPath(); cx.moveTo(0,yCap); cx.lineTo(w,yCap); cx.stroke(); cx.setLineDash([]);
+  cx.fillStyle='#5f6a63'; cx.font='8px "IBM Plex Mono",monospace'; cx.textAlign='left';
+  cx.fillText('CAP '+CAP.toFixed(0)+' Mbps',4,yCap-3);
+  cx.fillText(maxV.toFixed(0)+'M',4,10); cx.fillText('0',4,h-2);
+  if(samples.length<2) return;
+  const xOf=i=> i/(N-1)*w;
+  const off=N-samples.length;
+  const col = sim.utilSmooth>1?COL.crit : sim.utilSmooth>0.7?COL.warn : COL.ok;
+  cx.beginPath(); cx.moveTo(xOf(off),yOf(samples[0]));
+  for(let i=1;i<samples.length;i++) cx.lineTo(xOf(off+i),yOf(samples[i]));
+  cx.strokeStyle=col; cx.lineWidth=1.4; cx.stroke();
+  cx.lineTo(w,yOf(0)); cx.lineTo(xOf(off),yOf(0)); cx.closePath();
+  cx.globalAlpha=.16; cx.fillStyle=col; cx.fill(); cx.globalAlpha=1;
+  const last=samples[samples.length-1];
+  cx.fillStyle=col; cx.beginPath(); cx.arc(w-1.5,yOf(last),2.4,0,TAU); cx.fill();
+}
+
+// ---------- UI ----------
+const btnAttack=$('btnAttack'), btnMitigate=$('btnMitigate'), btnReset=$('btnReset');
+const ICON_PLAY='<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 4l14 8-14 8z"/></svg>';
+const ICON_STOP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 6h12v12H6z"/></svg>';
+const statusBox=$('statusBox'), statusText=$('statusText');
+
+function refreshStatus(){
+  let txt, cls='';
+  if(sim.mitigated){
+    if(sim.utilSmooth>0.75){ txt='DRENANDO FILAS…'; cls='warn'; }
+    else { txt='MITIGADO — REDE ESTÁVEL'; }
+  } else if(sim.attacking){
+    if(sim.utilSmooth>1){ txt='ALVO SATURADO'; cls='crit'; }
+    else { txt='ATAQUE EM CURSO'; cls='warn'; }
+  } else txt='SISTEMA EM REPOUSO';
+  statusText.textContent=txt;
+  statusBox.className='status '+cls;
+}
+function refreshBtns(){
+  if(sim.attacking){
+    btnAttack.classList.add('stop');
+    btnAttack.innerHTML=ICON_STOP+'PARAR ATAQUE';
+  } else {
+    btnAttack.classList.remove('stop');
+    btnAttack.innerHTML=ICON_PLAY+'INICIAR ATAQUE';
+  }
+}
+
+btnAttack.addEventListener('click',()=>{
+  if(!sim.attacking){
+    sim.attacking=true; sim.warned=false; sim.critLogged=false;
+    if(sim.mitigated) log('attack','Flood retomado — a mitigação ativa segue descartando na borda.');
+    else{
+      log('attack','Atacante 203.0.113.66 → flood ICMP echo-request para 10.0.0.255');
+      log('attack','Origem forjada: 10.0.0.10 (vítima) · payload '+sim.payload+' B · '+sim.rate+' pps');
+      log('attack','Cada request replica para '+sim.hostCount+' hosts — amplificação esperada ×'+sim.hostCount);
+    }
+  } else {
+    sim.attacking=false;
+    log('attack','Flood interrompido — origem 203.0.113.66 silenciada.');
+  }
+  refreshBtns();
+});
+
+btnMitigate.addEventListener('click',()=>{
+  if(sim.mitigated) return;
+  sim.mitigated=true; sim.mitigateAt=sim.time; sim.recoverLogged=false;
+  btnMitigate.disabled=true; btnMitigate.classList.remove('ready');
+  btnMitigate.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>MITIGAÇÃO ATIVA';
+  const lines=[
+    ['mitig','GW-EDGE(config)# interface gigabitEthernet 0/0'],
+    ['mitig','GW-EDGE(config-if)# no ip directed-broadcast'],
+    ['mitig','GW-EDGE(config)# access-list 110 deny icmp any host 10.0.0.255 echo'],
+    ['mitig','ACL aplicada na borda — pacotes de ataque descartados no gateway.']
+  ];
+  lines.forEach((l,i)=>setTimeout(()=>log(l[0],l[1]), i*260));
+});
+
+btnReset.addEventListener('click',()=>{
+  Object.assign(sim,{attacking:false,mitigated:false,detected:false,recoverLogged:false,
+    particles:[],waves:[],fx:[],accAtk:0,accL:0,smoothMbps:0,utilSmooth:0,lossPPS:0,
+    warned:false,critLogged:false,
+    stats:{rx:0,drop:0,legitLost:0,elapsed:0}});
+  samples.length=0;
+  btnAttack.classList.remove('stop');
+  btnAttack.innerHTML=ICON_PLAY+'INICIAR ATAQUE';
+  btnMitigate.disabled=true; btnMitigate.classList.remove('ready');
+  btnMitigate.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6z"/></svg>APLICAR MITIGAÇÃO';
+  logEl.innerHTML='';
+  log('boot','Estado reiniciado — aguardando operador.');
+  refreshBtns();
+});
+
+// sliders
+ $('rateRange').addEventListener('input',e=>{
+  sim.rate=+e.target.value; $('rateVal').textContent=sim.rate+' pps';
+});
+ $('payRange').addEventListener('input',e=>{
+  sim.payload=+e.target.value; $('payVal').textContent=sim.payload+' B';
+});
+ $('hostsRange').addEventListener('input',e=>{
+  sim.hostCount=+e.target.value;
+  $('hostsVal').textContent=sim.hostCount;
+  $('ampHud').textContent='AMPLIFICAÇÃO ×'+sim.hostCount;
+  $('cAmp').textContent='×'+sim.hostCount;
+  sim.waves=[]; layout();
+});
+ $('hostsRange').addEventListener('change',()=>{
+  log('net','Topologia reconstruída: '+sim.hostCount+' hosts · broadcast 10.0.0.255');
+});
+
+// relógio
+setInterval(()=>{
+  $('clock').textContent=new Date().toLocaleTimeString('pt-BR');
+},1000);
+
+// ---------- telemetria no DOM ----------
+function refreshPanels(){
+  const u=sim.utilSmooth;
+  const utilPct=Math.round(u*100);
+  const uv=$('utilVal'); uv.textContent=utilPct+'%';
+  uv.className=u>1?'crit':u>0.7?'warn':'';
+  const ub=$('utilBar'); ub.style.width=clamp(u*100,0,100)+'%';
+  ub.className=u>1?'crit':u>0.7?'warn':'';
+  const q=clamp((u-0.95)/0.9,0,1);
+  const qv=$('queueVal'); qv.textContent=Math.round(q*100)+'%';
+  qv.className=u>1?'crit':'';
+  const qb=$('queueBar'); qb.style.width=q*100+'%'; qb.className=u>1?'crit':'';
+  $('lossVal').textContent=fmtInt(sim.lossPPS)+' pps';
+  $('mbpsNow').textContent=sim.smoothMbps.toFixed(2)+' Mbps';
+  $('cRx').textContent=fmtInt(sim.stats.rx);
+  $('cDrop').textContent=fmtInt(sim.stats.drop);
+  $('cLost').textContent=fmtInt(sim.stats.legitLost);
+  $('cTime').textContent=fmtT(sim.stats.elapsed);
+}
+
+// ---------- loop ----------
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  sim.time+=dt;
+  if(stage.clientWidth!==view.w || stage.clientHeight!==view.h) resize();
+  update(dt);
+  render();
+  sampleAcc+=dt;
+  if(sampleAcc>=0.1){
+    sampleAcc-=0.1;
+    samples.push(sim.smoothMbps);
+    if(samples.length>240) samples.shift();
+  }
+  drawChart();
+  refreshPanels();
+  refreshStatus();
+  requestAnimationFrame(loop);
+}
+
+// ---------- boot ----------
+resize(); makeDots();
+log('boot','Laboratório inicializado — segmento 10.0.0.0/24 · gateway 10.0.0.1 · broadcast 10.0.0.255');
+log('net',sim.hostCount+' hosts conectados ao SW-CORE · tráfego nominal ~'+LEGIT_PPS+' pps.');
+log('info','Ajuste os parâmetros e inicie o ataque. Observe a onda de broadcast e a convergência sobre a vítima.');
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
