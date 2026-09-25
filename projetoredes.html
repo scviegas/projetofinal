@@ -353,7 +353,7 @@ textarea#diagText:focus{border-color:var(--acc)}
       <div class="legend">
         <span><i style="background:var(--netA)"></i>USUÁRIOS · 192.168.1.0/24</span>
         <span><i style="background:var(--netB)"></i>WAN · 10.0.0.0/30 + 10.0.1.0/30</span>
-        <span><i style="background:var(--netF)"></i>DMZ · 192.168.2.0/24</span>
+        <span><i style="background:var(--netF)"></i>SERVIDORES · 192.168.2.0/24</span>
       </div>
     </section>
     <section id="logWrap" class="corner">
@@ -371,7 +371,7 @@ textarea#diagText:focus{border-color:var(--acc)}
 <script>
 /* ============================================================
    OPERAÇÃO SENTINELA — jogo-guia: 5 PCs · 2 roteadores · ASA ·
-   servidores Web/DNS/FTP/E-mail no Packet Tracer
+   servidores Web/DNS/FTP/E-mail no Packet Tracer (topologia ASA de duas zonas)
    ============================================================ */
 'use strict';
 const $=s=>document.querySelector(s);
@@ -440,7 +440,7 @@ const PHASES={
 const MISSIONS=[
 /* ---------- M1 ---------- */
 { id:'m1',code:'M-01',phase:'p1',title:'A fortaleza sem muros',sub:'Topologia física · ~20 min',xp:100,
-  brief:`<p>A <b>Orion Distribuidora S.A.</b> contratou você para erguer a rede da matriz. O projeto prevê: uma <b>rede de usuários</b>, dois roteadores formando o núcleo e uma <b>DMZ</b> — área blindada onde ficarão os servidores <b>Web, DNS, FTP e E-mail</b>, protegidos por um <b>firewall ASA</b>.</p>
+  brief:`<p>A <b>Orion Distribuidora S.A.</b> contratou você para erguer a rede da matriz. O projeto prevê: uma <b>rede de usuários</b>, dois roteadores formando o núcleo e uma <b>rede de servidores protegida</b> — área onde ficarão os servidores <b>Web, DNS, FTP e E-mail</b>, protegidos por um <b>firewall ASA</b>.</p>
   <p>Primeira entrega: a infraestrutura física no <b>Cisco Packet Tracer</b>. O diagrama ao lado acompanha seu progresso.</p>`,
   steps:[
     `No Packet Tracer, posicione: <b>2 roteadores 2911</b>, <b>1 firewall ASA 5505</b> (categoria Security), <b>2 switches 2960</b>, <b>5 PCs</b> e <b>4 Servers</b>.`,
@@ -471,7 +471,7 @@ const MISSIONS=[
     ['PC4','192.168.1.14','Estação de trabalho','A']
   ],
   steps:[
-    `Em cada PC: <b>Desktop → IP Configuration</b>. Preencha IP, máscara <b>255.255.255.0</b>, gateway <b>192.168.1.1</b> e DNS <b>192.168.2.11</b> (o DNS da DMZ — ainda não responde, mas já deixamos apontado).`,
+    `Em cada PC: <b>Desktop → IP Configuration</b>. Preencha IP, máscara <b>255.255.255.0</b>, gateway <b>192.168.1.1</b> e DNS <b>192.168.2.11</b> (o DNS da rede de servidores — ainda não responde, mas já deixamos apontado).`,
     `No <b>Desktop → Command Prompt</b> do PC0: <b>ping 192.168.1.14</b> e depois <b>ping 192.168.1.1</b>.`
   ],
   quiz:[
@@ -534,9 +534,9 @@ write memory`}
 },
 /* ---------- M4 ---------- */
 { id:'m4',code:'M-04',phase:'p3',title:'O muro invisível',sub:'Investigação · ~10 min',xp:150,
-  brief:`<p>Núcleo pronto. A diretora pediu: "confira se os servidores já respondem". Você executa no PC0: <b>ping 192.168.2.11</b> — o DNS da DMZ.</p>
+  brief:`<p>Núcleo pronto. A diretora pediu: "confira se os servidores já respondem". Você executa no PC0: <b>ping 192.168.2.11</b> — o DNS da rede de servidores.</p>
   <p><b>Timeout.</b> As rotas estão corretas, os cabos verdes… e o pacote morre no caminho. Sua missão: descobrir <b>quem</b> o bloqueou.</p>`,
-  hint:{ic:'alert',t:`Siga o rastro: <b>PC0</b> → gateway <b>192.168.1.1</b> → <b>R1</b> → rota estática → <b>R2</b> → rota estática → <b>10.0.1.2</b>… e aqui o pacote encontra o <b>ASA</b>. Entrando pela <b>outside (nível 0)</b> rumo à <b>inside (nível 100)</b>. O que o ASA faz com tráfego "de fora para dentro", por padrão?`},
+  hint:{ic:'alert',t:`Siga o rastro: <b>PC0</b> → gateway <b>192.168.1.1</b> → <b>R1</b> → rota estática → <b>R2</b> → rota estática → <b>10.0.1.2</b>… e aqui o pacote encontra o <b>ASA</b>. Entrando pela <b>outside (nível 0)</b> rumo à <b>inside (nível 100)</b>, onde está a rede de servidores. O que o ASA faz com tráfego "de fora para dentro", por padrão?`},
   quiz:[
     {q:'As rotas estáticas estão corretas e mesmo assim o ping morre. Quem descarta o pacote?',o:['O Switch1, por segurança','O ASA: por padrão ele nega TODO tráfego vindo da outside (0) para a inside (100)','O PC4, porque a rede está congestionada','O R1, porque falta rota de retorno'],a:1,ex:'Roteamento ≠ permissão. O pacote CHEGA ao ASA — e o firewall, sem regra que o autorize, descarta. É o muro fazendo o trabalho dele.'},
     {q:'Num firewall ASA, o que representam "security-level 100" e "security-level 0"?',o:['Velocidade da porta em Mbps','Nível de confiança: 100 = interna confiável, 0 = externa hostil','Número de usuários suportados','Prioridade do roteamento'],a:1,ex:'O nível é o grau de confiança da zona. Regra de ouro do ASA: tráfego flui do mais confiável para o menos confiável — e é NEGADO no sentido contrário, salvo liberação explícita.'}
@@ -546,7 +546,8 @@ write memory`}
 },
 /* ---------- M5 ---------- */
 { id:'m5',code:'M-05',phase:'p4',title:'Erguendo as muralhas',sub:'CLI do ASA 5505 · zonas inside/outside · ~25 min',xp:200,
-  brief:`<p>O firewall está ligado mas "mudo": sem zonas, sem IP, sem rota. Vamos erguer as muralhas: <b>Vlan1 = inside</b> (a DMZ dos servidores, nível 100) e <b>Vlan2 = outside</b> (o link para o R2, nível 0).</p>
+  brief:`<p>O firewall está ligado mas "mudo": sem zonas, sem IP, sem rota. Vamos erguer as muralhas: <b>Vlan1 = inside</b> (rede protegida dos servidores, nível 100) e <b>Vlan2 = outside</b> (o link para o R2, nível 0).</p>
+  <p><b>Nota arquitetural:</b> esta atividade usa um ASA de <b>duas zonas</b>. Portanto, a rede 192.168.2.0/24 é tecnicamente a zona <b>inside</b> de servidores. Uma DMZ clássica exigiria uma terceira zona/interface com security-level intermediário.</p>
   <p>No ASA, a senha <b>enable</b> vem em branco (ou tente <b>cisco</b>). Aba <b>CLI</b>:</p>`,
   cli:[{t:'ASA 5505 · zonas e rota',c:`enable
 configure terminal
@@ -587,10 +588,11 @@ write memory`}],
 },
 /* ---------- M6 ---------- */
 { id:'m6',code:'M-06',phase:'p4',title:'A portaria define as regras',sub:'ACL do firewall · liberação de serviços · ~25 min',xp:250,
-  brief:`<p>Muralhas erguidas — mas ninguém entra nem sai. Um firewall profissional não derruba o muro: abre a <b>portaria</b>, e cada porta só passa para quem tem direito. Vamos escrever a <b>ACL</b> que autoriza, uma a uma, as portas dos serviços da DMZ.</p>`,
-  cli:[{t:'ASA · ACL de serviços',c:`access-list LIBERA extended permit icmp any any
+  brief:`<p>Muralhas erguidas — mas ninguém entra nem sai. Um firewall profissional não derruba o muro: abre a <b>portaria</b>, e cada porta só passa para quem tem direito. Vamos escrever a <b>ACL</b> que autoriza, uma a uma, as portas dos serviços da rede de servidores.</p>`,
+  cli:[{t:'ASA · ACL de serviços',c:`access-list LIBERA extended permit icmp 192.168.1.0 255.255.255.0 192.168.2.0 255.255.255.0
 access-list LIBERA extended permit tcp any host 192.168.2.10 eq www
 access-list LIBERA extended permit udp any host 192.168.2.11 eq domain
+access-list LIBERA extended permit tcp any host 192.168.2.11 eq domain
 access-list LIBERA extended permit tcp any host 192.168.2.12 eq ftp
 access-list LIBERA extended permit tcp any host 192.168.2.12 eq ftp-data
 access-list LIBERA extended permit tcp any host 192.168.2.13 eq smtp
@@ -598,14 +600,15 @@ access-list LIBERA extended permit tcp any host 192.168.2.13 eq pop3
 access-group LIBERA in interface outside
 write memory`}],
   steps:[
+    `A ACL libera DNS em <b>UDP/53 e TCP/53</b>. Para FTP, este laboratório usa o modelo <b>ativo simplificado</b> do Packet Tracer (controle TCP/21 e dados TCP/20).`,
     `Aplique a ACL na CLI do ASA. A última linha — <b>access-group ... in interface outside</b> — é quem liga a lista à portaria.`,
     `No PC0: <b>ping 192.168.2.11</b> — agora o pacote atravessa o muro.`,
     `No PC0: <b>Web Browser → http://192.168.2.10</b>. A página padrão do Packet Tracer deve aparecer.`
   ],
   quiz:[
     {q:'Você criou a access-list mas esqueceu o access-group. O que acontece?',o:['A ACL entra em modo de teste','A ACL fica INATIVA: criada, mas aplicada a nenhuma interface','O ASA desliga','A ACL bloqueia tudo'],a:1,ex:'Lista criada ≠ lista aplicada. Sem access-group na interface, o ASA mantém a regra padrão: negar tudo de fora para dentro.'},
-    {q:'Na linha "permit tcp any host 192.168.2.10 eq www", o "eq www" especifica:',o:['O endereço de origem','A porta de DESTINO 80 (HTTP)','O protocolo UDP','O nome do servidor'],a:1,ex:'eq = "exatamente esta porta de destino". www é o alias da porta 80. Cada serviço da DMZ tem sua linha — a portaria com uma porta para cada setor.'},
-    {q:'A linha "permit icmp any any" foi incluída porque:',o:['ICMP substitui o TCP','Permite testar com ping — útil no laboratório (na produção costuma ficar de fora)','O ASA exige ICMP para funcionar','DNS precisa de ICMP'],a:1,ex:'Ping é o estetoscópio da rede. Em laboratório, liberamos; em produção, avalia-se o risco — o ping revela que o host existe.'}
+    {q:'Na linha "permit tcp any host 192.168.2.10 eq www", o "eq www" especifica:',o:['O endereço de origem','A porta de DESTINO 80 (HTTP)','O protocolo UDP','O nome do servidor'],a:1,ex:'eq = "exatamente esta porta de destino". www é o alias da porta 80. Cada serviço da rede de servidores tem sua linha — a portaria com uma porta para cada setor.'},
+    {q:'A regra ICMP restrita da rede 192.168.1.0/24 para 192.168.2.0/24 foi incluída porque:',o:['ICMP substitui o TCP','Permite testar com ping — útil no laboratório (na produção costuma ficar de fora)','O ASA exige ICMP para funcionar','DNS precisa de ICMP'],a:1,ex:'Ping é o estetoscópio da rede. Em laboratório, liberamos; em produção, avalia-se o risco — o ping revela que o host existe.'}
   ],
   tasks:['PC0 pinga o servidor DNS (192.168.2.11) através do firewall.','PC0 abre http://192.168.2.10 no navegador.'],
   cp:'CHECKPOINT 3',log:'CHECKPOINT 3 VALIDADO — Portaria ativa: tráfego autorizado atravessa o ASA.'
@@ -837,8 +840,11 @@ function renderMission(){
 function wireMission(m){
   document.querySelectorAll('#mwrap .copy').forEach(b=>b.onclick=()=>{
     const pre=b.closest('.cli').querySelector('pre');
-    try{navigator.clipboard.writeText(pre.textContent);}catch(e){}
-    b.innerHTML=ic('check')+' copiado';snd.ok();setTimeout(()=>b.innerHTML=ic('copy')+' copiar',1600);
+    if(!navigator.clipboard){toast('Área de transferência indisponível. Selecione o texto e copie manualmente.','err');return;}
+    navigator.clipboard.writeText(pre.textContent).then(()=>{
+      b.innerHTML=ic('check')+' copiado';snd.ok();
+      setTimeout(()=>b.innerHTML=ic('copy')+' copiar',1600);
+    }).catch(()=>toast('Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.','err'));
   });
   document.querySelectorAll('#mwrap .opt').forEach(btn=>{
     btn.onclick=()=>{
@@ -903,7 +909,16 @@ function dnsResolve(name,f){
   if(f==='dns'&&name==='www.empresa.local')ip='192.168.2.99';
   return ip;
 }
-const reach=(ip,f)=>!(f==='gw'&&ip===IP.ftp);
+function isValidIPv4(s){
+  const p=String(s).trim().split('.');
+  return p.length===4 && p.every(x=>/^\d{1,3}$/.test(x) && Number(x)>=0 && Number(x)<=255);
+}
+function sameSubnet24(a,b){return a.split('.').slice(0,3).join('.')===b.split('.').slice(0,3).join('.');}
+function reach(src,ip,f){
+  // Gateway incorreto só impede o RETORNO quando origem e destino estão em redes diferentes.
+  if(f==='gw' && ip===IP.ftp && !sameSubnet24(src,ip)) return false;
+  return true;
+}
 
 function simHTML(){
   if(!save.sim.sc){
@@ -947,8 +962,9 @@ function simRun(raw){
   const out=[];const P=(t,c)=>out.push([t,c]);
   P('PC0> '+cmd,'cmd');
   const parts=cmd.split(/\s+/);const c=parts[0].toLowerCase();const a=(parts.slice(1).join(' ')||'').toLowerCase();
-  const isIp=s=>/^\d{1,3}(\.\d{1,3}){3}$/.test(s);
+  const isIp=isValidIPv4;
   const resolve=s=>isIp(s)?s:dnsResolve(s,f);
+  const SRC='192.168.1.10';
   if(c==='help'){P('Comandos: ping <ip|nome> · nslookup <nome> · browser <url> · ftp <ip|nome> · show acl · svc web|dns|ftp|mail · ipconfig · clear','dim');}
   else if(c==='clear'){box.innerHTML='';save.sim.hist=[];save.sim.cmds++;persist();return;}
   else if(c==='ipconfig'){P('Configuração IP do PC0:','dim');P('   IPv4 . . . . . . . : 192.168.1.10');P('   Máscara  . . . . . : 255.255.255.0');P('   Gateway  . . . . . : 192.168.1.1');P('   DNS  . . . . . . . : 192.168.2.11','dim');}
@@ -956,7 +972,7 @@ function simRun(raw){
     if(!a)P('Uso: ping <ip|nome>','wrn');
     else{const ip=resolve(a);
       if(!ip)P('Falha ao resolver "'+a+'" (DNS não conhece o nome).','err');
-      else if(!reach(ip,f))P('Esgotado o tempo limite do pedido para '+ip+'.','err');
+      else if(!reach(SRC,ip,f))P('Esgotado o tempo limite do pedido para '+ip+'. O destino pode estar ativo, mas sem rota de retorno para a rede de origem.','err');
       else P('Resposta de '+ip+': bytes=32 tempo=1ms TTL=125','ok');}
   }
   else if(c==='nslookup'){
@@ -986,15 +1002,16 @@ function simRun(raw){
     const ip=resolve(a);
     if(!a)P('Uso: ftp <ip|nome>','wrn');
     else if(!ip)P('Falha ao resolver '+a,'err');
-    else if(!reach(ip,f))P('> ftp: connect — tempo esgotado, o host não responde.','err');
+    else if(!reach(SRC,ip,f))P('> ftp: connect — tempo esgotado. O servidor está na rede, mas o gateway incorreto impede a resposta ao PC0.','err');
     else if(f==='acl')P('> conexão recusada pelo firewall (portas 21/20 descartadas na ACL).','err');
     else{P('Conectado a '+ip,'ok');P('220 FTP Server (Packet Tracer) pronto.');P('Usuário: cisco · Senha: ***  →  230 login OK','ok');P('ftp> dir  →  arquivo-projeto.txt · inventario.csv  (2 arquivos)','ok');}
   }
   else if(c==='show'&&a==='acl'){
     P('access-list LIBERA; elementos:','dim');
-    P('access-list LIBERA extended permit icmp any any');
+    P('access-list LIBERA extended permit icmp 192.168.1.0 255.255.255.0 192.168.2.0 255.255.255.0');
     P('access-list LIBERA extended permit tcp any host 192.168.2.10 eq www');
     P('access-list LIBERA extended permit udp any host 192.168.2.11 eq domain');
+    P('access-list LIBERA extended permit tcp any host 192.168.2.11 eq domain');
     if(f!=='acl'){P('access-list LIBERA extended permit tcp any host 192.168.2.12 eq ftp');P('access-list LIBERA extended permit tcp any host 192.168.2.12 eq ftp-data');}
     P('access-list LIBERA extended permit tcp any host 192.168.2.13 eq smtp');
     P('access-list LIBERA extended permit tcp any host 192.168.2.13 eq pop3');
