@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛡️ Network Rescue — Salve a Rede!</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --b900:#04256b;--b700:#0846a8;--b600:#0b52d0;--b500:#0d6efd;--b400:#3f8cff;
+  --ink:#0f1b3d;--ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;
+  --term:#0a1c45;--termink:#cfe3ff;
+  --tA:#dc2626;--tB:#0d6efd;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',system-ui,sans-serif}
+body{min-height:100vh;background:linear-gradient(135deg,#eef3ff,#f7faff 60%);color:var(--ink);overflow-x:hidden}
+.deco{position:fixed;border-radius:50%;z-index:0;pointer-events:none}
+.d1{width:420px;height:420px;background:radial-gradient(circle at 30% 30%,var(--b500),var(--b900));top:-160px;left:-160px;opacity:.14}
+.d2{width:300px;height:300px;background:var(--b600);bottom:-120px;right:-100px;opacity:.12}
+.d3{width:90px;height:90px;border:6px solid var(--b400);top:15%;right:5%;opacity:.22}
+#app{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:18px 14px 70px}
+
+.hud{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.chip{background:#fff;border:1px solid #dbe4ff;border-radius:999px;padding:6px 12px;font-weight:700;font-size:.8rem;box-shadow:0 2px 8px rgba(13,110,253,.08)}
+.chip.streak{background:#fff4e5;border-color:#fcd9a8;color:#b45309;animation:pop .3s}
+.hearts span{font-size:.95rem;letter-spacing:1px}
+.hearts .off{filter:grayscale(1);opacity:.35}
+.availbar{height:9px;border-radius:99px;background:#e7edfb;overflow:hidden;margin-bottom:12px}
+.availbar>div{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ok),#4ade80);transition:width .4s,background .4s}
+.availbar.mid>div{background:linear-gradient(90deg,var(--warn),#fbbf24)}
+.availbar.low>div{background:linear-gradient(90deg,var(--bad),#f87171)}
+
+.card{background:#fff;border-radius:22px;padding:24px 22px;box-shadow:0 14px 40px rgba(4,37,107,.13)}
+.card.shake{animation:shake .45s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@keyframes pop{from{transform:scale(.7)}to{transform:scale(1)}}
+.fade{animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.eyebrow{color:var(--b600);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.1em}
+h1{font-size:2rem;font-weight:800;background:linear-gradient(90deg,var(--b700),var(--b500));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.15}
+h2{font-size:1.3rem;font-weight:800;margin:6px 0 4px}
+.muted{color:#5b6b8c;font-size:.9rem}
+.center{text-align:center}
+.mt{margin-top:18px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(90deg,var(--b600),var(--b500));color:#fff;border:none;border-radius:999px;padding:13px 28px;font-size:.98rem;font-weight:700;cursor:pointer;transition:.2s;box-shadow:0 8px 20px rgba(13,110,253,.35)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(13,110,253,.45)}
+.btn.ghost{background:#fff;color:var(--b700);border:2px solid var(--b400);box-shadow:none}
+.btn.red{background:linear-gradient(90deg,#dc2626,#ef4444);box-shadow:0 8px 20px rgba(220,38,38,.35)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+.bar{height:10px;border-radius:99px;background:#e7edfb;overflow:hidden;margin:14px 0 16px}
+.bar>div{height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,var(--ok),#4ade80);transition:width .1s linear}
+.bar>div.mid{background:linear-gradient(90deg,var(--warn),#fbbf24)}
+.bar>div.low{background:linear-gradient(90deg,var(--bad),#f87171)}
+
+.qmeta{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.qtext{font-size:1.08rem;font-weight:700;line-height:1.45;margin-bottom:6px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.opt{display:flex;align-items:center;gap:10px;text-align:left;background:#f6f9ff;border:2px solid #dfe8fb;border-radius:14px;padding:12px 13px;font-size:.9rem;font-weight:600;cursor:pointer;transition:.15s;color:var(--ink)}
+.opt:hover:not(:disabled){border-color:var(--b500);background:#eef4ff;transform:translateY(-2px)}
+.opt:disabled{cursor:default;opacity:.75}
+.opt .key{flex:none;width:26px;height:26px;border-radius:8px;background:var(--b600);color:#fff;display:grid;place-items:center;font-size:.76rem;font-weight:800}
+.opt.correct{background:#e9f9ef;border-color:var(--ok);opacity:1}
+.opt.correct .key{background:var(--ok)}
+.opt.wrong{background:#feecec;border-color:var(--bad);opacity:1;animation:pop .3s}
+.opt.wrong .key{background:var(--bad)}
+
+.term{background:var(--term);border-radius:14px;padding:14px 16px;margin:12px 0;color:var(--termink);box-shadow:inset 0 0 30px rgba(0,0,0,.35)}
+.term .tt{font-size:.72rem;font-weight:700;color:#7fb2ff;letter-spacing:.08em;margin-bottom:8px;text-transform:uppercase}
+.term pre{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.55;white-space:pre;overflow-x:auto;color:var(--termink)}
+.term pre .g{color:#5dffa0}.term pre .r{color:#ff7b7b}.term pre .y{color:#ffd66b}
+
+.pbadge{width:70px;height:70px;border-radius:18px;display:grid;place-items:center;font-size:2rem;background:linear-gradient(135deg,var(--b600),var(--b900));color:#fff;box-shadow:0 10px 24px rgba(4,37,107,.35)}
+
+.feedback{margin-top:16px;border-radius:14px;padding:15px 17px;font-size:.9rem;line-height:1.5;animation:fadeUp .3s}
+.feedback.ok{background:#e9f9ef;border:1px solid #b7e6c8}
+.feedback.bad{background:#fff5f5;border:1px solid #f5c2c2}
+.feedback b{display:block;margin-bottom:6px;font-size:.98rem}
+.fbrow{display:flex;gap:8px;padding:6px 0;border-top:1px dashed #d6e2f7;font-size:.85rem}
+.fbrow:first-child{border-top:none}
+.fbrow .st{flex:none}
+
+.pool{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.dcard{width:100%;text-align:left;background:#f6f9ff;border:2px solid #dfe8fb;border-radius:12px;padding:11px 13px;font-size:.87rem;font-weight:600;cursor:pointer;transition:.15s;color:var(--ink)}
+.dcard:hover{border-color:var(--b500)}
+.dcard.sel{border-color:var(--b500);background:#e8f1ff;box-shadow:0 0 0 3px rgba(13,110,253,.15)}
+.dcard.okc{background:#e9f9ef;border-color:var(--ok);cursor:default}
+.dcard.badc{background:#feecec;border-color:var(--bad);cursor:default}
+.dcard.inz{padding:8px 11px;font-size:.8rem}
+.zones{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.zone{border:2px dashed #c9d8f5;border-radius:14px;padding:10px;min-height:150px;background:#fbfcff;cursor:pointer;transition:.15s}
+.zone h4{font-size:.8rem;color:var(--b700);text-align:center;margin-bottom:8px}
+.zone.locked{cursor:default}
+
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.slot{background:#f6f9ff;border:2px dashed #dfe8fb;border-radius:12px;padding:10px 12px;font-size:.85rem;font-weight:600;min-height:52px;display:flex;align-items:center;gap:8px}
+.slot .num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--b600);color:#fff;display:grid;place-items:center;font-size:.72rem;font-weight:800}
+.slot.done{border-style:solid;color:#fff}
+.schips{display:flex;flex-wrap:wrap;gap:8px}
+.schip{border:none;border-radius:10px;padding:10px 13px;font-size:.82rem;font-weight:700;color:#fff;cursor:pointer;transition:.15s;box-shadow:0 4px 10px rgba(4,37,107,.2)}
+.schip:hover{transform:translateY(-2px)}
+
+.tl{margin:10px 0}
+.tl pre{color:#9fd8ff}
+.tl pre .new{color:#5dffa0}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:18px 0}
+.stat{background:#f2f6ff;border-radius:14px;padding:13px;text-align:center}
+.stat .v{font-size:1.3rem;font-weight:800;color:var(--b700)}
+.stat .l{font-size:.72rem;color:#5b6b8c;font-weight:600}
+.catbar{margin:8px 0}
+.catbar .cl{display:flex;justify-content:space-between;font-size:.8rem;font-weight:700;margin-bottom:4px}
+.catbar .cb{height:9px;border-radius:99px;background:#e7edfb;overflow:hidden}
+.catbar .cb>div{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--b600),var(--b400))}
+
+.review{margin-top:14px;text-align:left}
+.review details{background:#f8faff;border:1px solid #e2e9fb;border-radius:12px;padding:11px 13px;margin-top:8px;font-size:.85rem}
+.review summary{cursor:pointer;font-weight:700}
+.review .ans{color:var(--ok);font-weight:700;margin-top:6px}
+
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:16px 0}
+.rule{background:#f2f6ff;border-radius:13px;padding:11px 13px;font-size:.82rem;font-weight:600}
+.rule span{font-size:1.2rem;display:block;margin-bottom:3px}
+.check{display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600;margin:10px 0}
+.resbox{border:3px double var(--b600);border-radius:14px;padding:14px;text-align:center;font-weight:800;color:var(--b700);margin:12px 0;letter-spacing:.06em}
+.confetti{position:fixed;top:-14px;z-index:50;width:10px;height:15px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(108vh) rotate(720deg)}}
+
+/* ── Placar ── */
+.savebox{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.savebox input{flex:1;min-width:200px;max-width:300px;border:2px solid var(--b400);border-radius:999px;padding:11px 16px;font-family:inherit;font-size:.9rem;font-weight:600;outline:none}
+.savebox input:focus{border-color:var(--b600);box-shadow:0 0 0 3px rgba(13,110,253,.15)}
+.lb{max-width:540px;margin:14px auto 0;text-align:left}
+.lb .row{display:flex;align-items:center;gap:10px;background:#f6f9ff;border:1px solid #dfe8fb;border-radius:12px;padding:10px 14px;margin-top:8px}
+.lb .row.top1{background:linear-gradient(90deg,#fff8e1,#fff);border-color:#f6c344}
+.lb .row.top2{background:linear-gradient(90deg,#f1f3f7,#fff);border-color:#c9d2e0}
+.lb .row.top3{background:linear-gradient(90deg,#fdeee0,#fff);border-color:#e2a06a}
+.lb .rk{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.85rem;background:var(--b600);color:#fff}
+.lb .nm{flex:1;font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb .meta{flex:none;text-align:right;font-size:.72rem;color:#5b6b8c;font-weight:700}
+.lb .meta b{display:block;color:var(--b700);font-size:.88rem}
+.lb .empty{text-align:center;color:#5b6b8c;padding:14px;font-size:.85rem}
+.minilb{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.minilb .mchip{background:#f2f6ff;border:1px solid #dbe4ff;border-radius:999px;padding:6px 12px;font-size:.75rem;font-weight:700;color:var(--b700)}
+.saved-msg{background:#e9f9ef;border:1px solid #b7e6c8;border-radius:12px;padding:10px 14px;margin-top:14px;font-weight:700;color:var(--ok);font-size:.9rem}
+.bonuschip{background:#fff4e5!important;border-color:#fcd9a8!important;color:#b45309!important}
+
+/* ── Modo Versus ── */
+.modebox{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.modecard{border:2px solid #dfe8fb;border-radius:18px;padding:18px;text-align:center;cursor:pointer;transition:.2s;background:#fbfcff}
+.modecard:hover{border-color:var(--b500);transform:translateY(-3px);box-shadow:0 10px 24px rgba(13,110,253,.15)}
+.modecard .mi{font-size:2.2rem;margin-bottom:6px}
+.modecard h3{font-size:1rem;margin-bottom:4px}
+.vsin{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.vsin input{flex:1;min-width:180px;max-width:240px;border:2px solid var(--b400);border-radius:999px;padding:11px 16px;font-family:inherit;font-size:.9rem;font-weight:700;text-align:center;outline:none}
+.vsin input:focus{box-shadow:0 0 0 3px rgba(13,110,253,.15)}
+.vsbar{display:flex;gap:10px;align-items:stretch;margin-bottom:10px}
+.tp{flex:1;background:#fff;border:2px solid #e3e9f7;border-radius:16px;padding:8px 12px;font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;opacity:.55;transition:.25s}
+.tp .tname{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tp .tdot{flex:none;width:12px;height:12px;border-radius:50%}
+.tp.act{opacity:1;transform:scale(1.02);box-shadow:0 6px 18px rgba(4,37,107,.14)}
+.tpA.act{border-color:var(--tA)}
+.tpB.act{border-color:var(--tB)}
+.tp .you{flex:none;font-size:.62rem;background:#111;color:#fff;border-radius:6px;padding:2px 6px;letter-spacing:.05em}
+.vsmark{align-self:center;flex:none;font-weight:800;color:#b9c7e6;font-size:.85rem}
+.turnbanner{border-radius:12px;padding:9px 14px;text-align:center;font-weight:800;font-size:.95rem;color:#fff;margin-bottom:10px;letter-spacing:.02em}
+.tba{background:linear-gradient(90deg,#dc2626,#ef4444)}
+.tbb{background:linear-gradient(90deg,#0d6efd,#3f8cff)}
+.vsfin{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch;margin-top:16px}
+.vscol{border:2px solid #e3e9f7;border-radius:18px;padding:16px;text-align:center}
+.vscol.win{border-color:#f6c344;background:linear-gradient(180deg,#fffaf0,#fff)}
+.vscol .vn{font-weight:800;font-size:1rem;margin-bottom:2px}
+.vscol .vr{font-size:1.8rem}
+.vscol .vs{font-size:.82rem;font-weight:700;color:#5b6b8c;margin:3px 0}
+.xpbar{margin:8px 0 4px;text-align:left}
+.xpbar .xl{display:flex;justify-content:space-between;font-size:.75rem;font-weight:700}
+.xpbar .xb{height:12px;border-radius:99px;background:#eef2fb;overflow:hidden;margin-top:4px}
+.xpbar .xb>div{height:100%;border-radius:99px;transition:width 1s ease}
+@media(max-width:600px){.opts{grid-template-columns:1fr}.zones{grid-template-columns:1fr}.slots{grid-template-columns:1fr}.rules{grid-template-columns:1fr}h1{font-size:1.5rem}.modebox{grid-template-columns:1fr}.vsbar{flex-direction:column}.vsmark{display:none}.vsfin{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="deco d1"></div><div class="deco d2"></div><div class="deco d3"></div>
+<div id="app"><div id="stage"></div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const stage=document.getElementById("stage");
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+function seededShuffle(n,seed){let s=(seed*9301+49297)%233280||7;const idx=[...Array(n).keys()];
+ for(let i=n-1;i>0;i--){s=(s*9301+49297)%233280;const j=s%(i+1);[idx[i],idx[j]]=[idx[j],idx[i]];}return idx;}
+
+let S=null,cursor=0,timerId=null,TIMER_ON=true,sbFrom="intro";
+let drag=null,sort_=null,curOrd=null,curCorrect=0;
+
+const PH=[
+ {i:"🛰️",n:"Conheça sua rede",d:"Gestão de redes e NMS: o que é, para que serve e exemplos."},
+ {i:"🏗️",n:"Construa a arquitetura",d:"Organize os equipamentos nas camadas Core, Distribuição e Acesso."},
+ {i:"📊",n:"Leia o painel do NOC",d:"Latência, largura de banda, jitter e packet loss."},
+ {i:"🐌",n:"A rede está lenta!",d:"Use ping e tracert para diagnosticar o problema."},
+ {i:"🔎",n:"Caça à falha",d:"Ordene as 6 etapas da gestão de falhas."},
+ {i:"📡",n:"Quem está falando?",d:"Protocolos ICMP e SNMP — com desafio bônus do snmpwalk!"},
+ {i:"🤖",n:"Automatize",d:"Scripts, Netmiko e Ansible."},
+ {i:"🔐",n:"Proteja a infraestrutura",d:"Autenticação, integridade, IDS/IPS."},
+ {i:"📈",n:"A empresa cresceu",d:"Manutenção, capacidade e escalabilidade."},
+ {i:"🚨",n:"Incidente final",d:"Caso integrador: identifique → isole → analise → resolva → valide."}
+];
+
+const TIMELINE=[
+"09:01 · Usuários reclamam de lentidão",
+"09:03 · Latência sobe para 350 ms",
+"09:04 · Packet loss chega a 22%",
+"09:05 · Servidor continua respondendo (tempo=350 ms)",
+"09:06 · Utilização do link chega a 98%",
+"09:12 · QoS + link redundante aplicados",
+"09:15 · Métricas voltam ao normal 🟢"];
+
+const PANELS={
+ "noc-normal":`<div class="term"><div class="tt">🖥️ Network Status — NOC TechNet</div><pre>Bandwidth  : 480 Mbps   <span class="g">████████░░</span>
+Latency    : 18 ms
+Jitter     : 4 ms
+Packet Loss: 0 %
+STATUS     : <span class="g">🟢 NORMAL</span></pre></div>`,
+ "noc-alert":`<div class="term"><div class="tt">🖥️ Network Status — NOC TechNet</div><pre>Bandwidth  : 95 Mbps    <span class="r">██░░░░░░░░</span>
+Latency    : 280 ms
+Jitter     : 85 ms
+Packet Loss: 18 %
+STATUS     : <span class="r">🔴 ALERTA</span></pre></div>`,
+ "ping-jitter":`<div class="term"><div class="tt">💻 Terminal</div><pre>C:\\&gt; ping 192.168.1.1
+
+Resposta de 192.168.1.1: tempo=<span class="g">12 ms</span>
+Resposta de 192.168.1.1: tempo=<span class="r">180 ms</span>
+Resposta de 192.168.1.1: tempo=<span class="g">35 ms</span>
+Resposta de 192.168.1.1: tempo=<span class="r">240 ms</span>
+
+Pacotes: Enviados = 4, Recebidos = 4, <span class="g">Perdidos = 0 (0% de perda)</span></pre></div>`,
+ "ping-loss":`<div class="term"><div class="tt">💻 Terminal</div><pre>C:\\&gt; ping dyna.wiki.org
+
+Resposta de dyna.wiki.org: tempo=171 ms
+<span class="r">Tempo limite da solicitação expirado.</span>
+Resposta de dyna.wiki.org: tempo=170 ms
+<span class="r">Tempo limite da solicitação expirado.</span>
+Resposta de dyna.wiki.org: tempo=171 ms
+
+Pacotes: Enviados = 8, Recebidos = 6, <span class="r">Perdidos = 2 (25% de perda)</span></pre></div>`,
+ "tracert":`<div class="term"><div class="tt">💻 Terminal</div><pre>C:\\&gt; tracert www.google.com
+
+  1    <span class="g">1 ms</span>    <span class="g">1 ms</span>    <span class="g">1 ms</span>   192.168.1.1
+  2    <span class="g">4 ms</span>    <span class="g">4 ms</span>    <span class="g">5 ms</span>   10.0.0.1
+  3    <span class="r">*</span>       <span class="r">*</span>       <span class="r">*</span>      <span class="r">solicitação expirada</span>
+  4   18 ms   15 ms   16 ms   2001:4860::1f7c</pre></div>`,
+ "snmpwalk":`<div class="term"><div class="tt">💻 Terminal — Consulta SNMP</div><pre>$ snmpwalk <span class="g">-v 2c</span> <span class="y">-c público</span> <span class="r">192.168.1.1</span>
+
+DISMAN-EVENT-MIB::sysUpTimeInstance = Timeticks: (1024) 0:00:10.24
+SNMPv2-MIB::sysDescr.0 = STRING: Router TechNet R1, IOS 15.x
+IF-MIB::ifNumber.0 = INTEGER: 24
+IF-MIB::ifDescr.1 = STRING: GigabitEthernet0/1
+IF-MIB::ifOperStatus.1 = INTEGER: up(1)
+IF-MIB::ifDescr.2 = STRING: GigabitEthernet0/2
+IF-MIB::ifInOctets.1 = Counter32: 84921304
+...</pre></div>`
+};
+
+const CH=[
+ // ── FASE 1 ──
+ {ph:0,xp:100,t:25,q:"A TechNet possui 80 computadores, switches, roteadores, servidores e pontos de acesso. Qual solução permite acompanhar toda essa infraestrutura?",
+  o:["Editor de texto","NMS (Network Management System)","Compilador Java","Servidor DNS"],a:1,
+  e:"Um NMS é o software que possibilita aos administradores monitorar, gerir e manter a rede, oferecendo uma visão abrangente do estado e do desempenho."},
+ {ph:0,xp:100,t:25,q:"Qual característica do NMS identifica e comunica falhas através de alertas e notificações?",
+  o:["Configuração remota","Gerenciamento de falhas","Inventário de dispositivos","Virtualização"],a:1,
+  e:"O gerenciamento de falhas envia alertas e notificações e disponibiliza ferramentas para diagnosticar e resolver problemas de forma ágil."},
+ {ph:0,xp:100,t:25,q:"Zabbix, Nagios, PRTG e SolarWinds são exemplos de...",
+  o:["Sistemas operativos","Antivírus corporativos","NMS — sistemas de gestão de rede","Linguagens de script"],a:2,
+  e:"O material lista Cisco Prime, Zabbix, PRTG, WhatsUp Gold, Nagios, OpManager e SolarWinds como exemplos de NMS."},
+ // ── FASE 2 ──
+ {type:"drag",ph:1,xp:300,t:120},
+ // ── FASE 3 ──
+ {ph:2,xp:100,t:25,panel:"noc-alert",q:"Analise o painel do NOC. Qual métrica indica que pacotes enviados NÃO estão chegando ao destino?",
+  o:["Bandwidth","Latência","Packet Loss","Throughput"],a:2,
+  e:"A perda de pacotes corresponde à proporção de pacotes que não chegam ao destino durante a transmissão — e pode indicar congestionamento."},
+ {ph:2,xp:100,t:25,panel:"noc-alert",q:"A variação no tempo de chegada dos pacotes — que prejudica voz e vídeo — é chamada de...",
+  o:["Jitter (tremulação)","Latência","Bandwidth","Ping"],a:0,
+  e:"Tremulação (jitter) é a variabilidade temporal da taxa de chegada de pacotes/quadros. Em streaming, é mitigada até certo ponto pelo uso de buffers."},
+ {ph:2,xp:100,t:25,panel:"noc-normal",q:"A largura de banda é medida em...",
+  o:["Bytes por segundo (Bps)","bps — bits por segundo (cuidado: não são bytes!)","Pacotes por minuto","Hertz"],a:1,
+  e:"É a quantidade de dados que pode ser transmitida por período, medida em bps — bits, não bytes! É a famosa 'velocidade' contratada do ISP."},
+ // ── FASE 4 ──
+ {ph:3,xp:100,t:25,panel:"ping-jitter",q:"Um usuário reclama: 'A Internet está lenta!'. Analisando o ping acima, qual problema aparece com mais evidência?",
+  o:["Perda de pacotes","Grande variação no tempo das respostas (jitter)","DNS parado","Cabo desconectado"],a:1,
+  e:"Todos os pacotes chegaram (0% de perda), mas os tempos variam de 12 ms a 240 ms — jitter elevado, péssimo para voz, vídeo e jogos."},
+ {ph:3,xp:100,t:25,panel:"ping-loss",q:"O ping mostra 25% de pacotes perdidos. O que isso pode indicar?",
+  o:["Congestionamento na rede","A Internet está perfeita","O monitor está com defeito","Falta de memória RAM"],a:0,
+  e:"A perda de pacotes corresponde aos pacotes que não chegam ao destino e pode indicar problemas na rede, como congestionamento."},
+ {ph:3,xp:100,t:25,panel:"tracert",q:"Analise o tracert acima. Qual salto (hop) merece investigação imediata?",
+  o:["Salto 1 — 1 ms","Salto 2 — 4 ms","Salto 3 — solicitação expirada","Salto 4 — 18 ms"],a:2,
+  e:"Analisar o percurso do pacote auxilia na identificação de pontos de falha — o salto 3 não respondeu, indicando possível elo rompido na rota."},
+ // ── FASE 5 ──
+ {type:"sort",ph:4,xp:300,t:90},
+ // ── FASE 6 ──
+ {ph:5,xp:100,t:25,q:"Qual protocolo de rede transmite mensagens de erro/operacionais e está por trás do ping e do tracert?",
+  o:["ICMP","FTP","SMTP","SSH"],a:0,
+  e:"O ICMP é fundamental para comunicar erros e mensagens operacionais numa rede IP e auxilia no diagnóstico — já o usamos no ping e no tracert!"},
+ {ph:5,xp:100,t:25,q:"No SNMP, quem supervisiona e monitora as atividades dos agentes?",
+  o:["O Gestor","O MIB","O roteador de borda","O usuário final"],a:0,
+  e:"Componentes do SNMP: Gestor (supervisiona e monitora os agentes), Agente (software no dispositivo gerido) e MIB (repositório hierárquico de informações)."},
+ {ph:5,xp:100,t:25,q:"No SNMP, quando o agente notifica o Gestor automaticamente sobre um evento significativo, isso é chamado de...",
+  o:["GetNextRequest","Trap (Armadilha)","Echo Reply","Handshake"],a:1,
+  e:"Trap: o agente notifica o Gestor sempre que um evento significativo ocorre. Já o GetNextRequest permite percorrer sequencialmente as entradas do MIB."},
+ // 🎁 BÔNUS SNMP
+ {ph:5,xp:100,bonus:true,t:30,panel:"snmpwalk",
+  q:"🎁 Bônus! No comando acima, o que representa o parâmetro <b>-c público</b>?",
+  o:["A comunidade SNMP configurada no dispositivo","A versão do protocolo SNMP","O nome do Gestor","A porta de conexão"],a:0,
+  e:"<b>-c público</b>: a comunidade SNMP configurada no dispositivo. E o <b>192.168.1.1</b> é o endereço IP do dispositivo de rede (ex.: roteador). No Windows, utilize ferramentas como o Paessler SNMP Tester ou o Net-SNMP."},
+ {ph:5,xp:100,bonus:true,t:30,panel:"snmpwalk",
+  q:"🎁 Bônus! E o parâmetro <b>-v 2c</b>?",
+  o:["A versão do protocolo SNMP utilizada","A comunidade de segurança","O endereço do Gestor","O nível de criptografia"],a:0,
+  e:"<b>-v 2c</b>: a versão do protocolo SNMP. Com ela, Gestor e Agente trocam informações padronizadas organizadas na MIB (Base de Informação de Gestão)."},
+ // ── FASE 7 ──
+ {ph:6,xp:100,t:25,q:"Qual biblioteca Python multiplataforma facilita a configuração e o gerenciamento de dispositivos de rede de diversos fabricantes?",
+  o:["Netmiko","Pandas","Flask","OpenCV"],a:0,
+  e:"O Netmiko auxilia engenheiros de rede na execução de comandos em switches, roteadores e firewalls de forma programática e repetitiva."},
+ {ph:6,xp:100,t:25,q:"Qual plataforma de software livre é considerada uma ferramenta de orquestração de dispositivos interligados à rede?",
+  o:["Ansible","Photoshop","Traceroute","Grafana"],a:0,
+  e:"O Ansible facilita a implantação em lote de configurações de servidores e serviços, a execução de tarefas ad hoc e a gestão de configurações."},
+ // ── FASE 8 ──
+ {ph:7,xp:100,t:25,q:"Validar a identidade de um usuário ou dispositivo ANTES de conceder acesso à rede é chamado de...",
+  o:["Autenticação","Auditoria","Backup","Balanceamento"],a:0,
+  e:"A autenticação assegura que quem tenta aceder aos recursos é, de fato, quem afirma ser — senhas, certificados digitais, 2FA e biometria."},
+ {ph:7,xp:100,t:25,q:"Qual princípio de segurança assegura que as informações recebidas sejam precisas, inalteradas e corretas?",
+  o:["Confidencialidade","Integridade","Disponibilidade","Não-repúdio"],a:1,
+  e:"Integridade: garante que o conteúdo não foi alterado/manipulado na transmissão — cobre a integridade do sistema e dos dados."},
+ {ph:7,xp:100,t:25,q:"Qual sistema monitora o tráfego e ENVIA ALERTAS sobre atividades suspeitas, sem bloquear?",
+  o:["IPS","IDS","DNS","DHCP"],a:1,
+  e:"O IDS detecta e envia alertas aos administradores; o IPS detecta E adota medidas para impedir tráfego malicioso, bloqueando pacotes."},
+ // ── FASE 9 ──
+ {ph:8,xp:100,t:25,q:"Seu jogo online viralizou da noite para o dia. Sem considerar um fator, haverá gargalos e até falha total do serviço. Qual fator?",
+  o:["A escalabilidade dos servidores","A cor do logo do jogo","O preço do ingresso","A marca do teclado"],a:0,
+  e:"Escalabilidade é a capacidade de gerir quantidade crescente de trabalho — sem ela, esgotamos recursos e o serviço pode falhar completamente."},
+ {ph:8,xp:100,t:25,q:"Qual prática envolve atividades programadas regularmente para prevenir falhas antes que se tornem críticas?",
+  o:["Manutenção preventiva","Desligamento noturno","Formatação semanal","Ignorar os alertas"],a:0,
+  e:"Manutenção preventiva: atividades programadas regulares — atualização de firmware, inspeção física de hardware e limpeza de racks contra superaquecimento."},
+ // ── FASE 10: INCIDENTE ──
+ {type:"inc",ph:9,xp:500,t:30,tl:1,panel:"noc-alert",q:"09:01 — Usuários do 3º andar reclamam de lentidão. Qual é o SINTOMA que você acabou de identificar?",
+  o:["Usuários relatando lentidão na rede","O servidor foi desligado","O firewall bloqueou todos os acessos","O cabo do datacenter rompeu"],a:0,
+  e:"Identificar a questão é a 1ª etapa da gestão de falhas — como um médico examina os sintomas, analisamos as métricas da rede."},
+ {type:"inc",ph:9,xp:500,t:30,tl:2,panel:"noc-alert",q:"O painel mostra: Latência 350 ms · Packet Loss 22% · Link 98%. Qual métrica chama sua atenção PRIMEIRO?",
+  o:["Utilização do link (98%) e perda de pacotes (22%)","A temperatura da sala do NOC","O número de licenças do software","O horário do último backup"],a:0,
+  e:"Se uma métrica principal divergir do valor esperado, isso é um 'sintoma' — utilização alta + perda de pacotes indicam congestionamento."},
+ {type:"inc",ph:9,xp:500,t:30,tl:3,panel:"noc-alert",
+  q:"O ping ao servidor retorna tempo=350 ms (sem timeout). O servidor está realmente FORA do ar?",
+  o:["Não — ele responde, mas com degradação severa","Sim, está completamente morto","Sim, foi hackeado","Precisa ser formatado agora"],a:0,
+  bad:{1:"⚠️ Cuidado! O servidor RESPONDE — o problema é o caminho, não a máquina. -200 XP e -5% de disponibilidade.",
+       3:"⚠️ Decisão precipitada! Formatar sem diagnosticar destrói evidências. -200 XP e -5% de disponibilidade."},
+  e:"O servidor continua respondendo: há degradação (alta latência), não queda total. Reiniciar ou formatar sem investigar destrói evidências."},
+ {type:"inc",ph:9,xp:500,t:30,tl:4,panel:"noc-alert",
+  q:"Para confirmar o caminho e localizar o gargalo, qual comando/ferramenta você utiliza?",
+  o:["tracert (ou o mapa de rotas do NMS)","Compilar o código-fonte","Trocar a senha do admin","Reinstalar o navegador"],a:0,
+  e:"O tracert analisa o percurso que o pacote realiza entre os dispositivos e auxilia na identificação de potenciais pontos de falha."},
+ {type:"inc",ph:9,xp:500,t:30,tl:5,panel:"noc-alert",
+  q:"O tracert mostra saltos normais até o roteador da distribuição. Qual componente deve ser ISOLADO?",
+  o:["O enlace/link saturado entre distribuição e core","O monitor do NOC","O teclado do helpdesk","O site externo da empresa"],a:0,
+  e:"Isolar o problema é examinar pequenos segmentos em busca do elo rompido — o gargalo está no link com 98% de utilização."},
+ {type:"inc",ph:9,xp:500,t:30,tl:5,panel:"noc-alert",
+  q:"Etapa 'Reunir informações': quais dados você coleta para documentar e analisar?",
+  o:["Logs do NMS, telemetria e estatísticas de latência/perda","Nada — já sabemos tudo","Apenas prints de memes do grupo","Somente o número de funcionários"],a:0,
+  e:"A coleta de dados não visa apenas resolver o problema, mas também documentar e aprimorar futuras estratégias de gerenciamento."},
+ {type:"inc",ph:9,xp:500,t:30,tl:6,panel:"noc-alert",
+  q:"Análise concluída: o link está congestionado. Qual solução você IMPLEMENTA?",
+  o:["Aplicar QoS/políticas na distribuição e ativar link redundante/balanceamento","Desligar a rede até amanhã","Comprar mais monitores para o NOC","Aumentar a fonte do servidor"],a:0,
+  e:"A camada de distribuição implementa políticas de rede (filtragem, segurança e QoS); links redundantes e balanceamento de carga otimizam o desempenho."},
+ {type:"inc",ph:9,xp:500,t:30,tl:7,panel:"noc-normal",
+  q:"Solução aplicada (QoS + link redundante). Como você VALIDA que resolveu?",
+  o:["Monitorar e comparar as métricas com os valores esperados","Esperar alguém reclamar de novo","Desligar o NMS para economizar","Mudar a senha do Wi-Fi"],a:0,
+  e:"Após implementar as soluções, a rede é monitorada e validada — executando as mesmas rotinas de análise para verificar se as métricas voltaram ao esperado."}
+];
+
+const DRAG_ITEMS=[
+ {t:"Roteador de alta capacidade que transporta grandes volumes de tráfego",z:0,w:"Core: camada central com alta velocidade de transmissão e grandes volumes."},
+ {t:"Redundâncias que asseguram a continuidade do serviço",z:0,w:"Core: possui redundâncias que garantem a continuidade do serviço."},
+ {t:"Switch que interliga VLANs e aplica políticas de QoS",z:1,w:"Distribuição: implementa filtragem, segurança e QoS entre sub-redes e VLANs."},
+ {t:"Camada intermediária que agrega o tráfego dos switches de acesso",z:1,w:"Distribuição: agrega e redistribui o tráfego antes de encaminhá-lo ao core."},
+ {t:"Access Point (AP) que conecta laptops e tablets",z:2,w:"Acesso: aqui encontramos APs, switches de acesso, computadores e tablets."},
+ {t:"Camada que interage diretamente com os usuários finais",z:2,w:"Acesso: é a camada que interage com os usuários finais da rede."}];
+const ZONES=["🧠 CORE (Núcleo/Borda)","🔀 DISTRIBUIÇÃO","📶 ACESSO"];
+
+const SORT_ITEMS=[
+ {t:"Identifique a questão",c:"#14b8c4",w:"Como um médico, examine as métricas e descubra o 'sintoma'."},
+ {t:"Isole o problema",c:"#2f6fed",w:"Examine pequenos segmentos em busca do elo rompido."},
+ {t:"Reúna informações pertinentes",c:"#8e44ad",w:"Colete os dados que evidenciam o problema e documente."},
+ {t:"Análise dos dados",c:"#e91e63",w:"Inspeção direta, métricas gráficas ou algoritmos de análise."},
+ {t:"Implementar soluções",c:"#f4511e",w:"Procedimentos conhecidos ou gerados por análises anteriores."},
+ {t:"Monitorização e validação",c:"#f6a821",w:"Verifique se as métricas voltaram aos valores esperados."}];
+
+/* ─────────── Placar (localStorage) ─────────── */
+const LB_KEY="netrescue_scores_v1";
+function loadScores(){try{return JSON.parse(localStorage.getItem(LB_KEY)||"[]");}catch(e){return[];}}
+function persistScores(l){try{localStorage.setItem(LB_KEY,JSON.stringify(l));return true;}catch(e){return false;}}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function sortLB(l){return [...l].sort((a,b)=>b.xp-a.xp||b.sla-a.sla||a.ts-b.ts);}
+function saveEntry(name,xp,sla,ok,tot){
+  const entry={n:name.slice(0,24),xp,sla,ok,tot,ts:Date.now()};
+  const list=loadScores();list.push(entry);
+  if(!persistScores(list))return null;
+  return sortLB(list).indexOf(entry)+1;
+}
+function saveTeamScore(){
+  if(!S||S.saved)return;
+  const inp=document.getElementById("teamName");
+  if(!inp)return;
+  const name=(inp.value||"").trim();
+  if(!name){inp.placeholder="Digite o nome da equipe!";inp.focus();return;}
+  const T=cur();
+  const pos=saveEntry(name,T.xp,Math.round(T.avail/10),T.ok,T.tot);
+  if(pos===null){alert("Não foi possível salvar neste navegador.");return;}
+  S.saved=true;S.lastPos=pos;
+  S.screen==="over"?renderGameOver():renderFinal();
+}
+function saveVsScores(){
+  if(!S||S.savedVs)return;
+  const list=loadScores();
+  S.teams.forEach(T=>{
+    if(!T.saved){
+      const entry={n:T.name,xp:T.xp,sla:Math.round(T.avail/10),ok:T.ok,tot:T.tot,ts:Date.now()};
+      list.push(entry);T.saved=true;
+      if(persistScores(list))T.lastPos=sortLB(loadScores()).indexOf(entry)+1;
+    }
+  });
+  S.savedVs=true;renderVsEnd();
+}
+function saveBoxHTML(){
+  if(!S)return"";
+  if(S.saved)return `<div class="saved-msg">💾 Pontuação salva! ${S.lastPos?"Posição #"+S.lastPos+" no ranking. 🎉":""}</div>`;
+  return `<div class="savebox">
+    <input id="teamName" maxlength="24" placeholder="Nome da equipe (ex.: Equipe Wi-Fi)">
+    <button class="btn" onclick="saveTeamScore()">💾 Salvar no placar</button></div>
+    <p class="muted" style="font-size:.72rem;margin-top:6px">A pontuação fica salva neste navegador.</p>`;
+}
+function wireTeamInput(){
+  const i=document.getElementById("teamName");
+  if(i)i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();saveTeamScore();}});
+}
+function renderScoreboard(from){
+  sbFrom=from;
+  const list=sortLB(loadScores());
+  const medals=["🥇","🥈","🥉"];
+  const rows=list.length?list.slice(0,10).map((e,i)=>`
+    <div class="row ${i===0?"top1":i===1?"top2":i===2?"top3":""}">
+      <span class="rk">${i<3?medals[i]:i+1}</span>
+      <span class="nm">${esc(e.n)}</span>
+      <span class="meta"><b>${e.xp} XP</b>SLA ${e.sla}% · ${new Date(e.ts).toLocaleDateString("pt-BR")}</span>
+    </div>`).join("")
+    :`<div class="lb empty">Nenhuma equipe registrada ainda. Jogue e salve sua pontuação! 🎯</div>`;
+  const back=from==="final"||from==="vsend"?"renderFinal":"renderIntro";
+  const backFn=from==="vsend"?"renderVsEnd":back;
+  stage.innerHTML=`<div class="card center fade">
+    <div style="font-size:2.6rem">🏆</div>
+    <p class="eyebrow">Competição TechNet</p><h2>Placar de Equipes</h2>
+    <div class="lb">${rows}</div>
+    <div class="mt" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn" onclick="${backFn}()">◀ Voltar</button>
+      ${list.length?`<button class="btn ghost" onclick="clearScores()">🗑️ Limpar placar</button>`:""}
+    </div></div>`;
+}
+function clearScores(){
+  if(confirm("Apagar TODAS as pontuações do placar?")){persistScores([]);renderScoreboard(sbFrom);}
+}
+function introPreview(){
+  const list=loadScores();
+  if(!list.length)return "";
+  const top=sortLB(list).slice(0,3);
+  return `<div class="minilb">${top.map((e,i)=>`<span class="mchip">${["🥇","🥈","🥉"][i]} ${esc(e.n)} · ${e.xp} XP</span>`).join("")}</div>
+    <div class="mt"><button class="btn ghost" onclick="renderScoreboard('intro')">🏆 Placar completo</button></div>`;
+}
+
+/* ─────────── Estado & helpers ─────────── */
+function newTeam(name){return{name,xp:0,avail:1000,lives:3,streak:0,best:0,ok:0,tot:0,byPhase:{},wrong:[],saved:false,lastPos:0,elim:false};}
+const cur=()=>S.teams[S.turn];
+function tColor(i){return i===0?"var(--tA)":"var(--tB)";}
+function heartsOf(T){return [0,1,2].map(i=>`<span class="${i<T.lives?"":"off"}">❤️</span>`).join("");}
+function hudHTML(){
+  if(S.mode==="solo"){
+    const T=cur(),sla=Math.round(T.avail/10),cls=sla>=70?"":sla>=40?" mid":" low";
+    return `<div class="hud">
+      <span class="chip">⭐ ${T.xp} XP</span>
+      ${T.streak>=2?`<span class="chip streak">🔥 x${T.streak}</span>`:`<span class="chip">🔥 —</span>`}
+      <span class="chip hearts">${heartsOf(T)}</span>
+      <span class="chip">📶 SLA ${sla}%</span></div>
+      <div class="availbar${cls}"><div style="width:${T.avail/10}%"></div></div>`;
+  }
+  const panels=S.teams.map((T,i)=>{
+    const sla=Math.round(T.avail/10);
+    return `<div class="tp ${i===0?"tpA":"tpB"} ${i===S.turn&&!T.elim?"act":""}">
+      <span class="tdot" style="background:${tColor(i)}"></span>
+      <span class="tname">${esc(T.name)}</span>
+      <span>⭐${T.xp}</span><span class="hearts">${heartsOf(T)}</span><span>📶${sla}%</span>
+      ${i===S.turn&&!T.elim?'<span class="you">▶ SUA VEZ</span>':T.elim?'<span class="you" style="background:#888">☠️</span>':""}
+    </div>`;}).join("");
+  const T=cur(),sla=Math.round(T.avail/10),cls=sla>=70?"":sla>=40?" mid":" low";
+  return `<div class="vsbar">${panels}</div><div class="availbar${cls}"><div style="width:${T.avail/10}%"></div></div>`;
+}
+function turnBanner(){
+  if(S.mode!=="vs")return "";
+  const T=cur();
+  return `<div class="turnbanner ${S.turn===0?"tba":"tbb"}">🎤 VEZ DE: ${esc(T.name)}</div>`;
+}
+function startTimer(sec,onExp){
+  clearInterval(timerId);
+  const bar=$("#tbar"); if(!bar||!TIMER_ON||!sec) return;
+  let left=sec; const max=sec;
+  const paint=()=>{ if(!document.getElementById("tbar"))return clearInterval(timerId);
+    const p=left/max*100; bar.style.width=p+"%";
+    bar.className=left>max*0.6?"":left>max*0.3?"mid":"low"; };
+  paint();
+  timerId=setInterval(()=>{left=Math.max(0,left-0.1);paint();if(left<=0){clearInterval(timerId);onExp&&onExp();}},100);
+}
+
+/* ─────────── Fluxo ─────────── */
+function start(mode,names){
+  TIMER_ON=$("#tmr")?$("#tmr").checked:true;
+  S={mode,turn:0,saved:false,lastPos:0,savedVs:false,screen:"play",
+     teams:mode==="vs"?names.map(n=>newTeam(n)):[newTeam(names?names[0]:"Equipe TechNet")]};
+  cursor=0; next();
+}
+function next(){
+  const c=CH[cursor];
+  if(!c) return S.justInc?renderResolve():(S.mode==="vs"?renderVsEnd(false):renderFinal());
+  if(!S.seen){S.seen=new Set();}
+  if(!S.seen.has(c.ph)){S.seen.add(c.ph);return renderPhaseIntro(c.ph);}
+  renderChallenge();
+}
+function advance(){
+  const T=cur();
+  if(T.lives<=0){
+    if(S.mode==="vs"){
+      const other=S.teams[1-S.turn];
+      if(other.lives>0){T.elim=true;return renderElimScreen();}
+      T.elim=true;other.elim=true;return renderVsEnd(true);
+    }
+    return renderGameOver();
+  }
+  cursor++;
+  if(cursor>=CH.length) return S.justInc?renderResolve():(S.mode==="vs"?renderVsEnd(false):renderFinal());
+  if(S.mode==="vs"){const other=1-S.turn; if(S.teams[other].lives>0) S.turn=other;}
+  next();
+}
+function renderPhaseIntro(f){
+  const p=PH[f];
+  stage.innerHTML=hudHTML()+`<div class="card center fade">
+    <div style="display:grid;place-items:center">
+      <div class="pbadge">${p.i}</div>
+      <p class="eyebrow" style="margin-top:12px">Fase ${f+1} de 10</p>
+      <h2>${p.n}</h2><p class="muted" style="max-width:480px;margin:6px auto 0">${p.d}</p>
+      ${turnBanner()}
+      <div class="mt"><button class="btn" onclick="renderChallenge()">Iniciar fase ▶</button></div>
+    </div></div>`;
+}
+function renderChallenge(){
+  const c=CH[cursor];
+  if(c.type==="drag")return renderDrag();
+  if(c.type==="sort")return renderSort();
+  renderMCQ(c);
+}
+
+/* ─────────── MCQ / INCIDENTE ─────────── */
+function renderMCQ(c){
+  S.justInc=c.type==="inc";
+  let stepInfo="";
+  if(c.bonus)stepInfo=`<span class="chip bonuschip">🎁 BÔNUS +${c.xp} XP</span>`;
+  else if(c.type==="inc"){
+    const k=CH.slice(0,cursor).filter(x=>x.type==="inc").length+1;
+    stepInfo=`<span class="chip">Decisão ${k}/8</span>`;
+  }
+  const tl=c.type==="inc"?timelineHTML(c.tl):"";
+  const panel=c.panel?PANELS[c.panel]:"";
+  curOrd=S.mode==="vs"?seededShuffle(c.o.length,cursor*13+S.turn*7+5):c.o.map((_,i)=>i);
+  curCorrect=curOrd.indexOf(c.a);
+  stage.innerHTML=hudHTML()+`<div class="card fade" id="qcard">
+    <div class="qmeta"><span class="eyebrow">${PH[c.ph].i} Fase ${c.ph+1} — ${PH[c.ph].n}</span>${stepInfo}</div>
+    <div class="bar"><div id="tbar"></div></div>
+    ${turnBanner()}${tl}${panel}
+    <p class="qtext">${c.q}</p>
+    <div class="opts">${curOrd.map((oi,i)=>`<button class="opt" id="opt${i}" onclick="answer(${i})"><span class="key">${i+1}</span>${c.o[oi]}</button>`).join("")}</div>
+    <div id="fb"></div></div>`;
+  startTimer(c.t,()=>answer(-1));
+}
+function timelineHTML(n){
+  let h=`<div class="term tl"><div class="tt">🚨 Log do incidente</div><pre>`;
+  for(let i=0;i<n;i++)h+=(i===n-1?`<span class="new">${TIMELINE[i]}</span>`:TIMELINE[i])+"\n";
+  return h+`</pre></div>`;
+}
+function grade(hit,c){
+  const T=cur();
+  T.tot++; T.byPhase[c.ph]=T.byPhase[c.ph]||{ok:0,tot:0}; T.byPhase[c.ph].tot++;
+  let title;
+  if(hit){
+    T.streak++;T.best=Math.max(T.best,T.streak);T.ok++;T.byPhase[c.ph].ok++;
+    const pts=c.xp+Math.min((T.streak-1)*25,100);
+    T.xp+=pts;
+    const dA=c.type==="inc"?20:10;
+    T.avail=Math.min(1000,T.avail+dA);
+    title=`✅ Correto! +${pts} XP · 📶 +${dA/10}% disponibilidade${T.streak>=2?` · 🔥 x${T.streak}`:""}`;
+    if(T.streak%4===0&&T.lives<3){T.lives++;title+=" · ❤️ vida recuperada!";}
+  }else{
+    T.streak=0;T.lives--;
+    T.avail=Math.max(0,T.avail-(c.type==="inc"?50:30));
+    T.wrong.push({n:T.tot,q:c.q,ans:c.o[c.a]});
+    title=arguments[2]===-1?"⏰ Tempo esgotado!":"❌ Errado!";
+  }
+  return title;
+}
+function answer(i){
+  const c=CH[cursor];
+  if($("#fb").innerHTML)return;
+  clearInterval(timerId);
+  const hit=i===curCorrect;
+  let title=grade(hit,c,i);
+  if(!hit&&i!==-1&&c.bad&&c.bad[i]){const T=cur();title=c.bad[i];T.xp=Math.max(0,T.xp-200);title+=` (total: ${T.xp} XP)`;}
+  for(let k=0;k<c.o.length;k++){
+    const b=$("#opt"+k);b.disabled=true;
+    if(k===curCorrect)b.classList.add("correct");else if(k===i)b.classList.add("wrong");
+  }
+  $("#fb").innerHTML=`<div class="feedback ${hit?"ok":"bad"}"><b>${title}</b>${c.e}
+    <div class="mt"><button class="btn" onclick="advance()">Continuar ▶</button></div></div>`;
+  if(!hit)$("#qcard").classList.add("shake");
+}
+
+/* ─────────── FASE 2: DRAG ─────────── */
+function renderDrag(){
+  const ord=S.mode==="vs"?seededShuffle(6,cursor*31+S.turn*17):shuffle([0,1,2,3,4,5]);
+  drag={sel:-1,pl:Array(6).fill(-1),graded:false,ord};
+  stage.innerHTML=hudHTML()+`<div class="card fade" id="qcard">
+    <div class="qmeta"><span class="eyebrow">🏗️ Fase 2 — Construa a arquitetura</span><span class="chip">6 equipamentos · +50 XP cada</span></div>
+    <div class="bar"><div id="tbar"></div></div>
+    ${turnBanner()}
+    <p class="qtext">A TechNet adotou o modelo <b>hierárquico</b>. Clique em um equipamento e depois na camada correta. Clique num item já colocado para devolvê-lo.</p>
+    <div class="pool" id="pool"></div>
+    <div class="zones" id="zones"></div>
+    <div id="fb"></div></div>`;
+  paintDrag();startTimer(120,dragTimeUp);
+}
+function paintDrag(){
+  const pool=$("#pool"),zones=$("#zones");
+  pool.innerHTML=drag.ord.filter(i=>drag.pl[i]===-1).map(i=>
+    `<button class="dcard ${drag.sel===i?"sel":""}" onclick="pickItem(${i})">${DRAG_ITEMS[i].t}</button>`).join("")||`<p class="muted">Todos os equipamentos foram colocados. Verifique! ✔</p>`;
+  zones.innerHTML=ZONES.map((z,zi)=>{
+    const items=drag.ord.filter(i=>drag.pl[i]===zi);
+    return `<div class="zone ${drag.graded?"locked":""}" onclick="dropZone(${zi})"><h4>${z}</h4>
+      ${items.map(i=>{const it=DRAG_ITEMS[i];const cls=drag.graded?(it.z===zi?"okc":"badc"):"";return `<div class="dcard inz ${cls}" onclick="unassign(event,${i})">${it.t}</div>`;}).join("")}</div>`;}).join("");
+}
+function pickItem(i){if(drag.graded)return;drag.sel=i;paintDrag();}
+function unassign(ev,i){ev.stopPropagation();if(drag.graded)return;drag.pl[i]=-1;drag.sel=i;paintDrag();}
+function dropZone(zi){if(drag.graded||drag.sel<0)return;drag.pl[drag.sel]=zi;drag.sel=-1;paintDrag();}
+function dragTimeUp(){
+  clearInterval(timerId);if(drag.graded)return;
+  const T=cur();T.lives--;T.avail=Math.max(0,T.avail-30);T.streak=0;
+  drag.pl=DRAG_ITEMS.map(x=>x.z);drag.graded=true;paintDrag();
+  showDragFB("⏰ Tempo esgotado! Veja a resposta correta.",0);
+}
+function dragVerify(){
+  if(drag.graded)return;clearInterval(timerId);
+  const T=cur();
+  const ok=drag.pl.filter((p,i)=>p===DRAG_ITEMS[i].z).length;
+  T.xp+=50*ok;
+  T.avail=Math.max(0,Math.min(1000,T.avail+(2*ok-6)*10));
+  T.byPhase[1]={ok,tot:6};T.tot++;
+  if(ok>=5){T.ok++;T.streak++;T.best=Math.max(T.best,T.streak);
+    if(T.streak%4===0&&T.lives<3)T.lives++;}
+  else if(ok<=3){T.lives--;T.streak=0;$("#qcard").classList.add("shake");}
+  drag.graded=true;paintDrag();
+  showDragFB(ok===6?"🏆 Arquitetura perfeita!":ok>=4?"👍 Bom trabalho — revisão abaixo:":"📚 Estude a teoria das camadas e tente de novo!",ok);
+}
+function showDragFB(head,ok){
+  const rows=DRAG_ITEMS.map(it=>{
+    const placed=drag.pl[DRAG_ITEMS.indexOf(it)];
+    const good=placed===it.z;
+    return `<div class="fbrow"><span class="st">${good?"✅":"❌"}</span><span><b>${it.t}</b><br>→ ${ZONES[it.z]}<br><i>${it.w}</i></span></div>`;}).join("");
+  $("#fb").innerHTML=`<div class="feedback ${ok>=5?"ok":"bad"}"><b>${head} · +${50*ok} XP</b>${rows}
+    <div class="mt"><button class="btn" onclick="advance()">Continuar ▶</button></div></div>`;
+}
+
+/* ─────────── FASE 5: ORDENAR ─────────── */
+function renderSort(){
+  sort_={seq:[],tries:0,locked:false,disp:shuffle([0,1,2,3,4,5])};
+  stage.innerHTML=hudHTML()+`<div class="card fade" id="qcard">
+    <div class="qmeta"><span class="eyebrow">🔎 Fase 5 — Caça à falha</span><span class="chip">1ª tentativa: +300 XP</span></div>
+    <div class="bar"><div id="tbar"></div></div>
+    ${turnBanner()}
+    <p class="qtext">Um incidente aconteceu! Monte a sequência correta da <b>gestão de falhas</b>: clique nas etapas na ordem certa.</p>
+    <div class="slots" id="slots"></div>
+    <div class="schips" id="schips"></div>
+    <div class="mt" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn ghost" onclick="undoSort()">↩️ Desfazer último</button>
+      <button class="btn" id="verBtn" onclick="checkSort()" disabled>✅ Verificar sequência</button>
+    </div>
+    <div id="fb"></div></div>`;
+  paintSort();startTimer(90,sortTimeUp);
+}
+function paintSort(){
+  $("#slots").innerHTML=SORT_ITEMS.map((s,i)=>{
+    const chosen=sort_.seq[i];
+    if(chosen===undefined)return `<div class="slot"><span class="num">${i+1}</span><span class="muted">—</span></div>`;
+    return `<div class="slot done" style="background:${s.c}"><span class="num" style="background:rgba(255,255,255,.25)">${i+1}</span>${s.t}</div>`;}).join("");
+  $("#schips").innerHTML=sort_.disp.map(i=>sort_.seq.includes(i)?
+    "":`<button class="schip" style="background:${SORT_ITEMS[i].c}" onclick="pushSort(${i})">${SORT_ITEMS[i].t}</button>`).join("");
+  $("#verBtn").disabled=sort_.seq.length!==6||sort_.locked;
+}
+function pushSort(i){if(sort_.locked||sort_.seq.length>=6)return;sort_.seq.push(i);paintSort();}
+function undoSort(){if(sort_.locked||!sort_.seq.length)return;sort_.seq.pop();paintSort();}
+function sortTimeUp(){
+  clearInterval(timerId);if(sort_.locked)return;
+  const T=cur();T.lives--;T.avail=Math.max(0,T.avail-30);T.streak=0;
+  revealSort("⏰ Tempo esgotado! Esta é a sequência correta do material:");
+}
+function checkSort(){
+  if(sort_.seq.length!==6||sort_.locked)return;clearInterval(timerId);
+  const T=cur();
+  const good=sort_.seq.every((v,i)=>v===i);
+  if(good){
+    const pts=sort_.tries===0?300:150;
+    T.xp+=pts;T.tot++;T.ok++;T.byPhase[4]={ok:sort_.tries===0?1:0.5,tot:1};
+    T.streak++;T.best=Math.max(T.best,T.streak);
+    if(T.streak%4===0&&T.lives<3)T.lives++;
+    sort_.locked=true;
+    $("#fb").innerHTML=`<div class="feedback ok"><b>🎯 Sequência perfeita! +${pts} XP ${sort_.tries>0?"(após tentativas)":""}</b>
+      ${SORT_ITEMS.map(s=>`<div class="fbrow"><span class="st">✅</span><span><b style="color:${s.c}">${s.t}</b> — ${s.w}</span></div>`).join("")}
+      <div class="mt"><button class="btn" onclick="advance()">Continuar ▶</button></div></div>`;
+  }else{
+    sort_.tries++;let k=0;while(k<6&&sort_.seq[k]===k)k++;
+    sort_.seq=sort_.seq.slice(0,k);
+    T.xp=Math.max(0,T.xp-100);T.avail=Math.max(0,T.avail-10);
+    sort_.disp=shuffle([0,1,2,3,4,5]);
+    paintSort();
+    $("#fb").innerHTML=`<div class="feedback bad"><b>⚠️ A posição ${k+1} estava errada — corrigida! (-100 XP)</b>
+      Dica: reúnir informações vem DEPOIS de isolar, e analisar vem depois de reunir. Tente de novo! ${sort_.tries>=2?'<br><button class="btn ghost mt" onclick="revealSort(\'👀 Ver sequência correta (+50 XP)\')">👀 Ver sequência correta</button>':""}</div>`;
+  }
+}
+function revealSort(msg){
+  sort_.seq=[0,1,2,3,4,5];sort_.locked=true;
+  const T=cur();T.xp+=50;T.tot++;T.byPhase[4]={ok:0,tot:1};
+  paintSort();
+  $("#fb").innerHTML=`<div class="feedback bad"><b>${msg}</b>
+    ${SORT_ITEMS.map(s=>`<div class="fbrow"><span class="st">✅</span><span><b style="color:${s.c}">${s.t}</b> — ${s.w}</span></div>`).join("")}
+    <div class="mt"><button class="btn" onclick="advance()">Continuar ▶</button></div></div>`;
+}
+
+/* ─────────── FIM: SOLO ─────────── */
+function rankOf(x){
+  if(x>=5600)return{t:"🏆 Network Master",e:"🏆",m:"Domínio total: NMS, métricas, falhas, segurança e incidentes sob controle!"};
+  if(x>=4200)return{t:"🥇 Administrador Sênior",e:"🥇",m:"Excelente! Falta pouco para o nível Master."};
+  if(x>=2800)return{t:"🥈 Administrador Pleno",e:"🥈",m:"Bom trabalho! Revise os erros abaixo e tente novamente."};
+  return{t:"🥉 Trainee de Redes",e:"🥉",m:"Todo administrador começou aqui. Revise o material da Semana 5 e jogue de novo!"};
+}
+function renderResolve(){
+  stage.innerHTML=hudHTML()+`<div class="card center fade">
+    <div class="resbox">╔══ INCIDENTE RESOLVIDO ══╗</div>
+    ${PANELS["noc-normal"]}
+    <p class="muted">As métricas voltaram aos valores esperados — validação concluída. 🟢</p>
+    <div class="mt"><button class="btn" onclick="cursor++;S.mode==='vs'?renderVsEnd(false):renderFinal()">Ver resultado 🏁</button></div></div>`;
+}
+function renderFinal(){
+  clearInterval(timerId);S.screen="final";
+  const T=cur(),r=rankOf(T.xp),sla=Math.round(T.avail/10);
+  const avg=ps=>{let o=0,t=0;ps.forEach(p=>{const b=T.byPhase[p]||{ok:0,tot:0};o+=b.ok;t+=b.tot;});return t?Math.round(100*o/t):0;};
+  const cats=[["🛰️ NMS & Arquitetura",[0,1,2]],["📊 Diagnóstico & Métricas",[3,4]],["🔎 Falhas, Protocolos & Bônus",[5,6]],["🔐 Segurança & Capacidade",[7,8]],["🚨 Incidente Crítico",[9]]];
+  stage.innerHTML=`<div class="card center fade">
+    <div style="font-size:3.6rem">${r.e}</div>
+    <p class="eyebrow">Relatório final — TechNet</p><h2>${r.t}</h2>
+    <p class="muted">${r.m}</p>
+    <div class="stats">
+      <div class="stat"><div class="v">${T.xp}</div><div class="l">XP TOTAL</div></div>
+      <div class="stat"><div class="v">${sla}%</div><div class="l">Disponibilidade</div></div>
+      <div class="stat"><div class="v">${T.ok}/${T.tot}</div><div class="l">Acertos</div></div>
+      <div class="stat"><div class="v">🔥${T.best}</div><div class="l">Melhor sequência</div></div>
+    </div>
+    <div style="text-align:left">${cats.map(([n,ps])=>`<div class="catbar"><div class="cl"><span>${n}</span><span>${avg(ps)}%</span></div><div class="cb"><div style="width:${avg(ps)}%"></div></div></div>`).join("")}</div>
+    ${T.wrong.length?`<div class="review"><p class="eyebrow" style="margin-top:14px">📋 Para revisar</p>
+      ${T.wrong.map(w=>`<details><summary>Desafio ${w.n} — ${w.q}</summary><p class="ans">✅ ${w.ans}</p></details>`).join("")}</div>`
+      :`<p style="color:var(--ok);font-weight:700;margin-top:12px">✨ Nenhum erro — rede 100% estável!</p>`}
+    ${saveBoxHTML()}
+    <div class="mt" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn ghost" onclick="renderScoreboard('final')">🏆 Placar de equipes</button>
+      <button class="btn" onclick="renderIntro()">🔄 Jogar novamente</button>
+    </div></div>`;
+  wireTeamInput();
+  if(T.xp>=4200)confetti();
+}
+function renderGameOver(){
+  clearInterval(timerId);S.screen="over";
+  const T=cur();
+  stage.innerHTML=`<div class="card center fade">
+    <div style="font-size:3.4rem">☕</div><h2>Pausa para o café… a rede colapsou!</h2>
+    <p class="muted">As 3 vidas acabaram no desafio ${T.tot}. Respire, revise o material e volte ao NOC.</p>
+    <div class="stats">
+      <div class="stat"><div class="v">${T.xp}</div><div class="l">XP</div></div>
+      <div class="stat"><div class="v">${Math.round(T.avail/10)}%</div><div class="l">SLA</div></div>
+      <div class="stat"><div class="v">${T.ok}/${T.tot}</div><div class="l">Acertos</div></div></div>
+    ${T.wrong.length?`<div class="review">${T.wrong.slice(-3).map(w=>`<details><summary>Desafio ${w.n} — ${w.q}</summary><p class="ans">✅ ${w.ans}</p></details>`).join("")}</div>`:""}
+    ${saveBoxHTML()}
+    <div class="mt"><button class="btn" onclick="renderIntro()">🔄 Tentar novamente</button></div></div>`;
+  wireTeamInput();
+}
+
+/* ─────────── VERSUS ─────────── */
+function renderElimScreen(){
+  const out=cur(),other=S.teams[1-S.turn];
+  stage.innerHTML=hudHTML()+`<div class="card center fade">
+    <div style="font-size:3.2rem">☠️</div>
+    <h2>${esc(out.name)} ficou sem vidas!</h2>
+    <p class="muted">A rede caiu sob sua gestão… 😬 A outra equipe assume o NOC!</p>
+    <div class="stats">
+      <div class="stat"><div class="v">${out.xp}</div><div class="l">XP final</div></div>
+      <div class="stat"><div class="v">${out.ok}/${out.tot}</div><div class="l">Acertos</div></div></div>
+    <div class="mt"><button class="btn" onclick="S.turn=1-S.turn;cursor++;next()">▶ Continuar com ${esc(other.name)}</button></div></div>`;
+}
+function renderVsEnd(doubleElim){
+  clearInterval(timerId);S.screen="vsend";
+  const [A,B]=S.teams;
+  const winner=doubleElim?null:(A.xp>B.xp?A:B.xp>A.xp?B:null);
+  const tie=!doubleElim&&A.xp===B.xp;
+  const wIdx=winner?(winner===A?0:1):-1;
+  const maxXp=Math.max(A.xp,B.xp,1);
+  const col=(T,i)=>{
+    const r=rankOf(T.xp);
+    return `<div class="vscol ${winner===T?"win":""}">
+      <div class="vr">${T.elim?"☠️":winner===T?"🏆":tie?"🤝":"🎖️"}</div>
+      <div class="vn" style="color:${tColor(i)}">${esc(T.name)}</div>
+      <div style="font-size:.72rem;font-weight:700;color:#5b6b8c">${T.elim?"Eliminada":r.t.replace(/^[^\w]+ /,"")}</div>
+      <div class="vs">⭐ ${T.xp} XP</div>
+      <div class="vs">📶 SLA ${Math.round(T.avail/10)}%</div>
+      <div class="vs">✅ ${T.ok}/${T.tot} acertos</div>
+      <div class="vs">🔥 melhor sequência: ${T.best}</div>
+    </div>`;};
+  const title=doubleElim?`💀 Dupla colapso! ${winner?esc(winner.name)+" resistiu mais…":""}`:tie?"🤝 Empate técnico!":`🏆 ${esc(winner.name)} venceu!`;
+  const details=S.teams.map((T,i)=>T.wrong.length?`<details style="text-align:left"><summary>📋 Erros de ${esc(T.name)} (${T.wrong.length})</summary>
+    ${T.wrong.map(w=>`<div style="margin-top:6px"><b>${w.q}</b><div class="ans">✅ ${w.ans}</div></div>`).join("")}</details>`:"").join("");
+  stage.innerHTML=`<div class="card center fade">
+    <div style="font-size:3rem">${doubleElim?"💀":tie?"🤝":"🏆"}</div>
+    <p class="eyebrow">Resultado do confronto</p><h2>${title}</h2>
+    <div class="vsfin">${col(A,0)}<div class="vsmark" style="align-self:center;font-weight:800;color:#b9c7e6">VS</div>${col(B,1)}</div>
+    <div class="xpbar" style="max-width:420px;margin:14px auto 0">
+      <div class="xl"><span style="color:${tColor(0)}">${esc(A.name)}</span><span style="color:${tColor(1)}">${esc(B.name)}</span></div>
+      <div class="xb"><div style="width:${A.xp/maxXp*100}%;background:linear-gradient(90deg,var(--tA),#f87171)"></div></div>
+      <div class="xb"><div style="width:${B.xp/maxXp*100}%;background:linear-gradient(90deg,var(--tB),#7fb2ff)"></div></div>
+    </div>
+    ${details}
+    ${S.savedVs?`<div class="saved-msg">💾 Ambas as equipes salvas no placar!</div>`
+      :`<div class="mt"><button class="btn" onclick="saveVsScores()">💾 Salvar ambas no placar</button></div>`}
+    <div class="mt" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn ghost" onclick="renderScoreboard('vsend')">🏆 Placar</button>
+      <button class="btn" onclick="renderIntro()">🔄 Nova partida</button>
+    </div></div>`;
+  if(winner&&winner.xp>=4200)confetti();
+}
+
+/* ─────────── INTRO ─────────── */
+function renderIntro(){
+  stage.innerHTML=`<div class="card center fade">
+    <p class="eyebrow">Universidade Jala · Redes de Computadores II · Semana 5 — Gestão de Rede</p>
+    <h1>🛡️ Network Rescue — Salve a Rede!</h1>
+    <p class="muted">Você acabou de ser contratado como <b>administrador de rede da TechNet</b>. Sua missão: <b>identificar → isolar → reunir informações → analisar → resolver → validar</b>.</p>
+    <div class="rules" style="text-align:left">
+      <div class="rule"><span>📶</span>SLA começa em 100% — cada erro derruba a disponibilidade</div>
+      <div class="rule"><span>❤️❤️❤️</span>3 vidas — a cada 4 acertos seguidos, recupera 1 ❤️</div>
+      <div class="rule"><span>⏱️</span>Cronômetro por decisão (desligável para projetor)</div>
+      <div class="rule"><span>⭐</span>100 XP · 300 XP nos especiais · 500 XP no incidente</div>
+      <div class="rule"><span>🎁</span>Bônus SNMP: interpretar o snmpwalk (+200 XP)</div>
+      <div class="rule"><span>⚔️</span>Versus: turnos alternados, opções embaralhadas por equipe</div>
+    </div>
+    <label class="check"><input type="checkbox" id="tmr" checked> Cronômetro ativo (desmarque para uso com projetor/turmas)</label>
+    <div class="modebox">
+      <div class="modecard" onclick="start('solo')">
+        <div class="mi">👤</div><h3>Modo Solo / Equipe única</h3>
+        <p class="muted" style="font-size:.78rem">Jogo completo, placar individual</p>
+      </div>
+      <div class="modecard" onclick="toggleVs()">
+        <div class="mi">⚔️</div><h3>Modo Versus — 2 equipes</h3>
+        <p class="muted" style="font-size:.78rem">Turnos alternados no mesmo computador</p>
+      </div>
+    </div>
+    <div id="vsForm" style="display:none">
+      <div class="vsin">
+        <input id="tnA" maxlength="16" value="Equipe Vermelha 🔴" style="border-color:var(--tA)">
+        <input id="tnB" maxlength="16" value="Equipe Azul 🔵" style="border-color:var(--tB)">
+      </div>
+      <div class="mt"><button class="btn red" onclick="vsStart()">⚔️ Começar o confronto!</button></div>
+      <p class="muted" style="font-size:.75rem;margin-top:8px">Cada equipe responde desafios alternados · quem ficar sem vidas é eliminado · vence quem tiver mais XP</p>
+    </div>
+    ${introPreview()}
+    <p class="muted" style="margin-top:12px;font-size:.75rem">💡 Teclas 1–4 respondem · Enter continua · Sugestão: equipes de 2–3 alunos</p>
+  </div>`;
+}
+function toggleVs(){const f=document.getElementById("vsForm");f.style.display=f.style.display==="none"?"block":"none";
+  const a=document.getElementById("tnA");if(f.style.display==="block")a.focus();}
+function vsStart(){
+  const a=(document.getElementById("tnA").value||"Equipe Vermelha").trim().slice(0,16);
+  const b=(document.getElementById("tnB").value||"Equipe Azul").trim().slice(0,16);
+  start("vs",[a||"Equipe Vermelha",b||"Equipe Azul"]);
+}
+function confetti(){
+  const colors=["#0d6efd","#0846a8","#3f8cff","#f59e0b","#16a34a","#ef4444"];
+  for(let i=0;i<60;i++){const c=document.createElement("div");c.className="confetti";
+    c.style.left=Math.random()*100+"vw";c.style.background=colors[i%colors.length];
+    c.style.animationDuration=(2.5+Math.random()*2)+"s";c.style.animationDelay=Math.random()*1.2+"s";
+    c.style.transform=`rotate(${Math.random()*360}deg)`;document.body.appendChild(c);
+    setTimeout(()=>c.remove(),6000);}
+}
+document.addEventListener("keydown",e=>{
+  if(e.target&&e.target.tagName==="INPUT")return;
+  const fb=$("#fb");
+  if(fb&&fb.innerHTML&&e.key==="Enter")return advance();
+  if(["1","2","3","4"].includes(e.key)){const b=$("#opt"+(+e.key-1));if(b&&!b.disabled)b.click();}
+});
+renderIntro();
+</script>
+</body>
+</html>
