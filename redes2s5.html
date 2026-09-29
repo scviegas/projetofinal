@@ -637,6 +637,9 @@ function renderDrag(){
     <p class="qtext">A TechNet adotou o modelo <b>hierárquico</b>. Clique em um equipamento e depois na camada correta. Clique num item já colocado para devolvê-lo.</p>
     <div class="pool" id="pool"></div>
     <div class="zones" id="zones"></div>
+    <div class="mt" style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn" id="dragVerifyBtn" onclick="dragVerify()" disabled>✅ Verificar arquitetura</button>
+    </div>
     <div id="fb"></div></div>`;
   paintDrag();startTimer(120,dragTimeUp);
 }
@@ -648,6 +651,8 @@ function paintDrag(){
     const items=drag.ord.filter(i=>drag.pl[i]===zi);
     return `<div class="zone ${drag.graded?"locked":""}" onclick="dropZone(${zi})"><h4>${z}</h4>
       ${items.map(i=>{const it=DRAG_ITEMS[i];const cls=drag.graded?(it.z===zi?"okc":"badc"):"";return `<div class="dcard inz ${cls}" onclick="unassign(event,${i})">${it.t}</div>`;}).join("")}</div>`;}).join("");
+  const verifyBtn=document.getElementById("dragVerifyBtn");
+  if(verifyBtn) verifyBtn.disabled=drag.graded || drag.pl.some(p=>p===-1);
 }
 function pickItem(i){if(drag.graded)return;drag.sel=i;paintDrag();}
 function unassign(ev,i){ev.stopPropagation();if(drag.graded)return;drag.pl[i]=-1;drag.sel=i;paintDrag();}
