@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Rescue — Gestão de Redes</title>
+<style>
+:root{--bg:#07111f;--panel:#0d1b2a;--panel2:#11263d;--text:#eef6ff;--muted:#9db3c9;--accent:#38bdf8;--good:#22c55e;--bad:#ef4444;--warn:#f59e0b}
+*{box-sizing:border-box} body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:radial-gradient(circle at top,#12304e,#07111f 58%);color:var(--text);min-height:100vh}
+.wrap{max-width:1050px;margin:auto;padding:24px}.top{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(28px,5vw,52px)} .sub{color:var(--muted);margin:8px 0 22px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.stat{background:#0b2034;border:1px solid #21415e;border-radius:14px;padding:13px;text-align:center}.stat b{display:block;font-size:22px}
+.card{background:rgba(13,27,42,.96);border:1px solid #24435f;border-radius:20px;padding:24px;box-shadow:0 18px 60px #0006}
+.progress{height:12px;background:#172b3d;border-radius:99px;overflow:hidden;margin:16px 0 24px}.bar{height:100%;background:linear-gradient(90deg,#38bdf8,#22c55e);width:0%;transition:.3s}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#12334c;color:#7dd3fc;font-weight:700;font-size:13px}
+.scenario{background:#071522;border-left:4px solid var(--accent);padding:16px;border-radius:10px;margin:18px 0;white-space:pre-line}
+.options{display:grid;gap:10px}.opt{border:1px solid #31516d;background:#10253a;color:white;border-radius:12px;padding:14px 16px;text-align:left;font-size:16px;cursor:pointer;transition:.18s}.opt:hover{transform:translateY(-1px);border-color:#38bdf8;background:#12304a}.opt:disabled{cursor:not-allowed;opacity:.85}.correct{border-color:var(--good)!important;background:#123c2a!important}.wrong{border-color:var(--bad)!important;background:#451b24!important}
+.feedback{display:none;margin-top:18px;padding:15px;border-radius:12px;background:#0a1725;line-height:1.5}.feedback.show{display:block}.next{display:none;margin-top:16px;border:0;border-radius:12px;padding:13px 20px;background:#38bdf8;color:#032033;font-weight:800;cursor:pointer}.next.show{display:inline-block}
+.start{text-align:center;padding:28px}.start button,.restart{border:0;border-radius:14px;padding:15px 25px;background:#22c55e;color:#04210e;font-size:18px;font-weight:800;cursor:pointer}
+.final{text-align:center}.grade{font-size:64px;margin:8px}.small{color:var(--muted)} footer{color:#71879b;text-align:center;font-size:12px;margin-top:18px}
+@media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}.wrap{padding:14px}.card{padding:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>🌐 Network Rescue</h1><div class="sub">Semana 5 — Gestão de Rede • Simulador de estudo</div></div>
+    <span class="badge">Redes de Computadores II</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span>XP</span><b id="xp">0</b></div>
+    <div class="stat"><span>Disponibilidade</span><b id="sla">100%</b></div>
+    <div class="stat"><span>Vidas</span><b id="lives">❤️❤️❤️</b></div>
+    <div class="stat"><span>Fase</span><b id="phase">0/20</b></div>
+  </div>
+
+  <div class="progress"><div class="bar" id="bar"></div></div>
+
+  <main class="card" id="game">
+    <div class="start">
+      <h2>🚨 Sua missão</h2>
+      <p>Você foi contratado para administrar a rede da empresa TechNet. Monitore a infraestrutura, interprete métricas, diagnostique falhas e tome decisões sem derrubar os serviços.</p>
+      <p><b>20 desafios • feedback imediato • pontuação final</b></p>
+      <button onclick="startGame()">INICIAR MISSÃO</button>
+    </div>
+  </main>
+  <footer>Material de revisão acadêmica baseado na Semana 5 — Gestão de Rede.</footer>
+</div>
+
+<script>
+const qs = [
+{t:"NMS: primeira decisão",s:"A empresa possui roteadores, switches, servidores e pontos de acesso. Você precisa acompanhar o estado e o desempenho desses dispositivos.",q:"Qual solução é apropriada para centralizar o monitoramento e a gestão?",o:["NMS","Editor de texto","Compilador Java","Servidor de arquivos"],a:0,e:"NMS (Network Management System) permite monitorar, gerir e manter a infraestrutura de rede."},
+{t:"Função do NMS",s:"O painel detectou comportamento anormal em um switch.",q:"Qual função do NMS é mais diretamente associada à identificação e comunicação desse problema?",o:["Gerenciamento de falhas","Edição de imagens","Compilação","Virtualização de desktop"],a:0,e:"O gerenciamento de falhas identifica e comunica falhas por alertas/notificações e apoia o diagnóstico."},
+{t:"Arquitetura hierárquica",s:"Você está organizando a rede em Core, Distribuição e Acesso.",q:"Em qual camada ficam os equipamentos que interagem diretamente com os usuários finais?",o:["Core","Distribuição","Acesso","NMS"],a:2,e:"A camada de acesso conecta usuários e dispositivos finais, incluindo switches de acesso e APs."},
+{t:"Core",s:"É necessário transportar grandes volumes de tráfego rapidamente entre segmentos da rede.",q:"Qual camada deve ter alta capacidade de processamento, transmissão e redundância?",o:["Acesso","Core","Usuário","Aplicação"],a:1,e:"O Core é a camada central de alta velocidade e normalmente utiliza roteadores/switches de alta capacidade."},
+{t:"Distribuição",s:"Uma camada precisa agregar tráfego de switches de acesso e aplicar políticas, filtragem e QoS.",q:"Qual é essa camada?",o:["Distribuição","Acesso","Usuário","DNS"],a:0,e:"A distribuição atua entre Core e Acesso, agregando tráfego e aplicando políticas."},
+{t:"Rede distribuída",s:"A empresa quer que diferentes nós administrem partes específicas da rede com autonomia.",q:"Qual modelo corresponde a essa ideia?",o:["Gerenciamento distribuído","Somente centralizado","Barramento","Cliente sem servidor"],a:0,e:"No gerenciamento distribuído, responsabilidades são alocadas entre vários nós com autonomia local."},
+{t:"Desvantagem distribuída",s:"Cada nó toma decisões localmente e precisa trocar informações com os demais.",q:"Qual risco deve ser considerado?",o:["Coordenação complexa e possível inconsistência","Ausência total de comunicação","Impossibilidade de escalabilidade","Nenhuma necessidade de políticas"],a:0,e:"A descentralização aumenta flexibilidade, mas coordenação e consistência podem se tornar mais complexas."},
+{t:"Latência",s:"Um ping mostra respostas de aproximadamente 171 ms.",q:"O que a latência representa?",o:["Tempo de percurso entre origem e destino","Quantidade total de armazenamento","Número de usuários","Tamanho do endereço IP"],a:0,e:"Latência é o tempo que um pacote demora para percorrer o caminho entre origem e destino."},
+{t:"Largura de banda",s:"Seu link contratado é de 500 Mbps.",q:"O que a largura de banda representa?",o:["Quantidade de dados transmissível por período","Variação no tempo de chegada","Percentual de pacotes perdidos","Tempo de resposta do DNS"],a:0,e:"Largura de banda expressa capacidade de transmissão e normalmente é medida em bits por segundo."},
+{t:"Jitter",s:"Ping: 12 ms, 180 ms, 35 ms, 240 ms. Nenhum pacote foi perdido.",q:"Qual métrica está claramente instável?",o:["Jitter","Endereço MAC","Máscara","Número de portas"],a:0,e:"Jitter é a variabilidade temporal na chegada dos pacotes. Grande oscilação prejudica voz e vídeo."},
+{t:"Packet Loss",s:"Foram enviados 100 pacotes e apenas 82 chegaram ao destino.",q:"Qual problema está sendo observado?",o:["18% de perda de pacotes","18 ms de latência","82% de jitter","100 Mbps de bandwidth"],a:0,e:"18 de 100 pacotes não chegaram: a perda é 18%."},
+{t:"Diagnóstico — etapa 1",s:"Usuários relatam lentidão. Você ainda não sabe onde está a causa.",q:"Qual deve ser a primeira etapa da gestão de falhas?",o:["Identificar a questão","Reiniciar tudo","Trocar todos os switches","Ignorar e aguardar"],a:0,e:"O processo começa identificando claramente o problema ou sintoma observado."},
+{t:"Diagnóstico — isolamento",s:"Você confirmou a lentidão, mas a rede possui muitos subsistemas.",q:"Qual é a próxima atitude lógica?",o:["Isolar o problema","Comprar mais servidores","Apagar os logs","Trocar todos os cabos"],a:0,e:"Isolar reduz o espaço de investigação e ajuda a localizar o segmento ou componente envolvido."},
+{t:"Coleta",s:"O subsistema suspeito foi isolado.",q:"O que fazer antes de concluir a causa?",o:["Reunir informações e evidências","Aplicar uma solução aleatória","Desligar o monitoramento","Descartar a telemetria"],a:0,e:"Logs, testes e telemetria fornecem evidências para a análise e também documentam o incidente."},
+{t:"Análise",s:"Você já possui logs, telemetria e resultados de testes.",q:"Qual etapa vem agora?",o:["Analisar os dados","Ignorar os dados","Trocar a topologia sem testar","Encerrar o incidente"],a:0,e:"Os dados coletados devem ser analisados por inspeção, gráficos ou técnicas automatizadas."},
+{t:"Implementação",s:"A análise identificou a causa e existe um procedimento conhecido para corrigi-la.",q:"O que fazer?",o:["Implementar a solução adequada","Voltar a identificar o problema","Apagar a documentação","Criar outro incidente"],a:0,e:"Depois da análise, executam-se os procedimentos necessários para resolver a falha."},
+{t:"Validação",s:"A correção foi aplicada e os usuários dizem que melhorou.",q:"O incidente pode ser encerrado imediatamente?",o:["Não; é preciso monitorar e validar","Sim; opinião do usuário basta","Sim; nunca é necessário medir novamente","Não; deve-se sempre trocar o roteador"],a:0,e:"Após a solução, monitoramento e validação confirmam se o comportamento voltou ao esperado."},
+{t:"Caso prático",s:"Link contratado: 500 Mbps. Medição efetiva: 100 Mbps. Usuários relatam lentidão.",q:"No processo de diagnóstico, essa diferença deve ser tratada inicialmente como:",o:["Sintoma que merece investigação","Prova automática de defeito no servidor","Erro de endereço IP","Evidência de que não há problema"],a:0,e:"Uma métrica divergente do esperado é um sintoma. Ainda é necessário isolar, coletar dados e analisar a causa."},
+{t:"Disponibilidade",s:"O NMS detecta rapidamente uma falha e gera um alerta antes que muitos usuários percebam.",q:"Qual benefício da monitorização aparece nesse cenário?",o:["Detecção rápida de problemas","Aumento automático do endereço IP","Eliminação de todas as falhas","Dispensa de manutenção"],a:0,e:"Monitorar ajuda a detectar problemas rapidamente e sustentar desempenho e disponibilidade."},
+{t:"INCIDENTE FINAL",s:"09:01 lentidão\n09:03 latência elevada\n09:04 perda de pacotes = 22%\n09:05 servidor ainda responde\n09:06 utilização do link = 98%",q:"Qual decisão segue melhor a metodologia de gestão de falhas estudada?",o:["Isolar o segmento/link, coletar métricas e logs, analisar a causa, aplicar correção e validar","Reiniciar todos os servidores imediatamente","Trocar o DNS sem medir nada","Ignorar porque o servidor ainda responde"],a:0,e:"A metodologia evita decisões precipitadas: identificar, isolar, coletar, analisar, implementar e validar."}
+];
+
+let i=0,xp=0,sla=100,lives=3,locked=false;
+function update(){
+ document.getElementById("xp").textContent=xp;
+ document.getElementById("sla").textContent=sla+"%";
+ document.getElementById("lives").textContent="❤️".repeat(Math.max(lives,0))+"🖤".repeat(Math.max(0,3-lives));
+ document.getElementById("phase").textContent=Math.min(i+1,20)+"/20";
+ document.getElementById("bar").style.width=(i/qs.length*100)+"%";
+}
+function startGame(){i=0;xp=0;sla=100;lives=3;render();}
+function render(){
+ locked=false; update();
+ const x=qs[i];
+ document.getElementById("game").innerHTML=`<span class="badge">DESAFIO ${i+1} DE ${qs.length}</span>
+ <h2>${x.t}</h2><div class="scenario">${x.s}</div><h3>${x.q}</h3>
+ <div class="options">${x.o.map((v,k)=>`<button class="opt" onclick="answer(${k},this)"><b>${String.fromCharCode(65+k)})</b> ${v}</button>`).join("")}</div>
+ <div class="feedback" id="fb"></div><button class="next" id="next" onclick="advance()">PRÓXIMO DESAFIO →</button>`;
+}
+function answer(k,btn){
+ if(locked)return; locked=true;
+ const x=qs[i], buttons=[...document.querySelectorAll(".opt")]; buttons.forEach(b=>b.disabled=true);
+ const fb=document.getElementById("fb");
+ if(k===x.a){xp+=100+(i===19?400:0);btn.classList.add("correct");fb.innerHTML=`✅ <b>Correto!</b><br>${x.e}<br><b>+${i===19?500:100} XP</b>`;}
+ else{lives=Math.max(0,lives-1);sla=Math.max(70,sla-3);btn.classList.add("wrong");buttons[x.a].classList.add("correct");fb.innerHTML=`❌ <b>Decisão inadequada.</b><br>${x.e}<br><b>-3% de disponibilidade.</b>`;}
+ fb.classList.add("show");document.getElementById("next").classList.add("show");update();
+}
+function advance(){i++; if(i>=qs.length)finish(); else render();}
+function finish(){
+ document.getElementById("bar").style.width="100%";
+ let pct=Math.round(xp/2400*100); let grade=pct>=90?"🏆":pct>=70?"🥈":pct>=50?"🥉":"🛠️";
+ let title=pct>=90?"Administrador de Redes — Elite":pct>=70?"Administrador de Redes":pct>=50?"Técnico em Treinamento":"Continue o diagnóstico";
+ document.getElementById("phase").textContent="20/20";
+ document.getElementById("game").innerHTML=`<div class="final"><div class="grade">${grade}</div><h2>Missão concluída!</h2>
+ <p class="small">Seu desempenho no Network Rescue</p>
+ <div class="stats"><div class="stat"><span>XP final</span><b>${xp}</b></div><div class="stat"><span>Disponibilidade</span><b>${sla}%</b></div><div class="stat"><span>Acertos</span><b>${Math.round((xp-(xp>=500?400:0))/100)}/20</b></div><div class="stat"><span>Nível</span><b style="font-size:16px">${title}</b></div></div>
+ <p><b>Regra de ouro:</b> primeiro identifique e meça o problema; depois escolha e valide a solução.</p>
+ <button class="restart" onclick="startGame()">JOGAR NOVAMENTE</button></div>`;
+}
+</script>
+</body>
+</html>
