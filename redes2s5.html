@@ -581,9 +581,9 @@ function renderMCQ(c){
     <div class="bar"><div id="tbar"></div></div>
     ${turnBanner()}${tl}${panel}
     <p class="qtext">${c.q}</p>
-    <div class="opts">${curOrd.map((oi,i)=>`<button class="opt" id="opt${i}" onclick="answer(${i})"><span class="key">${i+1}</span>${c.o[oi]}</button>`).join("")}</div>
+    <div class="opts">${curOrd.map((oi,i)=>`<button class="opt" id="opt${i}" onclick="answerChoice(${oi},${i})"><span class="key">${i+1}</span>${c.o[oi]}</button>`).join("")}</div>
     <div id="fb"></div></div>`;
-  startTimer(c.t,()=>answer(-1));
+  startTimer(c.t,()=>answerChoice(-1,-1));
 }
 function timelineHTML(n){
   let h=`<div class="term tl"><div class="tt">🚨 Log do incidente</div><pre>`;
@@ -610,21 +610,32 @@ function grade(hit,c){
   }
   return title;
 }
-function answer(i){
+function answerChoice(originalIndex,displayIndex){
   const c=CH[cursor];
-  if($("#fb").innerHTML)return;
+  const fb=$("#fb");
+  if(!fb||fb.innerHTML)return;
   clearInterval(timerId);
-  const hit=i===curCorrect;
-  let title=grade(hit,c,i);
-  if(!hit&&i!==-1&&c.bad&&c.bad[i]){const T=cur();title=c.bad[i];T.xp=Math.max(0,T.xp-200);title+=` (total: ${T.xp} XP)`;}
-  for(let k=0;k<c.o.length;k++){
-    const b=$("#opt"+k);b.disabled=true;
-    if(k===curCorrect)b.classList.add("correct");else if(k===i)b.classList.add("wrong");
+  const hit=originalIndex===c.a;
+  let title=grade(hit,c,displayIndex);
+  if(!hit&&originalIndex!==-1&&c.bad&&c.bad[originalIndex]){
+    const T=cur();title=c.bad[originalIndex];T.xp=Math.max(0,T.xp-200);title+=` (total: ${T.xp} XP)`;
   }
-  $("#fb").innerHTML=`<div class="feedback ${hit?"ok":"bad"}"><b>${title}</b>${c.e}
+  for(let k=0;k<c.o.length;k++){
+    const b=$("#opt"+k); if(!b)continue; b.disabled=true;
+    const oi=curOrd[k];
+    if(oi===c.a)b.classList.add("correct");
+    else if(k===displayIndex)b.classList.add("wrong");
+  }
+  const chosenText=originalIndex===-1?"Tempo esgotado":c.o[originalIndex];
+  const correctText=c.o[c.a];
+  $("#fb").innerHTML=`<div class="feedback ${hit?"ok":"bad"}"><b>${title}</b>
+    <div class="fbrow"><span class="st">👉</span><span><b>Você marcou:</b> ${chosenText}</span></div>
+    ${hit?"":`<div class="fbrow"><span class="st">✅</span><span><b>Resposta correta:</b> ${correctText}</span></div>`}
+    <div style="margin-top:8px">${c.e}</div>
     <div class="mt"><button class="btn" onclick="advance()">Continuar ▶</button></div></div>`;
   if(!hit)$("#qcard").classList.add("shake");
 }
+
 
 /* ─────────── FASE 2: DRAG ─────────── */
 function renderDrag(){
@@ -660,6 +671,7 @@ function dropZone(zi){if(drag.graded||drag.sel<0)return;drag.pl[drag.sel]=zi;dra
 function dragTimeUp(){
   clearInterval(timerId);if(drag.graded)return;
   const T=cur();T.lives--;T.avail=Math.max(0,T.avail-30);T.streak=0;
+  T.tot++;T.byPhase[1]={ok:0,tot:6};
   drag.pl=DRAG_ITEMS.map(x=>x.z);drag.graded=true;paintDrag();
   showDragFB("⏰ Tempo esgotado! Veja a resposta correta.",0);
 }
@@ -706,7 +718,8 @@ function paintSort(){
   $("#slots").innerHTML=SORT_ITEMS.map((s,i)=>{
     const chosen=sort_.seq[i];
     if(chosen===undefined)return `<div class="slot"><span class="num">${i+1}</span><span class="muted">—</span></div>`;
-    return `<div class="slot done" style="background:${s.c}"><span class="num" style="background:rgba(255,255,255,.25)">${i+1}</span>${s.t}</div>`;}).join("");
+    const picked=SORT_ITEMS[chosen];
+    return `<div class="slot done" style="background:${picked.c}"><span class="num" style="background:rgba(255,255,255,.25)">${i+1}</span>${picked.t}</div>`;}).join("");
   $("#schips").innerHTML=sort_.disp.map(i=>sort_.seq.includes(i)?
     "":`<button class="schip" style="background:${SORT_ITEMS[i].c}" onclick="pushSort(${i})">${SORT_ITEMS[i].t}</button>`).join("");
   $("#verBtn").disabled=sort_.seq.length!==6||sort_.locked;
@@ -733,13 +746,24 @@ function checkSort(){
       <div class="mt"><button class="btn" onclick="advance()">Continuar ▶</button></div></div>`;
   }else{
     sort_.tries++;let k=0;while(k<6&&sort_.seq[k]===k)k++;
-    sort_.seq=sort_.seq.slice(0,k);
+    const aluno=sort_.seq.map((v,i)=>`${i+1}. ${SORT_ITEMS[v].t}`).join("<br>");
     T.xp=Math.max(0,T.xp-100);T.avail=Math.max(0,T.avail-10);
-    sort_.disp=shuffle([0,1,2,3,4,5]);
-    paintSort();
-    $("#fb").innerHTML=`<div class="feedback bad"><b>⚠️ A posição ${k+1} estava errada — corrigida! (-100 XP)</b>
-      Dica: reúnir informações vem DEPOIS de isolar, e analisar vem depois de reunir. Tente de novo! ${sort_.tries>=2?'<br><button class="btn ghost mt" onclick="revealSort(\'👀 Ver sequência correta (+50 XP)\')">👀 Ver sequência correta</button>':""}</div>`;
+    $("#fb").innerHTML=`<div class="feedback bad"><b>⚠️ A posição ${k+1} não corresponde à sequência esperada. (-100 XP)</b>
+      <div style="margin-top:8px"><b>Ordem marcada pelo aluno:</b><br>${aluno}</div>
+      <div style="margin-top:8px">Dica: reunir informações vem <b>depois de isolar</b>, e analisar vem <b>depois de reunir</b>.</div>
+      <div class="mt" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="retrySort()">↩️ Tentar novamente</button>
+        ${sort_.tries>=2?'<button class="btn ghost" onclick="revealSort(\'👀 Sequência correta (+50 XP)\')">👀 Ver sequência correta</button>':""}
+      </div></div>`;
   }
+}
+function retrySort(){
+  if(sort_.locked)return;
+  sort_.seq=[];
+  sort_.disp=shuffle([0,1,2,3,4,5]);
+  $("#fb").innerHTML="";
+  paintSort();
+  startTimer(90,sortTimeUp);
 }
 function revealSort(msg){
   sort_.seq=[0,1,2,3,4,5];sort_.locked=true;
@@ -914,7 +938,10 @@ function confetti(){
 document.addEventListener("keydown",e=>{
   if(e.target&&e.target.tagName==="INPUT")return;
   const fb=$("#fb");
-  if(fb&&fb.innerHTML&&e.key==="Enter")return advance();
+  if(fb&&fb.innerHTML&&e.key==="Enter"){
+    const cont=[...fb.querySelectorAll("button")].find(b=>/advance\(\)/.test(b.getAttribute("onclick")||""));
+    if(cont)return cont.click();
+  }
   if(["1","2","3","4"].includes(e.key)){const b=$("#opt"+(+e.key-1));if(b&&!b.disabled)b.click();}
 });
 renderIntro();
