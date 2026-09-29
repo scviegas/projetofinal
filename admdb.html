@@ -1,1 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 Database Challenge — Semana 5</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --b900:#04256b; --b700:#0846a8; --b600:#0b52d0; --b500:#0d6efd; --b400:#3f8cff;
+    --ink:#0f1b3d; --ok:#16a34a; --bad:#dc2626; --warn:#f59e0b; --bg:#f4f7fe;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:'Poppins',system-ui,sans-serif}
+  body{min-height:100vh; background:linear-gradient(135deg,#eef3ff 0%,#f7faff 60%); color:var(--ink); overflow-x:hidden}
+  .deco{position:fixed; border-radius:50%; z-index:0; pointer-events:none}
+  .d1{width:420px;height:420px;background:radial-gradient(circle at 30% 30%,var(--b500),var(--b900));top:-160px;left:-160px;opacity:.15}
+  .d2{width:300px;height:300px;background:var(--b600);bottom:-120px;right:-100px;opacity:.12}
+  .d3{width:90px;height:90px;border:6px solid var(--b400);top:18%;right:8%;opacity:.25}
+  #app{position:relative; z-index:1; max-width:780px; margin:0 auto; padding:24px 16px 60px}
 
+  .hud{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  .chip{background:#fff; border:1px solid #dbe4ff; border-radius:999px; padding:7px 14px; font-weight:700; font-size:.85rem; box-shadow:0 2px 8px rgba(13,110,253,.08)}
+  .chip.streak{background:#fff4e5; border-color:#fcd9a8; color:#b45309; animation:pop .3s}
+  .hearts{font-size:1.05rem; letter-spacing:2px}
+  .hearts .off{filter:grayscale(1); opacity:.35}
+
+  .card{background:var(--card); border-radius:22px; padding:28px 26px; box-shadow:0 14px 40px rgba(4,37,107,.14)}
+  .card.shake{animation:shake .45s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+  @keyframes pop{from{transform:scale(.7)}to{transform:scale(1)}}
+  .fade{animation:fadeUp .35s ease}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+
+  .eyebrow{color:var(--b600); font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.12em}
+  h1{font-size:2rem; font-weight:800; background:linear-gradient(90deg,var(--b700),var(--b500)); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1.15}
+  h2{font-size:1.35rem; font-weight:800; margin:6px 0 4px}
+  .muted{color:#5b6b8c; font-size:.92rem}
+
+  .btn{display:inline-flex; align-items:center; gap:8px; background:linear-gradient(90deg,var(--b600),var(--b500)); color:#fff; border:none; border-radius:999px; padding:14px 30px; font-size:1rem; font-weight:700; cursor:pointer; transition:.2s; box-shadow:0 8px 20px rgba(13,110,253,.35)}
+  .btn:hover{transform:translateY(-2px); box-shadow:0 12px 26px rgba(13,110,253,.45)}
+  .btn.ghost{background:#fff; color:var(--b700); border:2px solid var(--b400); box-shadow:none}
+
+  .rules{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:20px 0}
+  .rule{background:#f2f6ff; border-radius:14px; padding:12px 14px; font-size:.88rem; font-weight:600}
+  .rule span{font-size:1.3rem; display:block; margin-bottom:4px}
+
+  .phase-badge{width:74px;height:74px;border-radius:20px; display:grid; place-items:center; font-size:2.1rem; background:linear-gradient(135deg,var(--b600),var(--b900)); color:#fff; margin-bottom:14px; box-shadow:0 10px 24px rgba(4,37,107,.35)}
+  .bar{height:10px; border-radius:99px; background:#e7edfb; overflow:hidden; margin:16px 0 20px}
+  .bar > div{height:100%; width:100%; border-radius:99px; background:linear-gradient(90deg,var(--ok),#4ade80); transition:width .1s linear, background .3s}
+  .bar > div.mid{background:linear-gradient(90deg,var(--warn),#fbbf24)}
+  .bar > div.low{background:linear-gradient(90deg,var(--bad),#f87171)}
+
+  .qmeta{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+  .qtext{font-size:1.12rem; font-weight:700; line-height:1.45; margin-bottom:6px; min-height:64px}
+  .opts{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px}
+  .opt{display:flex; align-items:center; gap:10px; text-align:left; background:#f6f9ff; border:2px solid #dfe8fb; border-radius:14px; padding:13px 14px; font-size:.93rem; font-weight:600; cursor:pointer; transition:.15s; color:var(--ink)}
+  .opt:hover:not(:disabled){border-color:var(--b500); background:#eef4ff; transform:translateY(-2px)}
+  .opt:disabled{cursor:default; opacity:.75}
+  .opt .key{flex:none; width:26px;height:26px;border-radius:8px; background:var(--b600); color:#fff; display:grid; place-items:center; font-size:.78rem; font-weight:800}
+  .opt.correct{background:#e9f9ef; border-color:var(--ok); opacity:1}
+  .opt.correct .key{background:var(--ok)}
+  .opt.wrong{background:#feecec; border-color:var(--bad); opacity:1; animation:pop .3s}
+  .opt.wrong .key{background:var(--bad)}
+
+  .feedback{margin-top:18px; border-radius:14px; padding:16px 18px; font-size:.93rem; line-height:1.5; animation:fadeUp .3s}
+  .feedback.ok{background:#e9f9ef; border:1px solid #b7e6c8}
+  .feedback.bad{background:#fff5f5; border:1px solid #f5c2c2}
+  .feedback b{display:block; margin-bottom:6px; font-size:1rem}
+
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin:22px 0}
+  .stat{background:#f2f6ff; border-radius:14px; padding:14px; text-align:center}
+  .stat .v{font-size:1.4rem; font-weight:800; color:var(--b700)}
+  .stat .l{font-size:.75rem; color:#5b6b8c; font-weight:600}
+
+  .review{margin-top:18px; text-align:left}
+  .review details{background:#f8faff; border:1px solid #e2e9fb; border-radius:12px; padding:12px 14px; margin-top:8px; font-size:.88rem}
+  .review summary{cursor:pointer; font-weight:700}
+  .review .ans{color:var(--ok); font-weight:700; margin-top:6px}
+  .center{text-align:center}
+  .mt{margin-top:22px}
+  .confetti{position:fixed; top:-14px; z-index:50; width:10px; height:15px; animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(108vh) rotate(720deg)}}
+  @media(max-width:560px){ .opts{grid-template-columns:1fr} .rules{grid-template-columns:1fr} h1{font-size:1.6rem} }
+</style>
+</head>
+<body>
+<div class="deco d1"></div><div class="deco d2"></div><div class="deco d3"></div>
+<div id="app"><div id="stage"></div></div>
+
+<script>
+const TIME_LIMIT = 30;
+
+const PHASES = [
+  {icon:"🧰", name:"DBA Iniciante", desc:"Escolha do RDBMS, hardware, RAM, CPU, SSD/HDD e requisitos do projeto."},
+  {icon:"⚡", name:"SQL Performance", desc:"Índices, SELECT *, WHERE, JOINs, limitação de resultados e desenho do banco."},
+  {icon:"🍃", name:"NoSQL Challenge", desc:"Escalabilidade horizontal, replicação, fragmentação e modelos de consistência."},
+  {icon:"🛠️", name:"DBA Master · Tuning", desc:"Cenários reais: gargalos, parâmetros, manutenção e otimização do desempenho."}
+];
+
+const QUESTIONS = [
+  // ===== FASE 1 — DBA INICIANTE =====
+  {p:0, q:"Ao escolher um RDBMS, qual é o PRIMEIRO passo recomendado pelo material?",
+   o:["Instalar o banco e testar depois","Entender os requisitos e casos de uso do projeto","Escolher sempre o banco mais popular","Definir os índices das tabelas"], a:1,
+   e:"1º passo: Requisitos e casos de uso — entender volume de dados, desempenho, escalabilidade e disponibilidade que o projeto precisa."},
+  {p:0, q:"Qual componente de hardware é crucial para o gerenciamento de cache e a aceleração das operações de leitura/gravação?",
+   o:["A placa de rede","A memória RAM","O monitor","A fonte de alimentação"], a:1,
+   e:"Mais RAM permite melhor gerenciamento de cache e acelera as operações de leitura/gravação."},
+  {p:0, q:"Por que SSDs são geralmente preferidos em relação a HDDs para bancos de dados?",
+   o:["Porque são mais baratos","Porque têm maior velocidade e menor latência","Porque fazem mais barulho","Porque têm maior tamanho físico"], a:1,
+   e:"O desempenho de E/S do disco afeta diretamente o banco de dados: SSDs superam HDDs em velocidade e latência."},
+  {p:0, q:"A disponibilidade do banco é CRÍTICA para o aplicativo. Qual configuração de hardware ajuda a garantir tolerância a falhas?",
+   o:["Unidades espelhadas (RAID) ou NAS","Um segundo monitor","Teclado mecânico","Aumentar a resolução da tela"], a:0,
+   e:"Configurações redundantes, como unidades espelhadas (RAID) ou armazenamento NAS, garantem tolerância a falhas e alta disponibilidade."},
+  {p:0, q:"Quais características são típicas de um RDBMS (ex.: MySQL, PostgreSQL, Oracle, MariaDB)?",
+   o:["Transações ACID e suporte a SQL","Esquema sempre flexível","Distribuição obrigatória por padrão","Ausência de transações"], a:0,
+   e:"O slide de exemplos lista transações ACID, suporte a SQL e padronização como forças do RDBMS."},
+
+  // ===== FASE 2 — SQL PERFORMANCE =====
+  {p:1, q:"O que é um índice (index) de banco de dados?",
+   o:["Uma estrutura que mapeia a chave de busca à localização do registro no disco","Um backup completo do banco","Um usuário administrador","Um tipo de consulta proibida"], a:0,
+   e:"O índice relaciona a Search Key ao Pointer to Disk Location, acelerando a localização dos registros."},
+  {p:1, q:"Qual prática NÃO faz parte da otimização de consultas apresentada no material?",
+   o:["Usar SELECT * em todas as consultas","Usar índices","Limitar os resultados","Usar JOINs adequados"], a:0,
+   e:"Boas práticas: usar índices, evitar consultas desnecessárias, limitar resultados, WHERE eficiente, EVITAR SELECT * e JOINs adequados."},
+  {p:1, q:"Qual é o início correto do fluxo de desenho do banco de dados (10 passos)?",
+   o:["1) Compreender os requisitos → 2) Identificar entidades e atributos","1) Definir índices → 2) Criar tabelas","1) Documentar → 2) Publicar","1) Normalizar → 2) Compreender requisitos"], a:0,
+   e:"Fluxo: requisitos → entidades/atributos → relações → normalização → tabelas → restrições → índices → desempenho → documentação."},
+  {p:1, q:"🚨 INCIDENTE! Uma consulta está lenta e faz buscas frequentes pela coluna 'cpf' em uma tabela com milhões de registros. O que investigar primeiro?",
+   o:["Criar/verificar um índice na coluna cpf","Remover a cláusula WHERE","Trocar para SELECT *","Duplicar a tabela"], a:0,
+   e:"Índices aceleram a localização de registros. O material recomenda analisar consultas problemáticas e adicionar índices quando necessário."},
+  {p:1, q:"Gaming, Social Media e IoT são casos de uso típicos de qual família de bancos?",
+   o:["NoSQL","SQL","Somente data warehouse","Nenhum dos dois"], a:0,
+   e:"O slide 'Configuração e otimização' posiciona Gaming, Social e IoT no lado NoSQL."},
+
+  // ===== FASE 3 — NOSQL CHALLENGE =====
+  {p:2, q:"O que significa NoSQL?",
+   o:["Not only SQL","No Standard Query Language","New Serial Query Language","No Secure Query Layer"], a:0,
+   e:"NoSQL = 'Not only SQL' — bancos que vão além do modelo relacional."},
+  {p:2, q:"O que é REPLICAÇÃO em bancos NoSQL?",
+   o:["Criar cópias idênticas dos dados em vários nós","Dividir os dados em partes menores","Apagar dados antigos automaticamente","Comprimir os dados em disco"], a:0,
+   e:"Replicação = cópias idênticas em vários nós → disponibilidade e tolerância a falhas. A leitura distribuída reduz a latência."},
+  {p:2, q:"E o que é FRAGMENTAÇÃO (sharding)?",
+   o:["Dividir os dados em partes menores e distribuí-los em nós diferentes","Criar cópias idênticas em todos os nós","Fazer backup semanal","Criptografar as colunas"], a:0,
+   e:"Sharding divide os dados entre nós → distribuição de carga balanceada, acesso paralelo e escalabilidade horizontal."},
+  {p:2, q:"Qual modelo de consistência garante que TODAS as leituras reflitam as gravações mais recentes?",
+   o:["Forte consistência","Consistência eventual","Consistência da sessão","Consistência causal"], a:0,
+   e:"Forte consistência sempre reflete a gravação mais recente — ao custo de maior tempo de resposta e carga no sistema."},
+  {p:2, q:"No Teorema CAP apresentado no material, quais são os três pilares?",
+   o:["Consistência, Disponibilidade e Tolerância a Partição","Custo, Agilidade e Performance","CPU, Aplicação e Proxy","Cache, Autenticação e Permissões"], a:0,
+   e:"O diagrama CAP mostra Consistency, Availability e Partition-Tolerance — cada banco se posiciona nesses eixos."},
+
+  // ===== FASE 4 — DBA MASTER / TUNING =====
+  {p:3, q:"O que é Database Tuning?",
+   o:["O processo de otimizar o desempenho do banco para melhorar eficiência e tempo de resposta","A instalação inicial do SGBD","A compra de licenças do software","A migração automática para a nuvem"], a:0,
+   e:"Tuning = ajuste do banco de dados para melhorar sua eficiência e velocidade de resposta."},
+  {p:3, q:"O que o tamanho do buffer do cache (cache da página) determina?",
+   o:["Quantos blocos de dados são mantidos em memória, reduzindo a E/S de disco","Quantos usuários podem fazer login","A frequência dos backups","O tamanho da janela do SGBD"], a:0,
+   e:"Aumentar o buffer do cache mantém mais blocos em memória e melhora o desempenho reduzindo E/S de disco."},
+  {p:3, q:"Qual parâmetro controla quantas conexões simultâneas o RDBMS aceita?",
+   o:["Número máximo de conexões","Nível de isolamento da transação","Tamanho do arquivo de registro","Velocidade do processador"], a:0,
+   e:"'Número máximo de conexões' equilibra desempenho e capacidade de resposta, evitando sobrecarga na conexão."},
+  {p:3, q:"Qual ação pertence à manutenção REGULAR dos índices?",
+   o:["Reconstruir/reorganizar índices fragmentados e atualizar estatísticas","Criar índice em todas as colunas de todas as tabelas","Excluir todos os índices de uma vez","Nunca mais tocar nos índices"], a:0,
+   e:"A manutenção do índice inclui reconstrução/reorganização de índices fragmentados e atualização de estatísticas para o plano de consulta ideal."},
+  {p:3, q:"Qual a diferença entre Mirroring e Splitting?",
+   o:["Mirroring cria uma cópia espelhada exata; Splitting divide os dados","Ambos apenas copiam os dados","Mirroring divide; Splitting copia","Nenhum dos dois existe"], a:0,
+   e:"Objetivos da aula: criar uma cópia exata do tipo espelho (mirroring) e dominar as estratégias de particionamento (splitting)."}
+];
+
+const stage = document.getElementById("stage");
+let S = null, timerId = null, timeLeft = TIME_LIMIT;
+
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+function startGame(){
+  const qs = QUESTIONS.map(q => {
+    const pos = shuffle(q.o.map((_,i)=>i));
+    return {...q, view: pos, correctPos: pos.indexOf(q.a)};
+  });
+  S = {qi:0, score:0, lives:3, streak:0, bestStreak:0, correct:0, wrong:[], qs};
+  clearInterval(timerId);
+  renderPhaseIntro(0);
+}
+
+function renderPhaseIntro(f){
+  const ph = PHASES[f];
+  stage.innerHTML = `
+    <div class="card center fade">
+      <div style="display:grid;place-items:center">
+        <div class="phase-badge">${ph.icon}</div>
+        <p class="eyebrow">Fase ${f+1} de 4</p>
+        <h2>${ph.name}</h2>
+        <p class="muted" style="max-width:480px;margin:8px auto 0">${ph.desc}</p>
+        <div class="mt"><button class="btn" onclick="renderQuestion()">Iniciar fase ▶</button></div>
+      </div>
+    </div>`;
+}
+
+function renderHearts(){
+  return [0,1,2].map(i => `<span class="${i < S.lives ? '' : 'off'}">❤️</span>`).join("");
+}
+
+function renderHud(){
+  document.getElementById("hud").innerHTML = `
+    <span class="chip">⭐ ${S.score}</span>
+    ${S.streak >= 2 ? `<span class="chip streak">🔥 x${S.streak}</span>` : `<span class="chip">🔥 —</span>`}
+    <span class="chip hearts">${renderHearts()}</span>`;
+}
+
+function renderQuestion(){
+  clearInterval(timerId);
+  timeLeft = TIME_LIMIT;
+  const q = S.qs[S.qi], f = Math.floor(S.qi/5);
+  stage.innerHTML = `
+    <div class="hud" id="hud"></div>
+    <div class="card fade" id="qcard">
+      <div class="qmeta">
+        <span class="eyebrow">${PHASES[f].icon} Fase ${f+1} — ${PHASES[f].name}</span>
+        <span class="chip">Questão ${S.qi+1}/20</span>
+      </div>
+      <div class="bar"><div id="tbar"></div></div>
+      <p class="qtext">${q.q}</p>
+      <div class="opts">
+        ${q.view.map((oi,i)=>`<button class="opt" id="opt${i}" onclick="answer(${i})"><span class="key">${i+1}</span>${q.o[oi]}</button>`).join("")}
+      </div>
+      <div id="fb"></div>
+    </div>`;
+  renderHud();
+  timerId = setInterval(tick, 100);
+}
+
+function tick(){
+  timeLeft = Math.max(0, timeLeft - 0.1);
+  const bar = document.getElementById("tbar");
+  if(!bar) return clearInterval(timerId);
+  const pct = (timeLeft/TIME_LIMIT)*100;
+  bar.style.width = pct + "%";
+  bar.className = timeLeft > TIME_LIMIT*0.6 ? "" : timeLeft > TIME_LIMIT*0.3 ? "mid" : "low";
+  if(timeLeft <= 0){ clearInterval(timerId); answer(-1); }
+}
+
+function answer(i){
+  if(document.getElementById("fb").innerHTML) return;
+  clearInterval(timerId);
+  const q = S.qs[S.qi];
+  const hit = i === q.correctPos;
+  S.streak = hit ? S.streak + 1 : 0;
+  S.bestStreak = Math.max(S.bestStreak, S.streak);
+  let pts = 0, title = "";
+  if(hit){
+    S.correct++;
+    const streakBonus = Math.min((S.streak-1)*25, 100);
+    pts = 100 + Math.round(timeLeft*3) + streakBonus;
+    S.score += pts;
+    title = `✅ Correto! <span style="color:var(--ok)">+${pts} pontos</span>${streakBonus ? ` (🔥 bônus +${streakBonus})` : ""}`;
+  } else {
+    S.lives--;
+    S.wrong.push({q:q.q, ans:q.o[q.a], num:S.qi+1});
+    title = i === -1 ? "⏰ Tempo esgotado!" : "❌ Errado!";
+    document.getElementById("qcard").classList.add("shake");
+  }
+  for(let k=0;k<4;k++){
+    const b = document.getElementById("opt"+k);
+    b.disabled = true;
+    if(k === q.correctPos) b.classList.add("correct");
+    else if(k === i) b.classList.add("wrong");
+  }
+  document.getElementById("fb").innerHTML = `
+    <div class="feedback ${hit?'ok':'bad'}">
+      <b>${title}</b>${q.e}
+      <div class="mt"><button class="btn" onclick="afterFeedback()">Continuar ▶</button></div>
+    </div>`;
+  renderHud();
+}
+
+function afterFeedback(){
+  if(S.lives <= 0) return renderGameOver();
+  S.qi++;
+  if(S.qi >= QUESTIONS.length) return renderFinal();
+  if(S.qi % 5 === 0) return renderPhaseIntro(S.qi/5);
+  renderQuestion();
+}
+
+function rankOf(c){
+  const p = c/QUESTIONS.length;
+  if(p >= 0.9) return {t:"Database Master 🏆", e:"🏆", msg:"Domínio absoluto! Você configura, otimiza e faz tuning como mestre."};
+  if(p >= 0.7) return {t:"DBA Sênior 🥇", e:"🥇", msg:"Excelente! Falta pouco para o nível master."};
+  if(p >= 0.5) return {t:"DBA Pleno 🥈", e:"🥈", msg:"Bom progresso! Revise os erros abaixo e tente novamente."};
+  return {t:"DBA Júnior 🥉", e:"🥉", msg:"Todo mestre começou aqui. Revise o material da Semana 5 e jogue de novo!"};
+}
+
+function renderGameOver(){
+  clearInterval(timerId);
+  stage.innerHTML = `
+    <div class="card center fade">
+      <div style="font-size:3.4rem">💀</div>
+      <h2>Game Over!</h2>
+      <p class="muted">Suas 3 vidas acabaram na questão ${S.qi+1}.</p>
+      <div class="stats">
+        <div class="stat"><div class="v">${S.score}</div><div class="l">Pontos</div></div>
+        <div class="stat"><div class="v">${S.correct}/20</div><div class="l">Acertos</div></div>
+        <div class="stat"><div class="v">🔥${S.bestStreak}</div><div class="l">Melhor sequência</div></div>
+      </div>
+      ${S.wrong.length ? reviewHTML() : ""}
+      <div class="mt"><button class="btn" onclick="startGame()">🔄 Jogar novamente</button></div>
+    </div>`;
+}
+
+function reviewHTML(){
+  return `<div class="review">
+    <p class="eyebrow">📋 Para revisar</p>
+    ${S.wrong.map(w=>`<details><summary>Questão ${w.num} — ${w.q}</summary><p class="ans">✅ ${w.ans}</p></details>`).join("")}
+  </div>`;
+}
+
+function renderFinal(){
+  clearInterval(timerId);
+  const r = rankOf(S.correct);
+  stage.innerHTML = `
+    <div class="card center fade">
+      <div style="font-size:4rem">${r.e}</div>
+      <p class="eyebrow">Resultado final</p>
+      <h2>${r.t}</h2>
+      <p class="muted">${r.msg}</p>
+      <div class="stats">
+        <div class="stat"><div class="v">${S.score}</div><div class="l">Pontos</div></div>
+        <div class="stat"><div class="v">${S.correct}/20</div><div class="l">Acertos</div></div>
+        <div class="stat"><div class="v">${Math.round(S.correct/20*100)}%</div><div class="l">Precisão</div></div>
+        <div class="stat"><div class="v">🔥${S.bestStreak}</div><div class="l">Melhor sequência</div></div>
+      </div>
+      ${S.wrong.length ? reviewHTML() : `<p style="color:var(--ok);font-weight:700">✨ Nenhum erro — revisão completa!</p>`}
+      <div class="mt"><button class="btn" onclick="startGame()">🔄 Jogar novamente</button></div>
+    </div>`;
+  if(S.correct/20 >= 0.7) confetti();
+}
+
+function confetti(){
+  const colors = ["#0d6efd","#0846a8","#3f8cff","#f59e0b","#16a34a","#ef4444"];
+  for(let i=0;i<50;i++){
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random()*100+"vw";
+    c.style.background = colors[i%colors.length];
+    c.style.animationDuration = (2.5+Math.random()*2)+"s";
+    c.style.animationDelay = Math.random()*1.2+"s";
+    c.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 6000);
+  }
+}
+
+function renderIntro(){
+  stage.innerHTML = `
+    <div class="card center fade">
+      <p class="eyebrow">Universidade Jala · Semana 5 · Gerenciamento de Banco de Dados</p>
+      <h1>🎮 Database Challenge</h1>
+      <p class="muted">Revisão interativa — Configuração, Otimização e Tuning</p>
+      <div class="rules" style="text-align:left">
+        <div class="rule"><span>⏱️</span>30 segundos por pergunta — quanto mais rápido, mais pontos</div>
+        <div class="rule"><span>❤️❤️❤️</span>3 vidas — errar ou deixar o tempo acabar custa uma</div>
+        <div class="rule"><span>🔥</span>Bônus por sequência de acertos consecutivos</div>
+        <div class="rule"><span>🏆</span>4 fases · 20 questões · ranking DBA Júnior → Database Master</div>
+      </div>
+      <button class="btn" onclick="startGame()">▶ Começar</button>
+      <p class="muted" style="margin-top:14px;font-size:.78rem">Dica: use as teclas 1–4 para responder</p>
+    </div>`;
+}
+
+document.addEventListener("keydown", e => {
+  const fb = document.getElementById("fb");
+  if(fb && fb.innerHTML && e.key === "Enter") return afterFeedback();
+  if(["1","2","3","4"].includes(e.key)){
+    const btn = document.getElementById("opt"+(+e.key-1));
+    if(btn && !btn.disabled) btn.click();
+  }
+});
+
+renderIntro();
+</script>
+</body>
+</html>
