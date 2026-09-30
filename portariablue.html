@@ -369,7 +369,7 @@ textarea#diagText:focus{border-color:var(--acc)}
 
 <script>
 /* ============================================================
-   OPERAÇÃO PORTARIA — BLUE TEAM (v2.1 · correções)
+   OPERAÇÃO PORTARIA — BLUE TEAM (v2.2 · correções de lógica)
    ============================================================ */
 'use strict';
 const $=s=>document.querySelector(s);
@@ -508,10 +508,14 @@ function aclCheck(id,pkt){
   for(const ln of list){if(matchLine(ln,pkt)){ln.hits++;return{acl:id,action:ln.action,implicit:false};}}
   return{acl:id,action:'deny',implicit:true};
 }
+function sameSubnet(ip,ifIp,mask){
+  if(!isIp(ip)||!isIp(ifIp)||!isIp(mask))return false;
+  return (ipN(ip)&ipN(mask))===(ipN(ifIp)&ipN(mask));
+}
 function ifaceOf(ip){
   const keys=['g0/0','g0/1','g0/2'];
   for(const k of keys){const IF=save.rtr.ifaces[k];
-    if(IF.up&&IF.ip&&inNet(ip,IF.ip,IF.mask))return k;}
+    if(IF.up&&IF.ip&&sameSubnet(ip,IF.ip,IF.mask))return k;}
   return null;
 }
 function flow(src,dst,proto,dport){
@@ -763,6 +767,11 @@ function execCli(raw){
 }
 function cliRun(raw){
   const line=raw.trim();
+  if(line){
+    if(cli.hist[cli.hist.length-1]!==line)cli.hist.push(line);
+    if(cli.hist.length>100)cli.hist=cli.hist.slice(-100);
+    cli.hi=null;
+  }
   const entry=[[promptStr()+(line?' ':'')+(line||''),'cmd']];
   if(line)execCli(line).forEach(l=>entry.push(l));
   save.cliLog=save.cliLog||[];
@@ -1573,7 +1582,7 @@ function validate(m){
   if(m.code==='M-10'&&!save.finSolved)miss.push('bateria FINAL verde após correção');
   if(miss.length){snd.err();toast('Falta: '+miss.join(' · '),'err');return;}
   save.done.push(m.id);save.xp+=m.xp;
-  if(!save.tEnd)save.tEnd=Date.now();
+  if(m.id==='m10'&&!save.tEnd)save.tEnd=Date.now();
   soc('perm','■ '+m.log);
   toast('+'+m.xp+' XP — '+m.code+' validada','ok');snd.done();
   if(m.cp){stamp(m.cp);setTimeout(()=>toast(m.cp+' alcançado','ok'),700);}
@@ -1664,7 +1673,7 @@ function startApp(){
   setInterval(clockTick,1000);clockTick();
 }
 const BOOT=[
-  'SIEM ORION · CONSOLE DO ANALISTA v2.1',
+  'SIEM ORION · CONSOLE DO ANALISTA v2.2',
   '> carregando caso: AUDITORIA EXTERNA #7734 ..... <span class="gd">OK</span>',
   '> achado: "usuários acessam serviços indevidos" <span class="rd">CONFIRMADO</span>',
   '> tabela de endereçamento ...................... <span class="em">NÃO FORNECIDA</span>',
