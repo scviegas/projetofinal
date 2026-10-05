@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROJETO·LAB — Material Instrucional · Processos e Etapas do Projeto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2EEE1; --paper2:#FAF7EE; --paper3:#E9E4D2;
+  --ink:#1A1811; --soft:#6E6858; --faint:#B8B2A0;
+  --red:#D23A1C; --blue:#2843C6; --yellow:#EFBE2E; --green:#2E7D46;
+  --bord:2px solid var(--ink);
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --sans:"Space Grotesk",sans-serif;
+  --disp:"Fraunces",serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:120px}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.10 0 0 0 0 0.09 0 0 0 0 0.07 0 0 0 0.045 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>"),
+    linear-gradient(rgba(26,24,17,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(26,24,17,.05) 1px,transparent 1px),
+    linear-gradient(rgba(26,24,17,.075) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(26,24,17,.075) 1px,transparent 1px);
+  background-size:140px 140px,32px 32px,32px 32px,160px 160px,160px 160px;
+}
+::selection{background:var(--yellow);color:var(--ink)}
+button{font-family:inherit;color:inherit;cursor:pointer}
+canvas.sim{display:block;width:100%;height:auto;background:var(--paper2);touch-action:none}
+canvas.sim:focus{outline:3px solid var(--red);outline-offset:-3px}
+a{color:inherit}
+
+header.top{position:sticky;top:0;z-index:60;background:var(--paper);border-bottom:var(--bord)}
+.top-in{max-width:1360px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:12px 24px}
+.logo{display:flex;align-items:center;gap:11px;text-decoration:none}
+.logo b{font-family:var(--disp);font-weight:900;font-size:21px;letter-spacing:.5px}
+.logo b i{font-style:italic;color:var(--red)}
+.logo small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--soft);text-transform:uppercase}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.prog{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px}
+.pcells{display:flex;gap:4px}
+.pcells i{width:14px;height:14px;border:2px solid var(--ink);display:block}
+.pcells i.on{background:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:7px;border:var(--bord);background:var(--paper2);font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;box-shadow:3px 3px 0 var(--ink);transition:transform .12s,box-shadow .12s;user-select:none}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+.btn.dark{background:var(--ink);color:var(--paper)}
+.btn.red{background:var(--red);color:var(--paper2)}
+.btn.small{padding:4px 9px;font-size:10px;box-shadow:2px 2px 0 var(--ink)}
+.btn svg{display:block}
+
+.shell{max-width:1360px;margin:0 auto;display:grid;grid-template-columns:238px 1fr;gap:0 44px;padding:0 24px;position:relative;z-index:1}
+nav.toc{position:sticky;top:96px;align-self:start;padding:34px 0 60px}
+nav.toc h4{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--soft);margin-bottom:14px}
+nav.toc ol{list-style:none;border-left:2px solid var(--ink)}
+nav.toc a{display:flex;gap:10px;align-items:baseline;text-decoration:none;padding:10px 0 10px 16px;border-left:4px solid transparent;margin-left:-3px;transition:background .15s}
+nav.toc a:hover{background:rgba(26,24,17,.06)}
+nav.toc a.active{border-left-color:var(--red);background:rgba(210,58,28,.07)}
+nav.toc a .n{font-family:var(--mono);font-size:11px;color:var(--soft)}
+nav.toc a.active .n{color:var(--red)}
+nav.toc a .t{font-weight:700;font-size:13.5px;line-height:1.25}
+nav.toc a .st{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint)}
+nav.toc a.done .st{color:var(--green);font-weight:600}
+nav.toc li.sep{margin-top:16px}
+.tocstrip{display:none}
+@media(max-width:1020px){
+  .shell{grid-template-columns:1fr;padding:0 16px}
+  nav.toc{display:none}
+  .tocstrip{display:block;position:sticky;top:65px;z-index:55;background:var(--paper);border-bottom:var(--bord)}
+  .tocstrip .in{display:flex;gap:6px;overflow-x:auto;padding:8px 16px;scrollbar-width:none}
+  .tocstrip a{flex:none;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em;text-decoration:none;border:2px solid var(--ink);padding:5px 10px;background:var(--paper2)}
+  .tocstrip a.active{background:var(--ink);color:var(--paper)}
+}
+
+.hero{padding:64px 0 52px;border-bottom:var(--bord);margin-bottom:26px}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--red);font-weight:600;text-transform:uppercase}
+.hero h1{font-family:var(--disp);font-weight:900;font-size:clamp(40px,6vw,84px);line-height:.98;letter-spacing:-.01em;margin:18px 0 22px;max-width:940px}
+.hero h1 em{font-style:italic;color:var(--red)}
+.hero p.lead{max-width:680px;font-size:18px;color:#33301F}
+.hero p.lead b{background:var(--yellow);padding:0 4px}
+.specs{display:flex;flex-wrap:wrap;gap:0;border:var(--bord);width:max-content;max-width:100%;margin-top:28px;background:var(--paper2)}
+.specs span{font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:8px 16px;border-right:2px solid var(--ink)}
+.specs span:last-child{border-right:0}
+.method{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));border:var(--bord);background:var(--paper2);margin-top:22px;max-width:940px}
+.method div{padding:13px 15px;border-right:2px solid var(--ink);font-size:12.5px;color:#43402e;line-height:1.4}
+.method div:last-child{border-right:0}
+.method b{font-family:var(--disp);font-weight:900;font-size:20px;color:var(--red);display:block;margin-bottom:2px}
+@media(max-width:760px){.specs span{border-right:0;border-bottom:2px solid var(--ink);flex:1 1 46%}}
+
+section.unit{padding:60px 0 30px;border-bottom:1px dashed var(--faint)}
+.unit-head{display:flex;gap:22px;align-items:flex-start;margin-bottom:8px;position:relative}
+.unit-no{font-family:var(--disp);font-weight:900;font-size:clamp(52px,7vw,96px);line-height:.8;color:rgba(26,24,17,.07);-webkit-text-stroke:2px rgba(26,24,17,.28);flex:none;user-select:none}
+.unit-head .uh-txt{padding-top:6px}
+.uh-txt h2{font-family:var(--disp);font-weight:900;font-size:clamp(26px,3.4vw,40px);line-height:1.05;margin-top:6px;max-width:700px}
+.uh-txt h2 em{font-style:italic;color:var(--red)}
+.unit-int{max-width:700px;font-size:16.5px;color:#33301F;margin:6px 0 24px}
+.unit-int b{background:var(--yellow);padding:0 3px}
+.stamp{position:absolute;right:0;top:4px;transform:rotate(-7deg);border:3px double var(--red);color:var(--red);font-family:var(--mono);font-weight:600;font-size:12px;letter-spacing:.18em;text-transform:uppercase;padding:9px 14px;text-align:center;opacity:0;pointer-events:none;background:rgba(250,247,238,.85)}
+.stamp small{display:block;font-size:9px;letter-spacing:.24em;margin-top:2px}
+.stamp.show{animation:stampIn .5s cubic-bezier(.2,1.6,.4,1) forwards}
+.stamp.instant{opacity:1;animation:none}
+@keyframes stampIn{0%{opacity:0;transform:rotate(-7deg) scale(2.4)}55%{opacity:1;transform:rotate(-7deg) scale(.92)}100%{opacity:1;transform:rotate(-7deg) scale(1)}}
+
+.board{position:relative;border:var(--bord);background:var(--paper2);box-shadow:6px 6px 0 rgba(26,24,17,.9);margin-bottom:24px}
+.board .cm{position:absolute;width:13px;height:13px;border:0 solid var(--ink);pointer-events:none}
+.cm.tl{top:-8px;left:-8px;border-top-width:2px;border-left-width:2px}
+.cm.tr{top:-8px;right:-8px;border-top-width:2px;border-right-width:2px}
+.cm.bl{bottom:-8px;left:-8px;border-bottom-width:2px;border-left-width:2px}
+.cm.br{bottom:-8px;right:-8px;border-bottom-width:2px;border-right-width:2px}
+.board-tag{position:absolute;top:-11px;left:18px;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.18em;padding:3px 10px;text-transform:uppercase}
+.board-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px 18px;border-bottom:var(--bord)}
+.board-head .spacer{flex:1}
+.board-body{display:grid;grid-template-columns:1fr 292px}
+.board-main{padding:16px;border-right:var(--bord);min-width:0}
+.board-side{padding:16px;display:flex;flex-direction:column;gap:14px;background:var(--paper)}
+.board-foot{border-top:var(--bord);padding:12px 18px;font-size:13.5px;color:#3d3a2c;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.board-foot .fmono{font-family:var(--mono);font-size:11px;color:var(--soft)}
+@media(max-width:900px){.board-body{grid-template-columns:1fr}.board-main{border-right:0;border-bottom:var(--bord)}}
+.readout{font-family:var(--mono);font-size:11.5px;color:var(--soft)}
+.readout b{color:var(--ink)}
+.side-label{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--soft);text-transform:uppercase;border-bottom:2px solid var(--ink);padding-bottom:5px}
+.hintline{font-family:var(--mono);font-size:11px;color:var(--soft);margin-top:8px}
+
+.panel{position:relative;border:var(--bord);background:var(--paper2);box-shadow:4px 4px 0 var(--ink);padding:22px 20px 20px;margin-bottom:18px}
+.panel .ptag{position:absolute;top:-11px;left:16px;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.18em;padding:3px 10px;text-transform:uppercase}
+.duo{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start}
+@media(max-width:900px){.duo{grid-template-columns:1fr}}
+.trio{display:grid;grid-template-columns:1.05fr .95fr .95fr;gap:18px;align-items:start}
+@media(max-width:1000px){.trio{grid-template-columns:1fr}}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
+.tcard{border:2px solid var(--ink);background:var(--paper2);padding:13px 15px}
+.tcard b{display:block;font-family:var(--disp);font-weight:900;font-size:16.5px;margin-bottom:4px;line-height:1.15}
+.tcard b i{font-style:normal;color:var(--red)}
+.tcard p{font-size:13px;color:#43402e;line-height:1.45}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.vgrid{grid-template-columns:1fr}}
+.vcard{display:flex;flex-direction:column;text-decoration:none;border:2px solid var(--ink);background:var(--paper2);padding:12px 14px;box-shadow:3px 3px 0 var(--ink);transition:transform .12s,box-shadow .12s}
+.vcard:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink)}
+.vcard .vk{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--soft);text-transform:uppercase;display:flex;gap:6px;flex-wrap:wrap}
+.vcard .vt{font-weight:700;font-size:14.5px;margin:7px 0 4px;line-height:1.25}
+.vcard .vd{font-size:12.5px;color:#5c5645;line-height:1.4;flex:1}
+.vcard .vgo{margin-top:10px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--red)}
+.bad{font-style:normal;border:1.5px solid currentColor;padding:1px 6px;font-size:9px;font-weight:600;letter-spacing:.08em}
+.bad.pt{color:var(--green)}.bad.en{color:var(--blue)}.bad.busca{color:var(--soft)}
+.readlist{list-style:none}
+.readlist li{border-bottom:1px dashed var(--faint)}
+.readlist li:last-child{border-bottom:0}
+.readlist a{display:flex;gap:10px;align-items:baseline;padding:10px 2px;text-decoration:none;font-size:13.5px;transition:background .12s}
+.readlist a:hover{background:rgba(26,24,17,.05)}
+.readlist .rt{font-weight:700;flex:none}
+.readlist .rd{color:#5c5645;font-size:12.5px}
+.readlist .u{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint);flex:none;padding-top:2px}
+@media(max-width:560px){.readlist .u{display:none}}
+.wlist{list-style:none}
+.wlist label{display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:13px;cursor:pointer;border-bottom:1px dashed var(--faint)}
+.wlist label:last-child{border-bottom:0}
+.wlist input,.ckx{appearance:none;-webkit-appearance:none;width:16px;height:16px;border:2px solid var(--ink);flex:none;margin-top:2px;cursor:pointer;background:var(--paper2)}
+.wlist input:checked,.ckx:checked{background:var(--ink)}
+.wlist input:checked::after,.ckx:checked::after{content:"";display:block;width:6px;height:9px;border:solid var(--paper);border-width:0 2px 2px 0;transform:rotate(42deg);margin:1px 3px}
+.wlist b{display:block;font-size:13px}
+.wlist small{color:var(--soft);font-size:11.5px;line-height:1.3;display:block}
+.goals{list-style:none}
+.goals li{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;padding:7px 0;border-bottom:1px dashed var(--faint);color:#43402e}
+.goals li .gbox{flex:none;width:16px;height:16px;border:2px solid var(--ink);margin-top:2px;position:relative;background:var(--paper2)}
+.goals li.done .gbox{background:var(--green);border-color:var(--green)}
+.goals li.done .gbox::after{content:"";position:absolute;left:3px;top:0;width:6px;height:10px;border:solid var(--paper2);border-width:0 2px 2px 0;transform:rotate(42deg)}
+.goals li.done{text-decoration:line-through;text-decoration-color:var(--faint);color:var(--ink)}
+.mnote{border-left:3px solid var(--red);padding:4px 0 4px 14px;font-family:var(--disp);font-style:italic;font-size:15px;line-height:1.45;color:#3d3a2c;margin-top:22px;max-width:700px}
+.mnote b{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--red);display:block;margin-bottom:4px}
+
+/* ---- componentes dos laboratórios ---- */
+.ficha{border:2px solid var(--ink);background:var(--paper2);padding:12px 14px}
+.ficha .vq{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.14em;margin-bottom:6px}
+.ficha b{font-size:14px}
+.ficha p{font-size:12.5px;color:#43402e;margin-top:5px;line-height:1.45}
+.srow{display:flex;align-items:center;gap:10px;padding:5px 0}
+.srow label{font-family:var(--mono);font-size:10px;font-weight:600;width:58px;flex:none}
+.srow input[type=range]{flex:1;min-width:50px}
+.srow .sv{font-family:var(--mono);font-size:11px;font-weight:600;width:26px;text-align:right}
+input[type=range]{appearance:none;-webkit-appearance:none;height:2px;background:var(--ink);outline-offset:4px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--red);border:2px solid var(--ink);cursor:grab}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--red);border:2px solid var(--ink);border-radius:0;cursor:grab}
+textarea,input[type=text]{width:100%;border:2px solid var(--ink);background:var(--paper2);font-family:var(--sans);font-size:14px;padding:10px 12px;color:var(--ink)}
+textarea:focus,input[type=text]:focus{outline:3px solid var(--yellow);outline-offset:-1px}
+textarea{resize:vertical;min-height:96px}
+.lfl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--soft);text-transform:uppercase;display:block;margin:12px 0 4px}
+.lfl:first-child{margin-top:0}
+.mtrow{border:2px solid var(--ink);background:var(--paper);padding:10px 12px;margin-bottom:10px}
+.mtrow .mthead{display:flex;gap:8px;align-items:center}
+.mtrow input[type=text]{flex:1;padding:6px 10px;font-weight:700;font-size:13.5px}
+.mtrow .mtgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;margin-top:6px}
+.mtrow .mtscore{font-family:var(--mono);font-weight:600;font-size:18px;flex:none}
+.mtbar{height:10px;border:2px solid var(--ink);background:var(--paper3);margin:4px 0 10px}
+.mtbar i{display:block;height:100%;background:var(--soft);transition:width .3s,background .3s}
+.mtbar.lead i{background:var(--green)}
+.qchecks{list-style:none;margin-top:12px}
+.qchecks li{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--faint);line-height:1.4}
+.qchecks li .ic{font-family:var(--mono);font-weight:600;flex:none;width:16px;text-align:center}
+.qchecks li.ok .ic{color:var(--green)}
+.qchecks li.warn .ic{color:#B98A16}
+.qchecks li.bad .ic{color:var(--red)}
+.chipv{font-family:var(--mono);font-size:10.5px;font-weight:600;border:2px solid var(--ink);background:var(--paper2);padding:5px 9px;letter-spacing:.04em}
+.chipv:hover{background:var(--yellow)}
+.chipv.on{background:var(--ink);color:var(--paper)}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px}
+.objrow{border:2px solid var(--ink);background:var(--paper);padding:10px 12px;margin-bottom:8px}
+.objrow .olab{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--red);display:block;margin-bottom:6px}
+.vstat{list-style:none;margin-top:10px}
+.vstat li{font-family:var(--mono);font-size:11px;padding:4px 0;border-bottom:1px dashed var(--faint);display:flex;gap:8px;line-height:1.4}
+.vstat li .ic{flex:none;font-weight:600}
+.vstat li.ok{color:var(--green)}.vstat li.warn{color:#B98A16}.vstat li.bad{color:var(--red)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:700px){.cmp{grid-template-columns:1fr}}
+.cmp .cbox{border:2px solid var(--ink);padding:11px 13px;font-size:13px;line-height:1.5;position:relative}
+.cmp .no{background:rgba(210,58,28,.06);border-color:var(--red)}
+.cmp .yes{background:rgba(46,125,70,.07);border-color:var(--green)}
+.cmp .ctag{position:absolute;top:-10px;left:10px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.12em;padding:2px 7px;color:var(--paper2)}
+.cmp .no .ctag{background:var(--red)}
+.cmp .yes .ctag{background:var(--green)}
+.cmp .cwhy{display:block;margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--soft)}
+.cmpwrap{margin:14px 0 4px}
+.cmpwrap h5{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);margin-bottom:10px}
+.qblock{border-left:4px solid var(--ink);padding:8px 0 8px 14px;font-family:var(--disp);font-style:italic;font-size:15px;line-height:1.5;margin-top:10px;background:rgba(26,24,17,.03)}
+.ga-box{border:3px solid var(--ink);background:var(--paper2);box-shadow:6px 6px 0 var(--ink);padding:24px;margin-bottom:24px;position:relative}
+.ga-box .gk{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--red);font-weight:600;text-transform:uppercase}
+.ga-box h3{font-family:var(--disp);font-weight:900;font-size:clamp(24px,3vw,34px);margin:6px 0 14px}
+.ga-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0;border:var(--bord);background:var(--paper)}
+.ga-grid div{padding:12px 14px;border-right:2px solid var(--ink);font-size:12.5px;line-height:1.45}
+.ga-grid div:last-child{border-right:0}
+.ga-grid b{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--soft);text-transform:uppercase;margin-bottom:3px}
+.cd{display:flex;border:var(--bord);width:max-content;max-width:100%;background:var(--paper2);margin-top:16px}
+.cd div{padding:10px 14px;border-right:2px solid var(--ink);text-align:center}
+.cd div:last-child{border-right:0}
+.cd b{display:block;font-family:var(--mono);font-weight:600;font-size:26px;line-height:1}
+.cd small{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--soft);text-transform:uppercase}
+.cd.pulse{animation:cdp 1s infinite alternate}
+@keyframes cdp{from{box-shadow:0 0 0 rgba(210,58,28,0)}to{box-shadow:0 0 0 4px rgba(210,58,28,.25)}}
+
+.plain{padding:58px 0 26px;border-bottom:1px dashed var(--faint)}
+.plain h2{font-family:var(--disp);font-weight:900;font-size:clamp(26px,3.2vw,38px);line-height:1.05;margin:6px 0 8px}
+.plain h2 em{font-style:italic;color:var(--red)}
+.plain .pk{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--soft);text-transform:uppercase}
+.plain .pl{max-width:700px;font-size:16px;color:#33301F;margin-bottom:22px}
+.sched{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--paper2);border:var(--bord)}
+.sched th{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;text-align:left;color:var(--soft);border-bottom:2px solid var(--ink);padding:9px 12px;background:var(--paper)}
+.sched td{border-bottom:1px dashed var(--faint);padding:11px 12px;vertical-align:top}
+.sched tr:last-child td{border-bottom:0}
+.sched td:first-child{font-family:var(--mono);font-weight:600;color:var(--red);white-space:nowrap}
+.sched td b{display:block}
+.sched td small{color:var(--soft);font-size:12px}
+.fchips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tog{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.05em;border:var(--bord);background:var(--paper2);padding:7px 12px;display:inline-flex;align-items:center;gap:8px}
+.tog[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.lkrow{display:flex;gap:12px;align-items:baseline;padding:10px 4px;border-bottom:1px dashed var(--faint);text-decoration:none;transition:background .12s}
+.lkrow:hover{background:rgba(26,24,17,.05)}
+.lkrow .lkn{font-weight:700;font-size:14px;flex:none}
+.lkrow .lkd{font-size:12.5px;color:#5c5645;flex:1;min-width:0}
+.lkrow .lku{font-family:var(--mono);font-size:10px;color:var(--faint);flex:none}
+@media(max-width:560px){.lkrow .lku{display:none}}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0 30px}
+.dgrid dt{font-weight:700;font-family:var(--mono);font-size:12px;letter-spacing:.05em;border-bottom:1px dashed var(--faint);padding:10px 0 4px}
+.dgrid dd{font-size:13px;color:#43402e;padding-bottom:10px;line-height:1.45}
+.rbarwrap{display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}
+.rbar{flex:1;min-width:180px;height:12px;border:2px solid var(--ink);background:var(--paper3)}
+.rbar i{display:block;height:100%;background:var(--red);width:0;transition:width .35s}
+.verdict{font-family:var(--mono);font-size:12px;font-weight:600}
+.verdict.ok{color:var(--green)}.verdict.mid{color:#B98A16}.verdict.low{color:var(--red)}
+
+#toasts{position:fixed;right:18px;top:78px;z-index:120;display:flex;flex-direction:column;gap:10px;max-width:320px}
+.toast{background:var(--paper2);border:var(--bord);box-shadow:4px 4px 0 var(--ink);padding:12px 14px 12px 16px;position:relative;animation:tIn .3s cubic-bezier(.2,1.4,.4,1)}
+.toast::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--red)}
+.toast.good::before{background:var(--green)}
+.toast h5{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+.toast.good h5{color:var(--green)}
+.toast p{font-size:13.5px;margin-top:3px;line-height:1.35}
+.toast.out{animation:tOut .25s forwards}
+@keyframes tIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes tOut{to{opacity:0;transform:translateX(30px)}}
+
+#finale{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;background:rgba(26,24,17,.55);padding:20px}
+#finale.show{display:flex}
+.fin-card{position:relative;background:var(--paper);border:3px solid var(--ink);box-shadow:10px 10px 0 var(--ink);max-width:540px;width:100%;padding:42px 38px 32px;text-align:center}
+.fin-card h3{font-family:var(--disp);font-weight:900;font-size:36px;line-height:1.02;margin:12px 0}
+.fin-card h3 em{font-style:italic;color:var(--red)}
+.fin-card p{color:#3d3a2c;font-size:15px}
+#finStats{display:flex;justify-content:center;flex-wrap:wrap;border:var(--bord);margin:20px 0;background:var(--paper2)}
+#finStats span{font-family:var(--mono);font-size:11px;padding:9px 13px;border-right:2px solid var(--ink)}
+#finStats span:last-child{border-right:0}
+#confetti{position:fixed;inset:0;z-index:160;pointer-events:none}
+
+footer{max-width:1360px;margin:0 auto;padding:44px 24px 66px;display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:flex-start;position:relative;z-index:1}
+footer .fb{font-family:var(--mono);font-size:11px;color:var(--soft);line-height:1.8}
+footer .fb b{color:var(--ink)}
+
+@media print{
+  body::before{display:none}body{background:#fff}
+  header.top,.tocstrip,#toasts,#finale{display:none!important}
+  .btn,.tog,.fchips,.chipv{display:none!important}
+  .board,.panel,.ga-box{box-shadow:none;break-inside:avoid}
+  section.unit,section.plain{break-before:page;border-bottom:0}
+  a{text-decoration:none;color:inherit}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="logo" href="#top">
+      <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>
+      <span><b>PROJETO<i>·LAB</i></b><small>material instrucional · processos e etapas do projeto</small></span>
+    </a>
+    <div class="top-right">
+      <div class="prog" title="Blocos concluídos">
+        <div class="pcells" id="cells"><i></i><i></i></div>
+        <span id="progText">0/2</span>
+      </div>
+      <button class="btn dark" id="btnContinue">Continuar</button>
+      <button class="btn icon" id="btnPrint" aria-label="Imprimir material" title="Imprimir"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg></button>
+      <button class="btn icon" id="btnSound" aria-label="Som" title="Som"></button>
+    </div>
+  </div>
+</header>
+
+<div class="tocstrip"><div class="in">
+  <a href="#ua">S3–4 PROCESSO</a><a href="#ub">S5–6 OBJETIVOS</a>
+  <a href="#entrega">ENTREGA &amp; GA</a><a href="#cronograma">CRONOGRAMA</a>
+  <a href="#glossario">GLOSSÁRIO</a><a href="#linkoteca">LINKOTECA</a>
+</div></div>
+
+<div class="shell" id="top">
+  <nav class="toc" aria-label="Índice">
+    <h4>MATERIAL · ÍNDICE</h4>
+    <ol>
+      <li><a href="#ua" data-u="ua"><span class="n">S3–4</span><span class="t">Processos e etapas do projeto: tema, justificativa e questão</span><span class="st">·</span></a></li>
+      <li><a href="#ub" data-u="ub"><span class="n">S5–6</span><span class="t">Objetivo do projeto: geral, específicos e introdução</span><span class="st">·</span></a></li>
+      <li class="sep"><a href="#entrega" data-u="entrega"><span class="n">—</span><span class="t">Entrega da Etapa 1 + GA (5,0 pts)</span><span class="st">·</span></a></li>
+      <li><a href="#cronograma" data-u="cronograma"><span class="n">—</span><span class="t">Cronograma das semanas 3 a 6</span><span class="st">·</span></a></li>
+      <li><a href="#glossario" data-u="glossario"><span class="n">—</span><span class="t">Glossário</span><span class="st">·</span></a></li>
+      <li><a href="#linkoteca" data-u="linkoteca"><span class="n">—</span><span class="t">Linkoteca</span><span class="st">·</span></a></li>
+    </ol>
+    <div class="mnote"><b>REGRA DE OURO</b>Projeto bom é projeto <b>recortado</b>: um tema específico, uma pergunta respondível, objetivos em degraus. Os laboratórios desta apostila existem para forçar o recorte — e salvar seu prazo de 21/09.</div>
+  </nav>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="kick">Material instrucional · Semanas 3 a 6 · Etapa 1 do Projeto</div>
+      <h1>Do tema à introdução: <em>recorte</em> antes de escrever.</h1>
+      <p class="lead">Quatro semanas para transformar uma vaga vontade de "pesquisar algo" num documento com <b>tema, justificativa, questão, objetivos e introdução</b>. Os laboratórios abaixo auditam cada peça — antes que o professor audite.</p>
+      <div class="cd" id="cdhero" aria-label="contagem regressiva para a entrega">
+        <div><b id="cd1d">—</b><small>dias</small></div>
+        <div><b id="cd1h">—</b><small>horas</small></div>
+        <div><b id="cd1m">—</b><small>min</small></div>
+        <div><b id="cd1s">—</b><small>seg</small></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--soft);margin-top:6px">PRAZO DE ENTREGA: 21/09/2026 · LOCAL: MÓDULO SEMANAS 5 e 6</div>
+      <div class="specs">
+        <span>2 BLOCOS (S3–4 · S5–6)</span><span>6 LABORATÓRIOS</span><span>8 AULAS GUIADAS</span><span>GA 5,0 PTS</span><span>PRAZO 21/09/2026</span><span>RUBRICA SIMULADA</span>
+      </div>
+      <div class="method">
+        <div><b>1</b>Leia a teoria de cada etapa (5 min)</div>
+        <div><b>2</b>Compare os exemplos ✗ / ✓</div>
+        <div><b>3</b>Use o laboratório com o SEU tema</div>
+        <div><b>4</b>Monte o documento e entregue no módulo</div>
+      </div>
+    </section>
+
+    <!-- ============ BLOCO S3-4 ============ -->
+    <section class="unit" id="ua" data-spy>
+      <div class="unit-head">
+        <div class="unit-no">S3–4</div>
+        <div class="uh-txt">
+          <div class="kick">Semanas 3 e 4</div>
+          <h2>Processos e etapas do projeto: <em>tema, justificativa, questão</em></h2>
+        </div>
+        <div class="stamp" data-stamp="ua">Bloco S3–4<small>concluído</small></div>
+      </div>
+      <p class="unit-int">Todo projeto começa por três decisões em cascata: <b>o quê</b> (tema), <b>por quê</b> (justificativa) e <b>que pergunta</b> (questão de pesquisa). Acertar aqui economiza semanas — errar aqui derruba tudo depois, capítulo por capítulo.</p>
+
+      <div class="panel">
+        <div class="ptag">Teoria essencial · as etapas</div>
+        <div class="tgrid">
+          <div class="tcard"><b>Etapas em <i>cascata</i></b><p>Um projeto acadêmico tem etapas encadeadas: tema → justificativa → questão → objetivos → referencial → metodologia → coleta → redação. Cada etapa <b>alimenta a seguinte</b> — pular uma cria buraco que aparece na nota.</p></div>
+          <div class="tcard"><b>Tema = assunto + <i>recorte</i></b><p>"Tecnologia na educação" é assunto. Tema é assunto <b>delimitado</b>: o quê, onde, com quem, quando. Recorte é generosidade com o seu prazo.</p></div>
+          <div class="tcard"><b>Justificativa = 4 elementos</b><p>O problema (o que está errado), <b>quem é afetado</b>, por que agora (número, prazo, mudança) e o que o estudo entrega. "É importante" não justifica — afirmação sem sustentação é opinião.</p></div>
+          <div class="tcard"><b>Questão de pesquisa</b><p>A pergunta que <b>governa o projeto inteiro</b>: tudo que você escrever serve para respondê-la. Boa questão é aberta (não sim/não), recortada e respondível com o método que você terá.</p></div>
+          <div class="tcard"><b>Viabilidade &gt; brilho</b><p>Tema brilhante sem dados, sem tempo ou sem interesse seu morre no meio. A escolha é um <b>ato de engenharia</b>: pondere as quatro forças antes de se apaixonar.</p></div>
+        </div>
+      </div>
+
+      <div class="board">
+        <i class="cm tl"></i><i class="cm tr"></i><i class="cm bl"></i><i class="cm br"></i>
+        <div class="board-tag">Laboratório A1 · O fluxo das etapas (clique em cada uma)</div>
+        <div class="board-head">
+          <span class="readout">ETAPAS EXPLORADAS <b id="flowN">0</b>/8</span>
+          <div class="spacer"></div>
+          <span class="readout">S3–4 <b style="color:var(--red)">■</b> · S5–6 <b style="color:#B98A16">■</b> · resto do semestre <b style="color:var(--soft)">■</b></span>
+        </div>
+        <div class="board-body">
+          <div class="board-main"><canvas class="sim" id="flowcv"></canvas></div>
+          <aside class="board-side">
+            <div>
+              <div class="side-label">Ficha da etapa</div>
+              <div class="ficha" id="flowinfo" style="margin-top:8px"><p>Clique em qualquer etapa do fluxo para abrir a ficha: o que é, o que entrega, e quando você vai fazer.</p></div>
+            </div>
+          </aside>
+        </div>
+        <div class="board-foot">
+          <span class="fmono">LEIA O FLUXO —</span>
+          <span>as etapas em <b>vermelho</b> são as destas duas semanas. Note que temas e questões vêm <b>antes</b> do referencial: primeiro o recorte, depois a literatura.</span>
+        </div>
+      </div>
+
+      <div class="trio">
+        <div class="panel">
+          <div class="ptag">Laboratório A2 · Matriz de viabilidade do tema</div>
+          <div id="mtrows"></div>
+          <button class="btn small" id="mtadd">+ ADICIONAR CANDIDATO</button>
+          <div style="margin-top:14px">
+            <div class="side-label">Placar dos candidatos</div>
+            <div id="mtbars" style="margin-top:8px"></div>
+            <div class="ficha" id="mtadvice" style="margin-top:10px"><p>Cadastre 2–3 candidatos a tema, dê notas honestas de 0–10 e deixe a matriz julgar.</p></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ptag">Teoria · critérios da matriz</div>
+          <div class="tgrid" style="grid-template-columns:1fr">
+            <div class="tcard"><b>INTERESSE <span style="font-family:var(--mono);font-size:10px;color:var(--soft)">PESO 25%</span></b><p>Você vai conviver com este tema por meses. Sem curiosidade genuína, a escrita vira tortura — e o texto sente.</p></div>
+            <div class="tcard"><b>VIABILIDADE <span style="font-family:var(--mono);font-size:10px;color:var(--soft)">PESO 25%</span></b><p>Cabe no semestre? Exige viagem, laboratório, autorização de empresa? Seja brutal: prazo curto mata tema longo.</p></div>
+            <div class="tcard"><b>ACESSO A DADOS <span style="font-family:var(--mono);font-size:10px;color:var(--soft)">PESO 25%</span></b><p>Existe literatura? Fontes públicas? Alguém vai responder seu questionário? Sem dados, não há pesquisa — só opinião.</p></div>
+            <div class="tcard"><b>RELEVÂNCIA <span style="font-family:var(--mono);font-size:10px;color:var(--soft)">PESO 25%</span></b><p>Alguém se importa com a resposta? Tem benefício prático ou teórico nomeável? É a semente da justificativa.</p></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ptag">Exemplos · tema</div>
+          <div class="cmpwrap">
+            <h5>✗ / ✓ O mesmo assunto, dois futuros</h5>
+            <div class="cmp">
+              <div class="cbox no"><span class="ctag">EVITE</span>"Tecnologia na educação"<span class="cwhy">amplo demais: cabem mil teses. Você não sabe por onde começar — nem onde parar.</span></div>
+              <div class="cbox yes"><span class="ctag">PREFIRA</span>"Aplicativo de gamificação no ensino de matemática do 6º ano de uma escola pública de Fortaleza"<span class="cwhy">o quê + onde + com quem: recortado ao seu alcance real.</span></div>
+            </div>
+            <div class="cmp">
+              <div class="cbox no"><span class="ctag">EVITE</span>"Marketing digital"<span class="cwhy">assunto de curso inteiro, não de um projeto.</span></div>
+              <div class="cbox yes"><span class="ctag">PREFIRA</span>"Instagram como canal de vendas de microempreendedores do bairro X em 2026"<span class="cwhy">delimitado, atual e com população acessível.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="duo">
+        <div class="panel">
+          <div class="ptag">Laboratório A3 · Montador de justificativa</div>
+          <label class="lfl">1 · O problema — o que está errado ou insatisfeito?</label>
+          <input type="text" id="jp" placeholder="ex.: alunos do 6º ano têm desempenho abaixo do mínimo em matemática">
+          <label class="lfl">2 · Quem sofre (ou se beneficia da solução)?</label>
+          <input type="text" id="jq" placeholder="ex.: alunos, professores e a gestão da escola">
+          <label class="lfl">3 · Por que agora? (número, prazo ou mudança recente)</label>
+          <input type="text" id="ja" placeholder="ex.: os resultados do SAEB 2023 e a retomada pós-pandemia tornam o tema urgente">
+          <label class="lfl">4 · O que o estudo entrega de concreto?</label>
+          <input type="text" id="je" placeholder="ex.: um protocolo de uso do aplicativo testado e replicável pela escola">
+          <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn red" id="jgen">GERAR PARÁGRAFO</button>
+            <button class="btn" id="jcopy">COPIAR</button>
+          </div>
+          <div class="qblock" id="jout" style="display:none"></div>
+          <div class="readout" id="jnote" style="margin-top:8px"></div>
+        </div>
+        <div>
+          <div class="panel">
+            <div class="ptag">Exemplos · justificativa</div>
+            <div class="cmp">
+              <div class="cbox no"><span class="ctag">EVITE</span>"O tema é muito importante e atual. Também é pouco explorado."<span class="cwhy">afirmação sem sustentação + "pouco explorado" não é razão — às vezes é pouco explorado porque não interessa.</span></div>
+              <div class="cbox yes"><span class="ctag">PREFIRA</span>"1 em cada 3 alunos do 6º ano está abaixo do mínimo em matemática (SAEB 2023); professores relatam falta de recursos interativos; o estudo entrega um protocolo testável para a escola."<span class="cwhy">problema + afetados + por que agora + entrega. Os 4 elementos.</span></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ptag">Prática do bloco</div>
+            <ul class="goals" data-unit="ua">
+              <li data-g="a_flow"><span class="gbox"></span>Explorar as 8 etapas no fluxo do projeto</li>
+              <li data-g="a_matrix"><span class="gbox"></span>Comparar 2+ candidatos na matriz (melhor nota ≥ 7)</li>
+              <li data-g="a_just"><span class="gbox"></span>Gerar e copiar uma justificativa completa (4 campos)</li>
+              <li data-g="a_q"><span class="gbox"></span>Obter laudo APTO (≥ 70) para sua questão de pesquisa</li>
+            </ul>
+            <div class="side-label" style="margin-top:14px">Para casa</div>
+            <ul class="wlist" style="margin-top:6px">
+              <li><label><input type="checkbox" data-ex="e1"><span><b>3 candidatos</b><small>liste 3 temas possíveis e rode todos na matriz</small></span></label></li>
+              <li><label><input type="checkbox" data-ex="e2"><span><b>Ler 3 resumos</b><small>resumos de TCCs/artigos do SEU tema no Google Acadêmico</small></span></label></li>
+              <li><label><input type="checkbox" data-ex="e3"><span><b>Justificativa à mão</b><small>reescreva o parágrafo gerado com suas palavras, sem o esqueleto</small></span></label></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="board">
+        <i class="cm tl"></i><i class="cm tr"></i><i class="cm bl"></i><i class="cm br"></i>
+        <div class="board-tag">Laboratório A4 · Auditor da questão de pesquisa</div>
+        <div class="board-body" style="grid-template-columns:1fr">
+          <div class="board-main" style="border-right:0">
+            <label class="lfl">Escreva sua questão de pesquisa — o auditor responde na hora</label>
+            <textarea id="qinput" placeholder="ex.: De que forma um aplicativo de gamificação afeta o desempenho em matemática de alunos do 6º ano de uma escola pública?"></textarea>
+            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+              <button class="btn red" id="qaudit">AUDITAR QUESTÃO</button>
+              <span class="readout" id="qscore" style="align-self:center"></span>
+            </div>
+            <div class="duo" style="margin-top:14px">
+              <ul class="qchecks" id="qchecks"></ul>
+              <div>
+                <div class="ficha" id="qverdict"><p><b>Sem laudo ainda.</b> Escreva sua questão e clique em AUDITAR.</p></div>
+                <div class="ficha" style="margin-top:10px"><div class="vq">FÓRMULAS QUE FUNCIONAM</div><p style="margin-top:2px">«De que forma <b>X</b> afeta <b>Y</b> em <b>Z</b>?»<br>«Qual o impacto de <b>X</b> sobre <b>Y</b> no contexto <b>Z</b>?»<br>«Como <b>X</b> pode contribuir para <b>Y</b> em <b>Z</b>?»</p></div>
+              </div>
+            </div>
+            <div class="hintline">o auditor analisa: abertura, questão aberta × fechada, recorte, relação entre variáveis, tamanho — tudo com heurísticas visíveis, para você aprender a se auditar sozinho</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="duo">
+        <div class="panel">
+          <div class="ptag">Para assistir · S3–4</div>
+          <div class="vgrid">
+            <a class="vcard" href="https://www.youtube.com/results?search_query=como+escolher+o+tema+do+tcc+projeto+de+pesquisa" target="_blank" rel="noopener">
+              <span class="vk"><i class="bad busca">BUSCA</i><i class="bad pt">PT-BR</i>YOUTUBE</span>
+              <span class="vt">Como escolher o tema do projeto</span>
+              <span class="vd">Critérios e armadilhas na escolha — assista antes de preencher a matriz de viabilidade.</span>
+              <span class="vgo">BUSCAR AULA ↗</span>
+            </a>
+            <a class="vcard" href="https://www.youtube.com/results?search_query=justificativa+da+pesquisa+como+fazer" target="_blank" rel="noopener">
+              <span class="vk"><i class="bad busca">BUSCA</i><i class="bad pt">PT-BR</i>YOUTUBE</span>
+              <span class="vt">Justificativa: como escrever</span>
+              <span class="vd">A estrutura problema → beneficiados → por que agora → contribuição, com exemplos reais.</span>
+              <span class="vgo">BUSCAR AULA ↗</span>
+            </a>
+            <a class="vcard" href="https://www.youtube.com/results?search_query=problema+de+pesquisa+e+quest%C3%A3o+de+pesquisa+diferen%C3%A7a" target="_blank" rel="noopener">
+              <span class="vk"><i class="bad busca">BUSCA</i><i class="bad pt">PT-BR</i>YOUTUBE</span>
+              <span class="vt">Problema × questão de pesquisa</span>
+              <span class="vd">A diferença que derruba meio semestre: o problema é a tensão; a questão é a pergunta que a investiga.</span>
+              <span class="vgo">BUSCAR AULA ↗</span>
+            </a>
+            <a class="vcard" href="https://www.youtube.com/@scribbr" target="_blank" rel="noopener">
+              <span class="vk"><i class="bad en">EN</i>CANAL</span>
+              <span class="vt">Scribbr</span>
+              <span class="vd">A melhor produtora de vídeos de metodologia do mundo: research questions, scope, introductions.</span>
+              <span class="vgo">ABRIR CANAL ↗</span>
+            </a>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ptag">Para ler · S3–4</div>
+          <ul class="readlist">
+            <li><a href="https://www.scribbr.com/research-process/research-question-examples/" target="_blank" rel="noopener"><span class="rt">Scribbr · Research Questions</span><span class="rd">como formular, com dezenas de exemplos</span><span class="u">scribbr.com</span></a></li>
+            <li><a href="https://owl.purdue.edu/owl/research_and_citation/conducting_research/conducting_research.html" target="_blank" rel="noopener"><span class="rt">Purdue OWL · Research</span><span class="rd">clássico gratuito sobre escolha e recorte</span><span class="u">owl.purdue.edu</span></a></li>
+            <li><a href="https://scholar.google.com.br" target="_blank" rel="noopener"><span class="rt">Google Acadêmico</span><span class="rd">teste a viabilidade: já existe literatura sobre seu tema?</span><span class="u">scholar.google.com.br</span></a></li>
+            <li><a href="https://bdtd.ibict.br" target="_blank" rel="noopener"><span class="rt">BDTD</span><span class="rd">biblioteca digital de teses e dissertações — veja como outros recortaram</span><span class="u">bdtd.ibict.br</span></a></li>
+            <li><a href="https://pt.wikipedia.org/wiki/Metodologia_cient%C3%ADfica" target="_blank" rel="noopener"><span class="rt">Wikipedia · Metodologia</span><span class="rd">visão geral dos conceitos da disciplina</span><span class="u">pt.wikipedia.org</span></a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="mnote"><b>O TESTE DO ELEVADOR</b>Se você não consegue explicar seu tema, sua justificativa e sua questão em 30 segundos para alguém do corredor, o projeto ainda não está recortado. Volte à matriz.</div>
+    </section>
+
+    <!-- ============ BLOCO S5-6 ============ -->
+    <section class="unit" id="ub" data-spy>
+      <div class="unit-head">
+        <div class="unit-no">S5–6</div>
+        <div class="uh-txt">
+          <div class="kick">Semanas 5 e 6</div>
+          <h2>Objetivo do projeto: geral, específicos <em>e introdução</em></h2>
+        </div>
+        <div class="stamp" data-stamp="ub">Bloco S5–6<small>concluído</small></div>
+      </div>
+      <p class="unit-int">Objetivos são <b>contratos</b>: o que você promete entregar, em verbos mensuráveis. O objetivo geral é o topo da escada; os específicos são os degraus. A introdução é o funil que conduz o leitor até esse contrato.</p>
+
+      <div class="panel">
+        <div class="ptag">Teoria essencial</div>
+        <div class="tgrid">
+          <div class="tcard"><b>Objetivo Geral</b><p>Uma frase com <b>verbo de nível alto</b> (propor, desenvolver, avaliar, implementar) + o objeto + o recorte. Ele <b>responde a questão de pesquisa</b> em modo promessa: se o OG não responde à questão, algo está errado.</p></div>
+          <div class="tcard"><b>Objetivos Específicos</b><p>3 a 5 degraus que, somados, <b>entregam o geral</b>. Regra da escada: entender (identificar/descrever) → analisar (analisar/comparar) → propor/avaliar. Se sobra um OE órfão, ele não pertence ao projeto.</p></div>
+          <div class="tcard"><b>Verbos medíveis</b><p>Objetivo usa verbo <b>observável</b>: identificar, quantificar, comparar. Nunca "conhecer", "entender", "saber" — não dá para verificar se alguém "conheceu". A taxonomia de Bloom organiza os verbos por profundidade.</p></div>
+          <div class="tcard"><b>Introdução em funil</b><p>Seis camadas, do amplo ao específico: contexto → recorte → problema → questão → justificativa → objetivos. O leitor deve terminar a introdução <b>sabendo exatamente</b> o que vem nas próximas páginas.</p></div>
+          <div class="tcard"><b>Etapas 1 e 2</b><p>A Etapa 1 entrega é a <b>fotografia do início</b>: tema, justificativa, questão, objetivos e introdução. O professor avalia se o contrato faz sentido — não se a pesquisa já foi feita.</p></div>
+        </div>
+      </div>
+
+      <div class="board">
+        <i class="cm tl"></i><i class="cm tr"></i><i class="cm bl"></i><i class="cm br"></i>
+        <div class="board-tag">Laboratório B1 · O funil da introdução (clique nas camadas)</div>
+        <div class="board-head">
+          <span class="readout">CAMADAS ESTUDADAS <b id="funN">0</b>/6</span>
+        </div>
+        <div class="board-body">
+          <div class="board-main"><canvas class="sim" id="funcv"></canvas></div>
+          <aside class="board-side">
+            <div>
+              <div class="side-label">Como escrever esta camada</div>
+              <div class="ficha" id="funinfo" style="margin-top:8px"><p>Clique numa camada do funil para ver o que escrever nela — na ordem em que aparecem no texto.</p></div>
+            </div>
+            <div>
+              <div class="side-label">Regra do funil</div>
+              <p style="font-size:12.5px;color:#43402e;line-height:1.5">Cada camada é <b>mais estreita</b> que a anterior. Se uma frase da introdução não serve a nenhuma camada, ela é enfeite — corte.</p>
+            </div>
+          </aside>
+        </div>
+        <div class="board-foot">
+          <span class="fmono">ORDEM NO TEXTO —</span>
+          <span>contexto → recorte → problema → questão → justificativa → objetivos. É a mesma ordem em que você <b>pensou</b> nas semanas 3–4 — a introdução conta essa história em páginas.</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ptag">Laboratório B2 · Construtor de objetivos (com verificação de verbos)</div>
+        <div class="objrow">
+          <span class="olab">OBJETIVO GERAL — escolha o verbo e complete</span>
+          <div class="chiprow" id="ogverbs"></div>
+          <input type="text" id="ogtext" placeholder="ex.: ... o efeito de um aplicativo de gamificação no desempenho em matemática do 6º ano de uma escola pública" style="margin-top:8px">
+        </div>
+        <div id="oerows"></div>
+        <button class="btn small" id="oeadd" style="margin-top:2px">+ ADICIONAR ESPECÍFICO</button>
+        <ul class="vstat" id="objstat"></ul>
+        <div class="ficha" id="objverdict" style="margin-top:12px"><p>Monte o objetivo geral e 3–5 específicos. O construtor verifica verbos, degraus e coerência ao vivo.</p></div>
+      </div>
+
+      <div class="duo">
+        <div class="panel">
+          <div class="ptag">Exemplos · objetivos</div>
+          <div class="cmp">
+            <div class="cbox no"><span class="ctag">EVITE</span>"Conhecer a gamificação na educação."<span class="cwhy">"Conhecer" não é verificável; sem recorte, é infinito.</span></div>
+            <div class="cbox yes"><span class="ctag">PREFIRA</span>"Avaliar o efeito de um aplicativo de gamificação no desempenho em matemática de alunos do 6º ano durante um bimestre."<span class="cwhy">verbo de nível alto + objeto + recorte. Um contrato possível de cumprir.</span></div>
+          </div>
+          <div class="cmp">
+            <div class="cbox no"><span class="ctag">EVITE</span>OE: "Pesquisar sobre gamificação."<span class="cwhy">"Pesquisar" é o projeto inteiro, não um degrau. Degrau tem produto.</span></div>
+            <div class="cbox yes"><span class="ctag">PREFIRA</span>OE: "Identificar, na literatura, as mecânicas de gamificação com evidência de efeito em matemática."<span class="cwhy">verbo observável + produto claro (uma revisão das mecânicas).</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ptag">Prática do bloco</div>
+          <ul class="goals" data-unit="ub">
+            <li data-g="b_fun"><span class="gbox"></span>Estudar as 6 camadas do funil da introdução</li>
+            <li data-g="b_obj"><span class="gbox"></span>Validar a estrutura: OG + 3–5 OEs aprovados pelo construtor</li>
+            <li data-g="b_check"><span class="gbox"></span>Completar o checklist do documento da Etapa 1</li>
+          </ul>
+          <div class="side-label" style="margin-top:14px">Para casa</div>
+          <ul class="wlist" style="margin-top:6px">
+            <li><label><input type="checkbox" data-ex="e4"><span><b>Escada no papel</b><small>escreva seus 3 OEs e verifique: somados, entregam o geral?</small></span></label></li>
+            <li><label><input type="checkbox" data-ex="e5"><span><b>Introdução em bullets</b><small>1 bullet por camada do funil antes de escrever em prosa</small></span></label></li>
+            <li><label><input type="checkbox" data-ex="e6"><span><b>Revisão em par</b><small>troque o rascunho com um colega e auditem a questão um do outro</small></span></label></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="duo">
+        <div class="panel">
+          <div class="ptag">Laboratório B3 · Checklist do documento (Etapa 1)</div>
+          <ul class="wlist" id="doccheck">
+            <li><label><input type="checkbox" data-ck="c1"><span><b>Identificação</b><small>capa/nome/curso/disciplina conforme o modelo do módulo</small></span></label></li>
+            <li><label><input type="checkbox" data-ck="c2"><span><b>Tema delimitado</b><small>uma frase com o quê + onde + com quem</small></span></label></li>
+            <li><label><input type="checkbox" data-ck="c3"><span><b>Justificativa</b><small>parágrafo com os 4 elementos (problema, afetados, por que agora, entrega)</small></span></label></li>
+            <li><label><input type="checkbox" data-ck="c4"><span><b>Questão de pesquisa</b><small>uma pergunta aberta, recortada, respondível — laudo ≥ 70</small></span></label></li>
+            <li><label><input type="checkbox" data-ck="c5"><span><b>Objetivo geral</b><small>verbo de nível alto + objeto + recorte</small></span></label></li>
+            <li><label><input type="checkbox" data-ck="c6"><span><b>3–5 objetivos específicos</b><small>degraus validados no construtor</small></span></label></li>
+            <li><label><input type="checkbox" data-ck="c7"><span><b>Introdução</b><small>as 6 camadas do funil em prosa, nesta ordem</small></span></label></li>
+            <li><label><input type="checkbox" data-ck="c8"><span><b>Referências preliminares</b><small>pelo menos 5, no padrão ABNT</small></span></label></li>
+          </ul>
+          <div class="readout" id="ckstatus" style="margin-top:10px"></div>
+        </div>
+        <div class="panel">
+          <div class="ptag">Para assistir · S5–6</div>
+          <div class="vgrid">
+            <a class="vcard" href="https://www.youtube.com/results?search_query=objetivo+geral+e+objetivos+espec%C3%ADficos+como+fazer" target="_blank" rel="noopener">
+              <span class="vk"><i class="bad busca">BUSCA</i><i class="bad pt">PT-BR</i>YOUTUBE</span>
+              <span class="vt">Objetivo geral × específicos</span>
+              <span class="vd">A relação de escada explicada com exemplos — a mesma do construtor acima.</span>
+              <span class="vgo">BUSCAR AULA ↗</span>
+            </a>
+            <a class="vcard" href="https://www.youtube.com/results?search_query=taxonomia+de+bloom+verbos+objetivos" target="_blank" rel="noopener">
+              <span class="vk"><i class="bad busca">BUSCA</i><i class="bad pt">PT-BR</i>YOUTUBE</span>
+              <span class="vt">Taxonomia de Bloom</span>
+              <span class="vd">Os níveis dos verbos — por que "identificar" não é objetivo geral e "propor" não é degrau 1.</span>
+              <span class="vgo">BUSCAR AULA ↗</span>
+            </a>
+            <a class="vcard" href="https://www.youtube.com/results?search_query=introdu%C3%A7%C3%A3o+do+tcc+estrutura+como+escrever" target="_blank" rel="noopener">
+              <span class="vk"><i class="bad busca">BUSCA</i><i class="bad pt">PT-BR</i>YOUTUBE</span>
+              <span class="vt">Introdução do TCC</span>
+              <span class="vd">A estrutura em funil na prática: parágrafo por parágrafo, com modelos comentados.</span>
+              <span class="vgo">BUSCAR AULA ↗</span>
+            </a>
+            <a class="vcard" href="https://www.youtube.com/results?search_query=scribbr+how+to+write+research+objectives" target="_blank" rel="noopener">
+              <span class="vk"><i class="bad busca">BUSCA</i><i class="bad en">EN</i>YOUTUBE</span>
+              <span class="vt">Research objectives (Scribbr)</span>
+              <span class="vd">A visão internacional dos objetivos: aims, objectives e o alinhamento com a questão.</span>
+              <span class="vgo">BUSCAR AULA ↗</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="mnote"><b>O CONTRATO</b>Na entrega, o professor vai checar uma coisa acima de todas: <b>questão → objetivo geral → objetivos específicos</b> contam a mesma história? Se sim, o resto do projeto tem chão. Se não, corrigir agora custa uma noite; corrigir depois custa o semestre.</div>
+    </section>
+
+    <!-- ============ ENTREGA & GA ============ -->
+    <section class="unit" id="entrega" data-spy style="border-bottom:0">
+      <div class="unit-head">
+        <div class="unit-no">GA</div>
+        <div class="uh-txt">
+          <div class="kick">Avaliação</div>
+          <h2>Entrega da Etapa 1 — <em>GA · 5,0 pontos</em></h2>
+        </div>
+      </div>
+      <p class="unit-int">A Etapa 1 vale <b>metade da avaliação do projeto</b> e é a fotografia do seu recorte. Entregue no módulo certo, dentro do prazo — e rode a rubrica abaixo antes de clicar em enviar.</p>
+
+      <div class="ga-box">
+        <div class="gk">Bala de prata da entrega</div>
+        <h3>GA · 5,0 pontos — Etapa 1 do projeto</h3>
+        <div class="ga-grid">
+          <div><b>Local de entrega</b>Módulo <b>Semanas 5 e 6</b> da disciplina</div>
+          <div><b>Prazo de entrega</b><span style="font-family:var(--mono);font-weight:600">21/09/2026</span></div>
+          <div><b>Peso</b>5,0 pontos</div>
+          <div><b>Formato</b>documento com: tema, justificativa, questão, objetivos (G + E) e introdução</div>
+        </div>
+        <div class="cd" id="cdga" aria-label="contagem regressiva para a entrega">
+          <div><b id="cd2d">—</b><small>dias</small></div>
+          <div><b id="cd2h">—</b><small>horas</small></div>
+          <div><b id="cd2m">—</b><small>min</small></div>
+          <div><b id="cd2s">—</b><small>seg</small></div>
+        </div>
+        <div class="readout" style="margin-top:8px" id="cdnote"></div>
+      </div>
+
+      <div class="panel">
+        <div class="ptag">Rubrica · simule sua nota</div>
+        <div class="rbarwrap">
+          <span class="readout" style="font-size:18px"><b id="gaScore">0,0</b>/5,0</span>
+          <div class="rbar"><i id="gaBar"></i></div>
+          <span class="verdict low" id="gaVerdict">SEM SUBMISSÃO AINDA</span>
+        </div>
+        <table class="sched" style="margin-top:16px"><tbody>
+          <tr><td style="width:34px"><input type="checkbox" class="ckx" data-ga="g1" data-pts="0.5"></td><td><b>Tema delimitado e viável</b><small>o quê + onde + com quem, cabível no semestre <span style="font-family:var(--mono);color:var(--soft)">(0,5)</span></small></td></tr>
+          <tr><td><input type="checkbox" class="ckx" data-ga="g2" data-pts="1"></td><td><b>Justificativa sustentada</b><small>problema + afetados + por que agora + entrega — sem "é importante" <span style="font-family:var(--mono);color:var(--soft)">(1,0)</span></small></td></tr>
+          <tr><td><input type="checkbox" class="ckx" data-ga="g3" data-pts="1"></td><td><b>Questão de pesquisa clara e recortada</b><small>aberta, respondível, com contexto delimitado <span style="font-family:var(--mono);color:var(--soft)">(1,0)</span></small></td></tr>
+          <tr><td><input type="checkbox" class="ckx" data-ga="g4" data-pts="1"></td><td><b>Objetivo geral com verbo adequado</b><small>nível alto + objeto + responde à questão <span style="font-family:var(--mono);color:var(--soft)">(1,0)</span></small></td></tr>
+          <tr><td><input type="checkbox" class="ckx" data-ga="g5" data-pts="1"></td><td><b>Objetivos específicos em degraus</b><small>3–5, coerentes, somados entregam o geral <span style="font-family:var(--mono);color:var(--soft)">(1,0)</span></small></td></tr>
+          <tr><td><input type="checkbox" class="ckx" data-ga="g6" data-pts="0.5"></td><td><b>Introdução com funil completo</b><small>6 camadas na ordem, sem enfeites <span style="font-family:var(--mono);color:var(--soft)">(0,5)</span></small></td></tr>
+        </tbody></table>
+      </div>
+    </section>
+
+    <!-- ============ CRONOGRAMA ============ -->
+    <section class="plain" id="cronograma" data-spy>
+      <div class="pk">Plano de trabalho</div>
+      <h2>Cronograma das <em>semanas 3 a 6</em></h2>
+      <p class="pl">Quatro semanas, quatro entregas de progresso — até o documento completo no módulo. Se travar numa etapa, use o laboratório dela antes de insistir no texto.</p>
+      <table class="sched">
+        <thead><tr><th>Semana</th><th>Foco</th><th>Entrega da semana</th></tr></thead>
+        <tbody>
+          <tr><td>S3</td><td><b>Etapas do projeto + escolha do tema</b><small>fluxo das etapas + matriz de viabilidade</small></td><td>2–3 candidatos na matriz, com o vencedor escolhido</td></tr>
+          <tr><td>S4</td><td><b>Justificativa + questão de pesquisa</b><small>montador + auditor da questão</small></td><td>Parágrafo de justificativa + questão com laudo ≥ 70</td></tr>
+          <tr><td>S5</td><td><b>Objetivos: geral e específicos</b><small>construtor com verificação de verbos</small></td><td>OG + 3–5 OEs validados, coerentes com a questão</td></tr>
+          <tr><td>S6</td><td><b>Introdução + entrega</b><small>funil completo + revisão com a rubrica</small></td><td><b style="color:var(--red)">ETAPA 1 entregue no módulo até 21/09/2026</b></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============ GLOSSÁRIO ============ -->
+    <section class="plain" id="glossario" data-spy>
+      <div class="pk">Vocabulário do projeto</div>
+      <h2>Glossário <em>de bolso</em></h2>
+      <p class="pl">Os termos que o professor usa — e que você precisa dominar para a conversa da banca.</p>
+      <dl class="dgrid">
+        <dt>TEMA</dt><dd>Assunto delimitado: o quê, onde, com quem, quando.</dd>
+        <dt>RECORTE</dt><dd>A fronteira que torna o tema executável no prazo.</dd>
+        <dt>PROBLEMA DE PESQUISA</dt><dd>A tensão/lacuna que motiva o estudo — não é o tema.</dd>
+        <dt>JUSTIFICATIVA</dt><dd>Parágrafo com 4 elementos: problema, afetados, por que agora, entrega.</dd>
+        <dt>QUESTÃO DE PESQUISA</dt><dd>A pergunta aberta e respondível que governa o projeto.</dd>
+        <dt>HIPÓTESE</dt><dd>Resposta provisória à questão, a ser testada (quando aplicável).</dd>
+        <dt>OBJETIVO GERAL</dt><dd>Verbo de nível alto + objeto + recorte; responde à questão.</dd>
+        <dt>OBJETIVOS ESPECÍFICOS</dt><dd>3–5 degraus mensuráveis que somados entregam o geral.</dd>
+        <dt>VERBO OPERACIONAL</dt><dd>Verbo observável (identificar, comparar) — nunca "conhecer".</dd>
+        <dt>TAXONOMIA DE BLOOM</dt><dd>Escala de profundidade dos verbos: lembrar → criar.</dd>
+        <dt>INTRODUÇÃO</dt><dd>Funil de 6 camadas: contexto → recorte → problema → questão → justificativa → objetivos.</dd>
+        <dt>VIABILIDADE</dt><dd>Se o projeto cabe no prazo, nos dados e nas habilidades disponíveis.</dd>
+        <dt>RECORTE TEMPORAL</dt><dd>O período estudado (ex.: 2026). Delimita a validade dos dados.</dd>
+        <dt>REFERENCIAL TEÓRICO</dt><dd>O que a literatura já sabe sobre o seu recorte.</dd>
+        <dt>METODOLOGIA</dt><dd>Como você investiga: tipo de estudo, dados, instrumentos.</dd>
+        <dt>ABORDAGEM QUALI/QUANTI</dt><dd>Análise de significados × análise numérica (podem se combinar).</dd>
+        <dt>VARIÁVEL</dt><dd>Grandeza que varia e se relaciona: a X e a Y da sua questão.</dd>
+        <dt>GA</dt><dd>A atividade avaliativa desta etapa — 5,0 pontos.</dd>
+        <dt>ETAPA 1</dt><dd>Documento inicial: tema, justificativa, questão, objetivos, introdução.</dd>
+        <dt>ABNT</dt><dd>Padrão de formatação e citação exigido no documento.</dd>
+        <dt>CITAÇÃO / REFERÊNCIA</dt><dd>Indicação da fonte no texto / listagem completa ao final.</dd>
+        <dt>PLÁGIO</dt><dd>Usar ideia ou texto de outro sem crédito — reprovação automática.</dd>
+        <dt>DELIMITAÇÃO</dt><dd>Seção que declara o que o projeto NÃO vai cobrir.</dd>
+        <dt>PEER REVIEW</dt><dd>Revisão por pares — inclusive o colega da disciplina.</dd>
+      </dl>
+    </section>
+
+    <!-- ============ LINKOTECA ============ -->
+    <section class="plain" id="linkoteca" data-spy style="border-bottom:0">
+      <div class="pk">Banco de referências</div>
+      <h2>Linkoteca <em>da disciplina</em></h2>
+      <p class="pl">Ferramentas gratuitas e fontes confiáveis para construir a Etapa 1 sem sofrimento.</p>
+      <div class="fchips" id="fchips">
+        <button class="tog" data-f="tudo" aria-pressed="true">TUDO</button>
+        <button class="tog" data-f="f" aria-pressed="false">FERRAMENTA</button>
+        <button class="tog" data-f="b" aria-pressed="false">BUSCA DE FONTES</button>
+        <button class="tog" data-f="d" aria-pressed="false">LEITURA</button>
+        <button class="tog" data-f="p" aria-pressed="false">PT-BR</button>
+      </div>
+      <div id="lklist">
+        <a class="lkrow" data-c="b p" href="https://scholar.google.com.br" target="_blank" rel="noopener"><span class="lkn">Google Acadêmico</span><span class="lkd">primeiro teste de viabilidade: já existe literatura sobre seu tema?</span><span class="lku">scholar.google.com.br</span></a>
+        <a class="lkrow" data-c="b p" href="https://bdtd.ibict.br" target="_blank" rel="noopener"><span class="lkn">BDTD</span><span class="lkd">teses e dissertações brasileiras — veja como outros recortaram temas parecidos</span><span class="lku">bdtd.ibict.br</span></a>
+        <a class="lkrow" data-c="b p" href="https://www.scielo.br" target="_blank" rel="noopener"><span class="lkn">SciELO</span><span class="lkd">periódicos científicos da América Latina em acesso aberto</span><span class="lku">scielo.br</span></a>
+        <a class="lkrow" data-c="b p" href="https://www.portaldeperiodicos.capes.br" target="_blank" rel="noopener"><span class="lkn">Portal CAPES</span><span class="lkd">acesso gratuito a milhares de periódicos com login acadêmico</span><span class="lku">portaldeperiodicos.capes.br</span></a>
+        <a class="lkrow" data-c="b" href="https://www.connectedpapers.com" target="_blank" rel="noopener"><span class="lkn">Connected Papers</span><span class="lkd">mapa visual de artigos relacionados a partir de um só</span><span class="lku">connectedpapers.com</span></a>
+        <a class="lkrow" data-c="f" href="https://www.zotero.org" target="_blank" rel="noopener"><span class="lkn">Zotero</span><span class="lkd">gerenciador gratuito de referências — comece a usar na Etapa 1</span><span class="lku">zotero.org</span></a>
+        <a class="lkrow" data-c="f" href="https://www.mendeley.com" target="_blank" rel="noopener"><span class="lkn">Mendeley</span><span class="lkd">alternativa ao Zotero, integração com Word</span><span class="lku">mendeley.com</span></a>
+        <a class="lkrow" data-c="f p" href="https://app.diagrams.net" target="_blank" rel="noopener"><span class="lkn">draw.io</span><span class="lkd">diagramas gratuitos — ótimo para rascunhar a "escada" dos objetivos</span><span class="lku">app.diagrams.net</span></a>
+        <a class="lkrow" data-c="f p" href="https://languagetool.org/pt-BR" target="_blank" rel="noopener"><span class="lkn">LanguageTool</span><span class="lkd">revisor gramatical gratuito em português para o texto final</span><span class="lku">languagetool.org</span></a>
+        <a class="lkrow" data-c="f" href="https://www.overleaf.com" target="_blank" rel="noopener"><span class="lkn">Overleaf</span><span class="lkd">se seu curso usar LaTeX, este é o editor colaborativo padrão</span><span class="lku">overleaf.com</span></a>
+        <a class="lkrow" data-c="d" href="https://www.scribbr.com/research-process/research-question-examples/" target="_blank" rel="noopener"><span class="lkn">Scribbr · Research Questions</span><span class="lkd">o melhor guia em inglês para formular a questão</span><span class="lku">scribbr.com</span></a>
+        <a class="lkrow" data-c="d" href="https://www.scribbr.com/research-process/research-paper-outline/" target="_blank" rel="noopener"><span class="lkn">Scribbr · Outlines</span><span class="lkd">estruturas de projeto e paper passo a passo</span><span class="lku">scribbr.com</span></a>
+        <a class="lkrow" data-c="d" href="https://owl.purdue.edu/owl/research_and_citation/conducting_research/conducting_research.html" target="_blank" rel="noopener"><span class="lkn">Purdue OWL</span><span class="lkd">referência clássica gratuita sobre pesquisa e citação</span><span class="lku">owl.purdue.edu</span></a>
+        <a class="lkrow" data-c="d p" href="https://www.gov.br/inep" target="_blank" rel="noopener"><span class="lkn">INEP</span><span class="lkd">dados oficiais de educação — fonte de números para justificativas</span><span class="lku">gov.br/inep</span></a>
+        <a class="lkrow" data-c="d p" href="https://sidra.ibge.gov.br" target="_blank" rel="noopener"><span class="lkn">IBGE · SIDRA</span><span class="lkd">estatísticas oficiais — o "por que agora" com dado real</span><span class="lku">sidra.ibge.gov.br</span></a>
+        <a class="lkrow" data-c="d p" href="https://pt.wikipedia.org/wiki/Taxonomia_de_Bloom" target="_blank" rel="noopener"><span class="lkn">Wikipedia · Taxonomia de Bloom</span><span class="lkd">os níveis dos verbos de objetivos</span><span class="lku">pt.wikipedia.org</span></a>
+        <a class="lkrow" data-c="d p" href="https://pt.wikipedia.org/wiki/Metodologia_cient%C3%ADfica" target="_blank" rel="noopener"><span class="lkn">Wikipedia · Metodologia</span><span class="lkd">panorama geral dos conceitos</span><span class="lku">pt.wikipedia.org</span></a>
+        <a class="lkrow" data-c="d p" href="https://www.infoescola.com" target="_blank" rel="noopener"><span class="lkn">InfoEscola</span><span class="lkd">explicações curtas em português sobre termos de metodologia</span><span class="lku">infoescola.com</span></a>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="fb">
+    <b>PROJETO·LAB — Material Instrucional</b> · Semanas 3–6 · Etapa 1 do Projeto<br>
+    GA 5,0 pontos · entrega no módulo Semanas 5 e 6 · prazo 21/09/2026 · todo o material roda localmente.<br>
+    Tipografia: Fraunces · Space Grotesk · IBM Plex Mono.
+  </div>
+  <button class="btn" id="btnReset">Zerar progresso</button>
+</footer>
+
+<div id="toasts" aria-live="polite"></div>
+
+<div id="finale" role="dialog" aria-modal="true">
+  <div class="fin-card">
+    <i class="cm tl"></i><i class="cm tr"></i><i class="cm bl"></i><i class="cm br"></i>
+    <div class="stamp show" style="position:static;opacity:1">Pronto para a Etapa 1<small>2 / 2 blocos</small></div>
+    <h3>Tema recortado, pergunta afiada, <em>contrato fechado</em>.</h3>
+    <p>Fluxo compreendido, justificativa sustentada, questão auditada, objetivos em degraus e o funil da introdução na mão. Falta escrever o documento — e entregar no módulo até 21/09/2026.</p>
+    <div id="finStats"></div>
+    <button class="btn dark" id="finClose">Voltar ao material</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const INK='#1A1811', PAPER2='#FAF7EE', PAPER3='#E9E4D2', RED='#D23A1C', BLUE='#2843C6', YELLOW='#EFBE2E', GREEN='#2E7D46', SOFT='#8a8370', GOLD='#B98A16';
+const T0=Date.now();
+const DEADLINE=new Date('2026-09-21T23:59:59');
+
+function setupCanvas(cv,LW,LH){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=LW*dpr; cv.height=LH*dpr;
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx,LW,LH};
+}
+let AC=null,muted=false;
+function ensureAudio(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} if(AC&&AC.state==='suspended')AC.resume(); }
+function beep(f=440,d=.08,type='square',g=.05){
+  if(muted||!AC)return;
+  try{
+    const o=AC.createOscillator(),v=AC.createGain();
+    o.type=type;o.frequency.setValueAtTime(f,AC.currentTime);
+    v.gain.setValueAtTime(g,AC.currentTime);
+    v.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);
+    o.connect(v).connect(AC.destination);o.start();o.stop(AC.currentTime+d+.02);
+  }catch(e){}
+}
+window.addEventListener('pointerdown',ensureAudio,{capture:true});
+const sndBtn=$('#btnSound');
+const IC={
+  soundOn:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7" stroke-linecap="round"/></svg>',
+  soundOff:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M22 9l-6 6M16 9l6 6" stroke-linecap="round"/></svg>'
+};
+sndBtn.innerHTML=IC.soundOn;
+sndBtn.addEventListener('click',()=>{muted=!muted;sndBtn.innerHTML=muted?IC.soundOff:IC.soundOn;});
+ $('#btnPrint').addEventListener('click',()=>window.print());
+
+function toast(title,body,good=false){
+  const box=$('#toasts');
+  const t=document.createElement('div');
+  t.className='toast'+(good?' good':'');
+  t.innerHTML=`<h5>${title}</h5><p>${body}</p>`;
+  box.appendChild(t);
+  while(box.children.length>3)box.firstChild.remove();
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),260);},4600);
+}
+
+/* contagem regressiva */
+function updCD(){
+  const diff=DEADLINE-Date.now();
+  const nodes=[['cd1d','cd1h','cd1m','cd1s'],['cd2d','cd2h','cd2m','cd2s']];
+  if(diff<=0){
+    nodes.forEach(n=>{n.forEach(id=>$('#'+id).textContent='0');});
+    $('#cdnote').textContent='O prazo de 21/09/2026 já passou — verifique nova data com o professor.';
+    $('#cdga').classList.add('pulse');
+    return;
+  }
+  const d=Math.floor(diff/864e5),h=Math.floor(diff/36e5)%24,m=Math.floor(diff/6e4)%60,s=Math.floor(diff/1e3)%60;
+  nodes.forEach(n=>{
+    $('#'+n[0]).textContent=d;
+    $('#'+n[1]).textContent=String(h).padStart(2,'0');
+    $('#'+n[2]).textContent=String(m).padStart(2,'0');
+    $('#'+n[3]).textContent=String(s).padStart(2,'0');
+  });
+  if(d<14)$('#cdga').classList.add('pulse');
+  $('#cdnote').textContent=d<14?'Menos de duas semanas: feche o documento e rode a rubrica antes de enviar.':'Ritmo saudável: siga o cronograma semana a semana.';
+}
+updCD();setInterval(updCD,1000);
+
+/* ============ PROGRESSO ============ */
+const UNITS={ua:['a_flow','a_matrix','a_just','a_q'],ub:['b_fun','b_obj','b_check']};
+let state={obj:{},done:{}};
+try{const s=localStorage.getItem('projlab-progress');if(s)state=Object.assign(state,JSON.parse(s));}catch(e){}
+function save(){try{localStorage.setItem('projlab-progress',JSON.stringify(state));}catch(e){}}
+function setGoal(id){
+  if(state.obj[id])return;
+  state.obj[id]=true;
+  const li=$(`.goals li[data-g="${id}"]`);if(li)li.classList.add('done');
+  const unit=Object.keys(UNITS).find(u=>UNITS[u].includes(id));
+  if(unit&&UNITS[unit].every(g=>state.obj[g]))completeUnit(unit);
+  save();
+}
+function completeUnit(u){
+  if(state.done[u])return;
+  state.done[u]=true;
+  const st=$(`.stamp[data-stamp="${u}"]`);if(st)st.classList.add('show');
+  const toc=$(`nav.toc a[data-u="${u}"]`);if(toc){toc.classList.add('done');toc.querySelector('.st').textContent='✓';}
+  refreshHeader();
+  const names={ua:'Bloco S3–4',ub:'Bloco S5–6'};
+  beep(523,.09);setTimeout(()=>beep(784,.14),110);
+  toast('Carimbo aplicado',`${names[u]} concluído. O documento da Etapa 1 está quase pronto.`,true);
+  if(Object.keys(UNITS).every(k=>state.done[k]))setTimeout(finale,900);
+  save();
+}
+function refreshHeader(){
+  const n=Object.values(state.done).filter(Boolean).length;
+  $('#progText').textContent=n+'/2';
+  $$('#cells i').forEach((c,i)=>c.classList.toggle('on',i<n));
+}
+ $('#btnContinue').addEventListener('click',()=>{
+  const next=Object.keys(UNITS).find(u=>!state.done[u]);
+  if(next)document.getElementById(next==='ua'?'ua':'ub').scrollIntoView({behavior:'smooth'});
+  else document.getElementById('entrega').scrollIntoView({behavior:'smooth'});
+});
+for(const [u,gs] of Object.entries(UNITS)){
+  if(gs.every(g=>state.obj[g])&&!state.done[u])state.done[u]=true;
+  gs.forEach(g=>{if(state.obj[g]){const li=$(`.goals li[data-g="${g}"]`);if(li)li.classList.add('done');}});
+  if(state.done[u]){
+    const st=$(`.stamp[data-stamp="${u}"]`);if(st)st.classList.add('instant');
+    const toc=$(`nav.toc a[data-u="${u}"]`);if(toc){toc.classList.add('done');toc.querySelector('.st').textContent='✓';}
+  }
+}
+refreshHeader();
+let resetArm=false;
+ $('#btnReset').addEventListener('click',e=>{
+  if(!resetArm){resetArm=true;e.target.textContent='Confirmar? (clique de novo)';setTimeout(()=>{resetArm=false;e.target.textContent='Zerar progresso';},3000);}
+  else{['projlab-progress','projlab-ex','projlab-rb'].forEach(k=>localStorage.removeItem(k));location.reload();}
+});
+const spy=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){
+    const id=e.target.id;
+    $$('nav.toc a').forEach(a=>a.classList.toggle('active',a.dataset.u===id));
+    $$('.tocstrip a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));
+  }
+}),{rootMargin:'-25% 0px -65% 0px'});
+ $$('section[data-spy]').forEach(s=>spy.observe(s));
+
+let exState={};try{exState=JSON.parse(localStorage.getItem('projlab-ex')||'{}');}catch(e){}
+ $$('input[data-ex]').forEach(inp=>{
+  if(exState[inp.dataset.ex])inp.checked=true;
+  inp.addEventListener('change',()=>{exState[inp.dataset.ex]=inp.checked;try{localStorage.setItem('projlab-ex',JSON.stringify(exState));}catch(e){}});
+});
+
+/* checklist documento (objetivo b_check) */
+let ckState={};try{ckState=JSON.parse(localStorage.getItem('projlab-ck')||'{}');}catch(e){}
+function updCk(){
+  const all=$$('#doccheck input');let n=0;
+  all.forEach(i=>{if(i.checked)n++;});
+  $('#ckstatus').innerHTML=`documento: <b>${n}/8</b> itens prontos ${n===8?'— <b style="color:'+GREEN+'">PRONTO PARA ENTREGAR</b>':''}`;
+  if(n===8)setGoal('b_check');
+}
+ $$('#doccheck input').forEach(i=>{
+  if(ckState[i.dataset.ck])i.checked=true;
+  i.addEventListener('change',()=>{ckState[i.dataset.ck]=i.checked;try{localStorage.setItem('projlab-ck',JSON.stringify(ckState));}catch(e){}updCk();});
+});
+updCk();
+
+/* ================================================================
+   LAB A1 — FLUXO DAS ETAPAS
+================================================================ */
+(()=>{
+  const cv=$('#flowcv'); const c=setupCanvas(cv,720,300).ctx;
+  const NODES=[
+    {n:'1 · TEMA',s:3,col:RED, w:'o assunto + recorte numa frase. Teste na matriz de viabilidade antes de se comprometer.',d:'frase de tema delimitado'},
+    {n:'2 · JUSTIFICATIVA',s:3,col:RED, w:'os 4 elementos: problema, afetados, por que agora, entrega. Use o montador A3.',d:'1 parágrafo sustentado'},
+    {n:'3 · QUESTÃO',s:4,col:RED, w:'a pergunta que governa tudo. Aberta, recortada, respondível. Audite no laboratório A4.',d:'1 pergunta com laudo ≥ 70'},
+    {n:'4 · OBJETIVOS',s:5,col:GOLD, w:'1 geral (verbo alto) + 3–5 específicos em degraus. Construa no laboratório B2.',d:'estrutura G + E validada'},
+    {n:'5 · REFERENCIAL',s:6,col:SOFT, w:'o que a literatura já sabe sobre o SEU recorte. 5–10 fontes lidas e anotadas.',d:'matriz de leituras + citações'},
+    {n:'6 · METODOLOGIA',s:8,col:SOFT, w:'como investigar: tipo de estudo, dados, instrumentos, participantes.',d:'seção de metodologia'},
+    {n:'7 · COLETA & ANÁLISE',s:10,col:SOFT, w:'executar: aplicar questionários, entrevistas, experimentos — e analisar.',d:'dados organizados e analisados'},
+    {n:'8 · REDAÇÃO FINAL',s:13,col:SOFT, w:'montar o texto completo, normalizar ABNT, revisar e entregar.',d:'trabalho final completo'}
+  ];
+  const POS=[[100,44],[300,44],[500,44],[660,150],[500,236],[300,236],[100,236],[60,150]];
+  let studied=new Set(),sel=-1;
+  POS.forEach(p=>{p[0]=p[0];});
+  const pts=[[100,70],[300,70],[500,70],[660,70],[560,230],[360,230],[160,230],[60,230]];
+  cv.addEventListener('pointerdown',e=>{
+    const r=cv.getBoundingClientRect();
+    const x=(e.clientX-r.left)*720/r.width,y=(e.clientY-r.top)*300/r.height;
+    let hit=-1;
+    NODES.forEach((n,i)=>{
+      const w=NODES[i].n.length*7+22;
+      const px=pts[i][0],py=pts[i][1];
+      if(x>=px-w/2&&x<=px+w/2&&y>=py-14&&y<=py+14)hit=i;
+    });
+    if(hit<0)return;
+    sel=hit;
+    if(!studied.has(hit)){studied.add(hit);beep(560+hit*30,.06,'triangle',.05);}
+    else beep(420,.04,'triangle',.04);
+    const n=NODES[hit];
+    $('#flowinfo').innerHTML=`<div class="vq" style="color:${n.col}">ETAPA ${hit+1} · SEMANA ${n.s}</div><b>${n.n.replace(/^\d+ · /,'')}</b><p>${n.w}</p><p style="margin-top:6px;font-family:var(--mono);font-size:10.5px;color:var(--soft)">ENTREGA: ${n.d}</p>`;
+    $('#flowN').textContent=studied.size;
+    if(studied.size>=8)setGoal('a_flow');
+  });
+  (function draw(t){
+    requestAnimationFrame(draw);
+    c.clearRect(0,0,720,300);
+    /* conexões */
+    const seq=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0]];
+    c.strokeStyle='rgba(26,24,17,.3)';c.lineWidth=1.5;c.setLineDash([4,4]);
+    for(let i=0;i<7;i++){
+      const a=pts[i],b=pts[i+1];
+      c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();
+    }
+    c.setLineDash([]);
+    /* nós */
+    NODES.forEach((n,i)=>{
+      const px=pts[i][0],py=pts[i][1];
+      const done=studied.has(i);
+      const w=n.n.length*7+22;
+      c.fillStyle= done?(sel===i?'rgba(239,190,46,.7)':'rgba(239,190,46,.4)'):(sel===i?'rgba(26,24,17,.12)':'rgba(26,24,17,.04)');
+      rrf(c,px-w/2,py-14,w,28,4);c.fill();
+      c.strokeStyle=n.col;c.lineWidth=2;
+      if(!done){c.setLineDash([4,3]);}
+      rrf(c,px-w/2,py-14,w,28,4);c.stroke();c.setLineDash([]);
+      c.fillStyle=INK;
+      c.font='600 9px "IBM Plex Mono",monospace';c.textAlign='center';
+      c.fillText(n.n,px,py+3);
+      c.textAlign='left';
+      if(done){c.fillStyle=GREEN;c.beginPath();c.arc(px-w/2+1,py-14,5,0,7);c.fill();}
+    });
+    c.font='400 9px "IBM Plex Mono",monospace';
+    c.fillStyle=SOFT;
+    c.fillText('clique nas etapas em qualquer ordem — o fluxo real é 1→8',14,286);
+  })(0);
+  function rrf(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+})();
+
+/* ================================================================
+   LAB A2 — MATRIZ DO TEMA
+================================================================ */
+(()=>{
+  const host=$('#mtrows'),bars=$('#mtbars');
+  const CRIT=['INTERESSE','VIABILIDADE','DADOS','RELEVÂNCIA'];
+  let cands=[
+    {name:'',s:[5,5,5,5]}
+  ];
+  function score(s){return (s[0]+s[1]+s[2]+s[3])/4;}
+  function build(){
+    host.innerHTML='';
+    cands.forEach((cd,ci)=>{
+      const row=document.createElement('div');
+      row.className='mtrow';
+      const critHtml=CRIT.map((cr,k)=>`<div class="srow"><label>${cr}</label><input type="range" min="0" max="10" value="${cd.s[k]}" data-c="${ci}" data-k="${k}"><span class="sv">${cd.s[k]}</span></div>`).join('');
+      row.innerHTML=`<div class="mthead"><input type="text" placeholder="Candidato ${ci+1} — descreva seu tema" value="${cd.name.replace(/"/g,'&quot;')}" data-n="${ci}"><span class="mtscore">${score(cd.s).toFixed(1)}</span></div><div class="mtgrid">${critHtml}</div>`;
+      host.appendChild(row);
+    });
+    host.querySelectorAll('input[type=text]').forEach(inp=>inp.addEventListener('input',()=>{
+      cands[+inp.dataset.n].name=inp.value;drawBars();
+    }));
+    host.querySelectorAll('input[type=range]').forEach(inp=>inp.addEventListener('input',()=>{
+      const ci=+inp.dataset.c,k=+inp.dataset.k;
+      cands[ci].s[k]=+inp.value;
+      inp.parentElement.querySelector('.sv').textContent=inp.value;
+      inp.closest('.mtrow').querySelector('.mtscore').textContent=score(cands[ci].s).toFixed(1);
+      drawBars();beep(400+inp.value*20,.03,'triangle',.03);
+    }));
+    drawBars();
+  }
+  function drawBars(){
+    const named=cands.filter(c=>c.name.trim().length>2);
+    bars.innerHTML='';
+    if(!named.length){bars.innerHTML='<p style="font-size:12px;color:var(--soft)">nomeie os candidatos para ver o placar</p>';return;}
+    const best=Math.max(...named.map(c=>score(c.s)));
+    named.forEach(cd=>{
+      const sc=score(cd.s);
+      const el=document.createElement('div');
+      const lead=sc===best&&sc>=7;
+      el.innerHTML=`<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;font-weight:600"><span>${cd.name.length>34?cd.name.slice(0,34)+'…':cd.name}</span><span style="color:${sc>=7?GREEN:sc>=5?GOLD:RED}">${sc.toFixed(1)}</span></div><div class="mtbar${lead?' lead':''}"><i style="width:${sc*10}%"></i></div>`;
+      bars.appendChild(el);
+    });
+    const b=named.reduce((a,c)=>score(c.s)>score(a.s)?c:a,named[0]);
+    const bs=score(b);
+    let msg;
+    if(bs>=7)msg=`<div class="vq" style="color:${GREEN}">RECOMENDAÇÃO DA MATRIZ</div><p><b>${b.name}</b> lidera com ${bs.toFixed(1)} — perfil equilibrado nas quatro forças. Probe na questão de pesquisa.</p>`;
+    else if(bs>=5)msg=`<div class="vq" style="color:${GOLD}">TEMA MEIO-AMEIO</div><p>O melhor candidato (${b.name}, ${bs.toFixed(1)}) tem fraquezas. Melhore o critério mais baixo — ou reabeça a busca por candidatos.</p>`;
+    else msg=`<div class="vq" style="color:${RED}">NENHUM CANDIDATO VIÁVEL</div><p>Todos abaixo de 5. Seja honesto: um tema sem dados ou sem prazo vira abandono. Gere novas ideias.</p>`;
+    $('#mtadvice').innerHTML=msg;
+    if(named.length>=2&&bs>=7){
+      setGoal('a_matrix');
+      if(!window.__mt){window.__mt=true;toast('Tema viável encontrado','Matriz aprovou um candidato com nota ≥ 7 — é um bom tema para levar adiante.',true);}
+    }
+  }
+  $('#mtadd').addEventListener('click',()=>{
+    if(cands.length>=3){toast('Limite de 3','Compare no máximo 3 por vez — mais vira paralisia.');return;}
+    cands.push({name:'',s:[5,5,5,5]});build();beep(520,.05,'triangle',.05);
+  });
+  build();
+})();
+
+/* ================================================================
+   LAB A3 — MONTADOR DE JUSTIFICATIVA
+================================================================ */
+(()=>{
+  const ids=['jp','jq','ja','je'];
+  $('#jgen').addEventListener('click',()=>{
+    const [p,q,a,e]=ids.map(i=>$('#'+i).value.trim());
+    const missing=ids.filter(i=>$('#'+i).value.trim().length<12);
+    if(missing.length){
+      $('#jnote').innerHTML=`<b style="color:${RED}">campos curtos demais:</b> ${missing.map(i=>({jp:'problema',jq:'quem sofre',ja:'por que agora',je:'entrega'}[i])).join(', ')} — cada um precisa de pelo menos uma frase.`;
+      beep(180,.14,'sawtooth',.05);return;
+    }
+    const pLow=p.charAt(0).toLowerCase()+p.slice(1);
+    const txt=`O problema que motiva esta pesquisa é a seguinte situação: ${pLow.endsWith('.')?pLow:pLow+'.'} Essa realidade afeta diretamente ${q.endsWith('.')?q:q+'.'} ${a.endsWith('.')?a:a+' '}, o que torna a investigação atual e oportuna. Nesse contexto, este projeto se justifica por buscar ${e.endsWith('.')?e:e+'.'}, oferecendo subsídio concreto para a tomada de decisão dos envolvidos e contribuindo com a literatura da área.`;
+    const out=$('#jout');
+    out.style.display='block';
+    out.textContent='“'+txt+'”';
+    out.dataset.txt=txt;
+    $('#jnote').innerHTML=`<b style="color:${GREEN}">✓ parágrafo gerado</b> — agora releia, ajuste ao seu jeito e leve ao documento. O esqueleto é apoio, não produto final.`;
+    beep(660,.07);setTimeout(()=>beep(880,.1),90);
+    setGoal('a_just');
+  });
+  $('#jcopy').addEventListener('click',()=>{
+    const t=$('#jout').dataset.txt;
+    if(!t){$('#jnote').innerHTML='gere o parágrafo primeiro.';return;}
+    (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(
+      ()=>toast('Copiado','Justificativa na área de transferência — cole no documento e adapte.',true),
+      ()=>toast('Cópia bloqueada','Seu navegador impediu — selecione o texto manualmente.')
+    );
+    beep(520,.05,'triangle',.04);
+  });
+})();
+
+/* ================================================================
+   LAB A4 — AUDITOR DA QUESTÃO
+================================================================ */
+(()=>{
+  $('#qaudit').addEventListener('click',()=>{
+    const raw=$('#qinput').value.trim();
+    const checks=$('#qchecks');
+    if(!raw){checks.innerHTML='<li class="bad"><span class="ic">✗</span>escreva uma questão antes de auditar.</li>';$('#qverdict').innerHTML='<div class="vq" style="color:'+RED+'">SEM QUESTÃO</div><p>O auditor não julga página em branco.</p>';return;}
+    const q=raw.replace(/\s+/g,' ');
+    const low=q.toLowerCase();
+    let score=0;const items=[];
+    const add=(cls,txt)=>{items.push({cls,txt});};
+    /* termina com ? */
+    if(q.endsWith('?')){score+=8;add('ok','Termina com interrogação — é uma pergunta, não um título.');}
+    else{add('warn','Não termina com "?". Questão de pesquisa é pergunta: termine com interrogação.');}
+    /* abertura */
+    if(/^(como|de que forma|de que maneira|em que medida|qual|quais)/.test(low)){score+=22;add('ok','Abertura forte: "Como / De que forma / Qual" convida a investigação aberta.');}
+    else if(/^(o que|o que é|defina|explique|cite|liste|o que são)/.test(low)){score-=6;add('bad','Abertura descritiva ("O que é…"): qualquer livro responde. Prefira "De que forma X afeta Y…".');}
+    else if(/^(por que|porque)/.test(low)){score+=8;add('warn','"Por que" pede causalidade — investigável, mas difícil. Considere "De que forma…".');}
+    else{add('warn','Abertura incomum. Fórmulas seguras: "De que forma…", "Qual o impacto de…", "Como…".');}
+    /* questão fechada */
+    if(/\sou\s|\bou\b/.test(low)){score-=18;add('bad','Contém "ou": pode virar resposta de sim/não. Questão boa pede grau, não voto.');}
+    else{score+=6;add('ok','Sem "ou": a resposta exigirá análise, não um voto de sim/não.');}
+    /* relacional */
+    if(/impacto|influência|influencia|efeito|afeta|altera|contribui|relação entre|desempenho|results/.test(low)){score+=20;add('ok','Há relação entre variáveis (efeito/impacto/relação) — isso torna a questão investigável.');}
+    else{add('warn','Não identifico duas variáveis se relacionando. Inclua o fator (X) e o resultado observado (Y).');}
+    /* recorte */
+    if(/no brasil|em fortaleza|no ceará|na escola|na empresa|em pequenas|nas organiza|em micro|no setor|em uma|do 6|ano|série|bairr|cidade|estado|região|2024|2025|2026/.test(low)){score+=16;add('ok','Há recorte de contexto (onde/quem/quando) — isso delimita o alcance.');}
+    else{add('bad','Falta recorte: onde? com quem? em que período? Questão sem contexto é infinita.');}
+    /* report */
+    if(/história de|importância de|evolução d|resumo sobre/.test(low)){score-=10;add('bad','Cheira a "trabalho de resumo" ("história de/importância de"). Questão investiga, não resume.');}
+    /* tamanho */
+    const words=q.split(' ').length;
+    if(words<6){score-=14;add('warn','Questão curta demais: provavelmente vaga. Inclua variáveis e contexto.');}
+    else if(words>34){score-=8;add('warn','Questão longa (>34 palavras): pode estar carregando duas perguntas. Corte até sobrar uma.');}
+    else{score+=8;add('ok',`Tamanho saudável (${words} palavras): específica sem ser afogada.`);}
+    score=clamp(score,0,100);
+    /* render */
+    checks.innerHTML=items.map(i=>`<li class="${i.cls}"><span class="ic">${i.cls==='ok'?'✓':i.cls==='warn'?'!':'✗'}</span>${i.txt}</li>`).join('');
+    const v=$('#qscore');
+    v.innerHTML=`PONTUAÇÃO <b>${score}</b>/100`;
+    if(score>=70){
+      $('#qverdict').innerHTML=`<div class="vq" style="color:${GREEN}">APTA ✓ — PODE GUIAR O PROJETO</div><p>A questão passa nos critérios: aberta, relacionando variáveis e com recorte. Use-a como bússola: cada parágrafo do trabalho serve para respondê-la.</p>`;
+      beep(700,.07);setTimeout(()=>beep(940,.1),90);
+      toast('Questão aprovada pelo auditor','Score '+score+'/100. Leve-a ao documento com confiança.',true);
+      setGoal('a_q');
+    }else if(score>=40){
+      $('#qverdict').innerHTML=`<div class="vq" style="color:${GOLD}">REVISAR — QUASE LÁ</div><p>Corrija os itens vermelhos/amarelos e audite de novo. Fórmula segura: «De que forma <b>X</b> afeta <b>Y</b> em <b>Z</b>?»</p>`;
+      beep(320,.1,'triangle',.05);
+    }else{
+      $('#qverdict').innerHTML=`<div class="vq" style="color:${RED}">REPENSAR</div><p>A questão atual não sustenta um projeto. Comece pela fórmula: «De que forma X afeta Y em Z?» — substitua X, Y e Z pelo seu tema.</p>`;
+      beep(180,.16,'sawtooth',.06);
+    }
+  });
+})();
+
+/* ================================================================
+   LAB B1 — FUNIL DA INTRODUÇÃO
+================================================================ */
+(()=>{
+  const cv=$('#funcv'); const c=setupCanvas(cv,720,320).ctx;
+  const LAYERS=[
+    {n:'CONTEXTO',w:'Comece amplo: a área, um número do setor, a tendência. 2–3 frases que situem qualquer leitor.',tip:'Um dado estatístico na 1ª frase prende a atenção.',col:BLUE},
+    {n:'RECORTE',w:'Estreite: o que exatamente será estudado, onde, com quem, em que período.',tip:'Recorte é generosidade com o seu prazo — reivindique menos do que você pode.',col:BLUE},
+    {n:'PROBLEMA',w:'A tensão: o que não funciona, não se sabe, ou precisa melhorar dentro do recorte.',tip:'Problema ≠ tema. Problema é algo que incomola alguém de verdade.',col:GOLD},
+    {n:'QUESTÃO',w:'A pergunta-guia, já auditada (laboratório A4). Uma frase, terminando em "?".',tip:'Ela deve poder ser respondida com o método que você terá.',col:GOLD},
+    {n:'JUSTIFICATIVA',w:'Por que responder vale a pena: os 4 elementos (problema, afetados, por que agora, entrega).',tip:'1 parágrafo. Se não cabe em 6 linhas, ainda não está recortado.',col:RED},
+    {n:'OBJETIVOS',w:'O contrato: 1 objetivo geral + 3–5 específicos em degraus (laboratório B2).',tip:'Terminar a introdução nos objetivos = o leitor já sabe o que vem depois.',col:RED}
+  ];
+  let studied=new Set(),sel=-1,hover=-1;
+  cv.addEventListener('pointermove',e=>{
+    const r=cv.getBoundingClientRect();
+    hover=Math.floor(((e.clientY-r.top)*320/r.height-18)/48);
+    if(hover<0||hover>5)hover=-1;
+  });
+  cv.addEventListener('pointerleave',()=>hover=-1);
+  cv.addEventListener('pointerdown',e=>{
+    const r=cv.getBoundingClientRect();
+    const idx=Math.floor(((e.clientY-r.top)*320/r.height-18)/48);
+    if(idx<0||idx>5)return;
+    sel=idx;
+    if(!studied.has(idx)){studied.add(idx);beep(500+idx*40,.06,'triangle',.05);}
+    else beep(420,.04,'triangle',.04);
+    const L=LAYERS[idx];
+    $('#funinfo').innerHTML=`<div class="vq" style="color:${L.col}">CAMADA ${idx+1} DE 6</div><b>${L.n}</b><p>${L.w}</p><p style="margin-top:6px;font-family:var(--mono);font-size:10.5px;color:var(--soft)">DICA: ${L.tip}</p>`;
+    $('#funN').textContent=studied.size;
+    if(studied.size>=6)setGoal('b_fun');
+  });
+  (function draw(){
+    requestAnimationFrame(draw);
+    c.clearRect(0,0,720,320);
+    const top=18,h=40,gap=8;
+    LAYERS.forEach((L,i)=>{
+      const y=top+i*(h+gap);
+      const halfTop=300-((300-96)*i/5), halfBot=300-((300-96)*(i+1)/5);
+      const cx=340;
+      const done=studied.has(i);
+      const hi=(hover===i||sel===i);
+      c.beginPath();
+      c.moveTo(cx-halfTop,y);c.lineTo(cx+halfTop,y);
+      c.lineTo(cx+halfBot,y+h);c.lineTo(cx-halfBot,y+h);c.closePath();
+      c.fillStyle= done?(hi?'rgba(239,190,46,.75)':'rgba(239,190,46,.45)'):(hi?'rgba(26,24,17,.14)':'rgba(26,24,17,.05)');
+      c.fill();
+      c.strokeStyle=done?GREEN:L.col;c.lineWidth=hi?2.5:1.8;
+      c.stroke();
+      c.fillStyle=INK;
+      c.font='600 11px "IBM Plex Mono",monospace';c.textAlign='center';
+      c.fillText((i+1)+' · '+L.n,cx,y+h/2+4);
+      if(done){c.fillStyle=GREEN;c.textAlign='left';c.fillText('✓',cx+halfBot+8,y+h/2+4);}
+      c.textAlign='left';
+    });
+    c.fillStyle=SOFT;c.font='400 9px "IBM Plex Mono",monospace';
+    c.fillText('amplo ↑ topo do funil — específico ↓ base: é assim que o leitor desce pela sua introdução',16,310);
+  })();
+})();
+
+/* ================================================================
+   LAB B2 — CONSTRUTOR DE OBJETIVOS
+================================================================ */
+(()=>{
+  const OG_V=['Propor','Desenvolver','Implementar','Avaliar','Modelar','Construir'];
+  const OE_V=['Identificar','Descrever','Levantar','Caracterizar','Analisar','Comparar','Testar','Avaliar'];
+  const STEP1=['Identificar','Descrever','Levantar','Caracterizar'];
+  const STEP2=['Analisar','Comparar'];
+  const STEP3=['Propor','Avaliar','Testar','Desenvolver'];
+  let ogV=null,oes=[{v:null,t:''},{v:null,t:''},{v:null,t:''}];
+  const ogHost=$('#ogverbs');
+  function chip(host,labels,get,set,force){
+    host.innerHTML='';
+    labels.forEach(l=>{
+      const b=document.createElement('button');
+      b.className='chipv'+(get()===l?' on':'');
+      b.textContent=l;
+      b.addEventListener('click',()=>{set(get()===l?null:l);render();beep(480,.04,'triangle',.04);});
+      host.appendChild(b);
+    });
+  }
+  const oeHost=$('#oerows');
+  function buildOes(){
+    oeHost.innerHTML='';
+    oes.forEach((oe,i)=>{
+      const row=document.createElement('div');
+      row.className='objrow';
+      row.innerHTML=`<span class="olab">OBJETIVO ESPECÍFICO ${i+1}</span><div class="chiprow" data-i="${i}"></div><input type="text" data-t="${i}" placeholder="… ${oe.v?oe.v.toLowerCase():'[verbo]'} …" value="${oe.t.replace(/"/g,'&quot;')}" style="margin-top:8px">`;
+      oeHost.appendChild(row);
+    });
+    oes.forEach((oe,i)=>{
+      const host=oeHost.querySelector(`[data-i="${i}"]`);
+      chip(host,OE_V,()=>oe.v,v=>oe.v=v);
+      const inp=oeHost.querySelector(`[data-t="${i}"]`);
+      inp.addEventListener('input',()=>{oe.t=inp.value;render();});
+    });
+  }
+  chip(ogHost,OG_V,()=>ogV,v=>ogV=v);
+  $('#ogtext').addEventListener('input',e=>render());
+  $('#oeadd').addEventListener('click',()=>{
+    if(oes.length>=5){toast('Máximo de 5','Mais que 5 específicos dilui o projeto — e cansa a banca.');return;}
+    oes.push({v:null,t:''});buildOes();render();beep(520,.05,'triangle',.05);
+  });
+  function render(){
+    const st=$('#objstat');
+    const items=[];
+    const ogT=$('#ogtext').value.trim();
+    let score=0;
+    if(ogV){items.push(['ok',`OG com verbo de nível alto: "${ogV}"`]);score+=20;}
+    else items.push(['bad','OG sem verbo: escolha um verbo de nível alto (Propor, Desenvolver, Avaliar…)']);
+    if(ogT.length>15){items.push(['ok',`OG com objeto e recorte (${ogT.split(/\s+/).length} palavras)`]);score+=10;}
+    else items.push(['warn','Complete o OG: o quê + onde/com quem + quando']);
+    if(ogV&&ogT.length>15)score+=5;
+    /* OEs */
+    const filled=oes.filter(o=>o.t.trim().length>10);
+    if(filled.length===oes.length&&oes.length>=3){items.push(['ok',`${oes.length} OEs preenchidos (entre 3 e 5)`]);score+=15;}
+    else if(oes.length<3)items.push(['bad','Mínimo de 3 objetivos específicos — a escada precisa de degraus']);
+    else items.push(['warn','Complete o texto de todos os OEs']);
+    const verbs=oes.map(o=>o.v);
+    if(verbs.every(Boolean)){
+      const dup=verbs.some((v,i)=>verbs.indexOf(v)!==i);
+      if(dup){items.push(['warn','Há verbo repetido entre os OEs — cada degrau merece um verbo próprio']);}
+      else{items.push(['ok','Verbos dos OEs todos distintos']);score+=5;}
+      /* steps */
+      const has1=oes.some(o=>STEP1.includes(o.v));
+      const has2=oes.some(o=>STEP2.includes(o.v));
+      const has3=oes.some(o=>STEP3.includes(o.v));
+      if(has1){items.push(['ok','Degrau 1 presente (entender: identificar/descrever…)']);score+=10;}else items.push(['warn','Falta degrau 1: um OE que identifique ou descreva o cenário']);
+      if(has2){items.push(['ok','Degrau 2 presente (analisar/comparar)']);score+=10;}else items.push(['warn','Falta degrau 2: um OE que analise ou compare']);
+      if(has3){items.push(['ok','Degrau 3 presente (propor/avaliar/testar)']);score+=10;}else items.push(['warn','Falta degrau 3: um OE que proponha, avalie ou teste']);
+      if(ogV&&verbs.includes(ogV)){items.push(['warn','Um OE repete o verbo do OG — se o OE faz o mesmo do geral, sobra um']);}
+    }else{
+      items.push(['warn','Escolha o verbo de cada OE']);
+    }
+    const okAll=score>=80;
+    st.innerHTML=items.map(i=>`<li class="${i[0]}"><span class="ic">${i[0]==='ok'?'✓':i[0]==='warn'?'!':'✗'}</span>${i[1]}</li>`).join('');
+    const v=$('#objverdict');
+    if(okAll){
+      v.innerHTML=`<div class="vq" style="color:${GREEN}">ESTRUTURA VALIDADA ✓</div><p><b>${ogV} ${ogT}</b></p><p style="margin-top:4px">Degrau 1 (${oes.find(o=>STEP1.includes(o.v))?.v}) → degrau 2 (${oes.find(o=>STEP2.includes(o.v))?.v}) → degrau 3 (${oes.find(o=>STEP3.includes(o.v))?.v}). Os degraus somados entregam o geral — este é um contrato plausível de cumprir.</p>`;
+      setGoal('b_obj');
+      if(!window.__ob){window.__ob=true;toast('Estrutura validada','OG + OEs formam uma escada coerente. Transcreva para o documento.',true);}
+      beep(700,.06);setTimeout(()=>beep(940,.1),90);
+    }else{
+      v.innerHTML=`<div class="vq" style="color:${GOLD}">CONSTRUINDO… ${clamp(score,0,99)}/100</div><p>Corrija os itens marcados. A estrutura ideal: 1º OE entende, 2º analisa, 3º propõe/avalia — e o geral coroa a escada.</p>`;
+    }
+  }
+  buildOes();
+  render();
+})();
+
+/* ============ LINKOTECA filtro ============ */
+ $$('#fchips .tog').forEach(b=>b.addEventListener('click',()=>{
+  $$('#fchips .tog').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+  const f=b.dataset.f;
+  $$('#lklist .lkrow').forEach(r=>{
+    r.style.display=(f==='tudo'||r.dataset.c.split(' ').includes(f))?'':'none';
+  });
+  beep(500,.05,'triangle',.04);
+}));
+
+/* ============ RUBRICA GA ============ */
+let gaState={};try{gaState=JSON.parse(localStorage.getItem('projlab-rb')||'{}');}catch(e){}
+function updGa(){
+  const boxes=$$('input[data-ga]');let pts=0;
+  boxes.forEach(b=>{if(b.checked)pts+=parseFloat(b.dataset.pts);});
+  $('#gaScore').textContent=pts.toFixed(1).replace('.',',');
+  $('#gaBar').style.width=(pts/5*100)+'%';
+  const v=$('#gaVerdict');
+  if(pts>=4.5){v.textContent='PRONTO — enviar com confiança';v.className='verdict ok';}
+  else if(pts>=3.5){v.textContent='QUASE — fechar os itens faltantes';v.className='verdict ok';}
+  else if(pts>=2){v.textContent='EM CONSTRUÇÃO — revisar os blocos';v.className='verdict mid';}
+  else{v.textContent='SEM SUBMISSÃO AINDA';v.className='verdict low';}
+}
+ $$('input[data-ga]').forEach(b=>{
+  if(gaState[b.dataset.ga])b.checked=true;
+  b.addEventListener('change',()=>{gaState[b.dataset.ga]=b.checked;try{localStorage.setItem('projlab-rb',JSON.stringify(gaState));}catch(e){}updGa();});
+});
+updGa();
+
+/* ============ FINALE ============ */
+let fShown=false;
+function finale(){
+  if(fShown)return;fShown=true;
+  const exDone=Object.values(exState).filter(Boolean).length;
+  const ckN=$$('#doccheck input').filter(i=>i.checked).length;
+  const gaPts=$$('input[data-ga]').filter(b=>b.checked).length;
+  const secs=Math.floor((Date.now()-T0)/1000);
+  $('#finStats').innerHTML=`<span>BLOCOS 2/2</span><span>DOCUMENTO ${ckN}/8</span><span>EXERCÍCIOS ${exDone}/6</span><span>SESSÃO ${Math.floor(secs/60)}min ${String(secs%60).padStart(2,'0')}s</span>`;
+  $('#finale').classList.add('show');
+  beep(523,.12,'square',.07);setTimeout(()=>beep(659,.12,'square',.07),130);setTimeout(()=>beep(784,.12,'square',.07),260);setTimeout(()=>beep(1047,.3,'square',.07),390);
+  const fcv=document.createElement('canvas');fcv.id='confetti';document.body.appendChild(fcv);
+  const W=innerWidth,Hh=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+  fcv.width=W*dpr;fcv.height=Hh*dpr;
+  const c=fcv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+  const cols=[INK,RED,YELLOW,BLUE,GREEN];
+  const ps=Array.from({length:150},()=>({x:Math.random()*W,y:-Math.random()*Hh*.8,w:5+Math.random()*5,h:8+Math.random()*8,r:Math.random()*6,vr:-4+Math.random()*8,vy:130+Math.random()*130,sw:Math.random()*6,col:cols[Math.floor(Math.random()*5)]}));
+  const t0=performance.now();
+  (function fall(t){
+    c.clearRect(0,0,W,Hh);
+    ps.forEach(p=>{
+      p.y+=p.vy/60;p.x+=Math.sin(t/400+p.sw)*.8;p.r+=p.vr/60;
+      c.save();c.translate(p.x,p.y);c.rotate(p.r);
+      c.fillStyle=p.col;c.fillRect(-p.w/2,-p.h/2,p.w,p.h);c.restore();
+    });
+    if(t-t0<5200&&$('#finale').classList.contains('show'))requestAnimationFrame(fall);
+    else fcv.remove();
+  })(t0);
+}
+ $('#finClose').addEventListener('click',()=>{$('#finale').classList.remove('show');fShown=false;});
+ $('#finale').addEventListener('click',e=>{if(e.target.id==='finale'){$('#finale').classList.remove('show');fShown=false;}});
+
+setTimeout(()=>toast('Bem-vindo ao PROJETO·LAB','Semanas 3–6 em uma apostila: escolha o tema na matriz, audite a questão, monte os objetivos — e entregue até 21/09/2026.'),900);
+</script>
+</body>
+</html>
