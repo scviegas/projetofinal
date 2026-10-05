@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BioSensor Quest 2.1 — Bioimpedance & Vital Signs Lab</title>
+<!--
+ ═══════════════════════════════════════════════════════════════
+ CORREÇÕES v2.1
+ ÁUDIO 1: eletrodos menores + braços/pernas mais grossos; tetrapolar
+          explicada (I=injeta corrente, V=mede tensão, Z=V/I ao vivo).
+ ÁUDIO 2: valores do quiz/academia/monitor definidos em faixas
+          (ECG, EEG, EMG, BIA, eletrodo, SpO₂, φ, P50); novas questões.
+ NOVO:    Anamnese do paciente (módulo BIA) + exportação em PDF no
+          laboratório e na tela final.
+ ═══════════════════════════════════════════════════════════════
+-->
+<style>
+:root{--bg:#060b14;--panel:#0d1626;--panel2:#132038;--line:#22345c;--txt:#e9f1ff;--mut:#8aa2c9;
+--teal:#2dd4bf;--cyan:#38bdf8;--mag:#e879f9;--lime:#a3e635;--red:#f87171;--gold:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100vh;
+background:radial-gradient(1000px 600px at 80% -10%,#123043 0%,var(--bg) 60%)}
+button{font-family:inherit;cursor:pointer}
+#hud{position:sticky;top:0;z-index:60;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+padding:10px 16px;background:rgba(6,11,20,.93);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.logo{font-weight:800;font-size:16px;background:linear-gradient(90deg,var(--teal),var(--cyan),var(--mag));
+-webkit-background-clip:text;background-clip:text;color:transparent}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--mut)}
+.chip b{color:var(--txt)}
+.spacer{flex:1}
+.langs{display:flex;gap:4px}
+.langs button{background:var(--panel2);border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:5px 9px;font-size:12px;font-weight:700}
+.langs button.on{color:#031318;background:linear-gradient(90deg,var(--teal),var(--cyan));border-color:transparent}
+.mini{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:5px 9px;font-size:12px}
+.mini:hover{color:var(--txt);border-color:var(--teal)}
+main{max-width:1080px;margin:0 auto;padding:22px 16px 70px}
+.screen{display:none}.screen.active{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1.title{font-size:clamp(26px,4.5vw,40px);font-weight:900;line-height:1.1;
+background:linear-gradient(90deg,var(--teal),var(--cyan),var(--mag));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mut);margin:8px 0 18px;line-height:1.5}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:14px}
+.btn{border:none;border-radius:12px;padding:12px 20px;font-weight:700;font-size:14.5px;transition:.2s}
+.btn-p{background:linear-gradient(90deg,#0d9488,#0369a1);color:#fff}
+.btn-p:hover{filter:brightness(1.25);transform:translateY(-1px)}
+.btn-g{background:transparent;border:1px solid var(--line);color:var(--mut)}
+.btn-g:hover{color:var(--txt);border-color:var(--teal)}
+.btn-gold{background:linear-gradient(90deg,#b45309,#f59e0b);color:#fff}
+.field{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.field input{flex:1;min-width:220px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+border-radius:12px;padding:13px 15px;font-size:15px;outline:none}
+.field input:focus{border-color:var(--teal)}
+.flags{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.flag{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:12px;
+padding:14px 20px;font-size:15px;font-weight:700}
+.flag.on{border-color:var(--teal);box-shadow:0 0 0 2px rgba(45,212,191,.35)}
+.hub-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:16px}
+.mod{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;
+flex-direction:column;gap:8px;transition:.2s}
+.mod:hover{transform:translateY(-3px);border-color:var(--teal)}
+.mod .ic{font-size:32px}
+.mod .nm{font-weight:800;font-size:16.5px}
+.mod .d{font-size:13px;color:var(--mut);line-height:1.45}
+.mod .xp{font-size:12px;color:var(--gold)}
+.bar{height:10px;background:var(--panel2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--cyan))}
+.flip{perspective:900px;height:230px;cursor:pointer}
+.flip .inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip.on .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;
+border:1px solid var(--line);background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:6px}
+.face .ic{font-size:30px}
+.face .t{font-weight:800;font-size:15px;color:var(--teal)}
+.face.back{transform:rotateY(180deg);background:var(--panel2);font-size:12.5px;color:#c9d8f2;overflow:auto;line-height:1.5}
+.flip-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin:14px 0 22px}
+.qnum{font-size:12.5px;color:var(--mut);margin-bottom:6px}
+.qtext{font-size:18px;font-weight:700;margin-bottom:14px;line-height:1.4}
+.ops{display:grid;gap:10px}
+.opt{text-align:left;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:12px;
+padding:12px 15px;font-size:14.5px;transition:.15s}
+.opt:hover:not(:disabled){border-color:var(--teal);transform:translateX(3px)}
+.opt.ok{background:rgba(163,230,53,.15);border-color:var(--lime);color:var(--lime);font-weight:700}
+.opt.bad{background:rgba(248,113,113,.12);border-color:var(--red);color:var(--red)}
+.fb{min-height:26px;margin-top:14px;font-weight:700;font-size:14.5px}
+.fb.ok{color:var(--lime)}.fb.bad{color:var(--red)}
+.nx{margin-top:12px}
+.lab-grid{display:grid;grid-template-columns:minmax(280px,420px) 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:820px){.lab-grid{grid-template-columns:1fr}}
+#bodySvg{width:100%;background:#0a1220;border:1px solid var(--line);border-radius:14px;touch-action:none}
+.elec{cursor:grab;touch-action:none}
+.sq{margin-top:8px;font-size:13px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2)}
+.sq.good{color:var(--lime);border-color:var(--lime)}
+.sq.mid{color:var(--gold);border-color:#7c6417}
+.sq.bad{color:var(--red);border-color:#7c2d2d}
+.ctr{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+@media(max-width:560px){.ctr{grid-template-columns:1fr}}
+.ctr label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+.ctr label b{color:var(--txt)}
+.ctr .fw{grid-column:1/-1}
+input[type=range]{width:100%;accent-color:var(--teal)}
+select,input[type=text],input[type=number],textarea{width:100%;background:var(--panel2);border:1px solid var(--line);
+color:var(--txt);border-radius:10px;padding:9px 10px;font-size:13.5px;outline:none;font-family:inherit}
+select:focus,input:focus,textarea:focus{border-color:var(--teal)}
+textarea{resize:vertical;min-height:54px}
+.h-title{font-size:13px;color:var(--teal);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700}
+.ro-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:14px}
+.ro{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.ro .l{font-size:10.5px;color:var(--mut);line-height:1.3;min-height:26px}
+.ro .v{font-size:19px;font-weight:800;margin-top:4px}
+.ro .v small{font-size:11px;color:var(--mut)}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:820px){.chart-grid{grid-template-columns:1fr}}
+canvas.chart{width:100%;height:200px;background:#0a1220;border:1px solid var(--line);border-radius:12px;display:block}
+.fi{font-size:12.5px;color:#c9d8f2;line-height:1.5;margin-top:8px}
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.pre{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:600}
+.pre:hover{border-color:var(--cyan)}
+.mi{list-style:none}
+.mi li{font-size:13.5px;color:var(--mut);padding:6px 0;border-bottom:1px dashed var(--line)}
+.mi li:last-child{border:none}
+.mi li.done{color:var(--lime)}
+.case-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.note{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:#0a1220;border:1px solid var(--line);
+border-radius:10px;padding:10px 12px;color:var(--cyan);margin:12px 0}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(80px);background:#0d2b28;
+border:1px solid var(--teal);color:#c8fff6;padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:700;
+transition:.35s;z-index:99;opacity:0;max-width:90vw;text-align:center}
+#toast.on{transform:translateX(-50%);opacity:1}
+#confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:98}
+#confetti span{position:absolute;top:-40px;animation:fall 2.8s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.15}}
+.final-box{background:var(--panel);border:1px solid var(--gold);border-radius:20px;padding:40px 22px;text-align:center}
+.badge-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0}
+.bdg{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;color:var(--gold)}
+.bdg.off{opacity:.3;filter:grayscale(1);color:var(--mut)}
+.disc{font-size:11px;color:var(--mut);margin-top:22px;text-align:center}
+.vgrid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}
+@media(max-width:820px){.vgrid{grid-template-columns:1fr}}
+.monwrap{position:relative;height:250px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#050b10}
+.monwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+.monlabel{position:absolute;font-size:10.5px;color:#8aa2c9;letter-spacing:1px}
+.ecglbl{top:6px;left:8px;color:#a3e635}
+.plbl{top:58%;left:8px;color:#38bdf8}
+.bigs{display:flex;gap:12px;margin-top:10px}
+.bigval{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.bigval span{font-size:26px;font-weight:900}
+.bigval small{display:block;font-size:10.5px;color:var(--mut);letter-spacing:1px;margin-top:2px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.rk-table{width:100%;border-collapse:collapse}
+.rk-table th,.rk-table td{padding:8px 10px;border-bottom:1px solid var(--line);font-size:13.5px;text-align:left}
+.rk-table th{color:var(--teal);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+.rk-table tr.me td{color:var(--lime);font-weight:700}
+#repOverlay{position:fixed;inset:0;display:none;overflow:auto;z-index:120;background:#dde4ef}
+#repDoc{width:840px;max-width:96%;margin:20px auto;background:#fff;color:#1a2233;padding:30px 34px;border-radius:10px;font-size:13px;line-height:1.55}
+#repDoc h1{font-size:20px;color:#0f766e;margin-bottom:4px}
+#repDoc h3{font-size:14px;color:#0f766e;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+#repDoc table{width:100%;border-collapse:collapse;margin:8px 0}
+#repDoc td,#repDoc th{border:1px solid #cbd5e1;padding:6px 9px;font-size:12px;text-align:left;vertical-align:top}
+#repDoc th{background:#f1f5f9}
+#repDoc img{width:100%;border:1px solid #cbd5e1;border-radius:6px;margin:6px 0}
+#repDoc ul{margin:6px 0 6px 20px}
+#repDoc li{margin:4px 0}
+#repDoc .rmeta{color:#64748b;font-size:12px;margin-bottom:12px}
+@media print{
+ @page{size:A4;margin:12mm}
+ body *{visibility:hidden}
+ #repOverlay,#repOverlay *{visibility:visible}
+ #repOverlay{display:block!important;position:absolute;left:0;top:0;width:100%;background:#fff}
+ #repDoc{margin:0;border-radius:0;width:100%;max-width:100%}
+ .noprint{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<header id="hud">
+  <span class="logo">🧬 BioSensor Quest 2.1</span>
+  <span class="chip">👤 <b id="hName">—</b></span>
+  <span class="chip">⭐ <b id="hXp">0/100</b></span>
+  <span class="chip">🎖️ <b id="hRank">—</b></span>
+  <span class="chip">🏅 <b id="hBdg">0</b>/11</span>
+  <span class="spacer"></span>
+  <span class="langs"><button data-l="pt">🇧🇷 PT</button><button data-l="en">🇺🇸 EN</button><button data-l="es">🇪🇸 ES</button></span>
+  <button class="mini" id="bMap">🗺️</button>
+  <button class="mini" id="bRank">🏆</button>
+  <button class="mini" id="bReset">🔄</button>
+</header>
+
+<main>
+  <!-- INTRO -->
+  <section id="scr-intro" class="screen active">
+    <h1 class="title" id="iTitle"></h1>
+    <p class="sub" id="iTag"></p>
+    <div class="card">
+      <div class="h-title" id="iLangT"></div>
+      <div class="flags" id="iFlags">
+        <button class="flag" data-l="pt">🇧🇷 Português</button>
+        <button class="flag" data-l="en">🇺🇸 English</button>
+        <button class="flag" data-l="es">🇪🇸 Español</button>
+      </div>
+      <div class="h-title" id="iHowT"></div>
+      <ul class="mi" id="iHow"></ul>
+      <div class="field">
+        <input id="iName" maxlength="22">
+        <button class="btn btn-p" id="iStart">▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- HUB -->
+  <section id="scr-hub" class="screen">
+    <h1 class="title" id="hubT" style="font-size:26px"></h1>
+    <p class="sub" id="hubSub"></p>
+    <div class="bar" style="max-width:420px"><i id="hubBar" style="width:0%"></i></div>
+    <div class="grid hub-grid" id="hubCards"></div>
+  </section>
+
+  <!-- ACADEMIA -->
+  <section id="scr-acad" class="screen">
+    <div class="case-head"><h1 class="title" id="acT" style="font-size:24px"></h1><button class="btn btn-g" id="acBack"></button></div>
+    <p class="sub" id="acSub"></p>
+    <div class="grid flip-grid" id="acCards"></div>
+    <div class="card" id="acQuizBox"></div>
+  </section>
+
+  <!-- LAB -->
+  <section id="scr-lab" class="screen">
+    <div class="case-head"><h1 class="title" id="lbT" style="font-size:24px"></h1><button class="btn btn-g" id="lbBack"></button></div>
+    <p class="sub" id="lbSub"></p>
+    <!-- NOVO: anamnese do paciente -->
+    <div class="card" id="anamCard">
+      <div class="h-title" id="anamT"></div>
+      <div id="anamForm"></div>
+      <div class="note" id="imcV"></div>
+    </div>
+    <div class="lab-grid">
+      <div class="card">
+        <div class="h-title" id="lbBodyT"></div>
+        <svg id="bodySvg" viewBox="0 0 300 520"></svg>
+        <div class="sq" id="sqChip">—</div>
+        <div class="note" id="tetraNote" style="display:none"></div>
+      </div>
+      <div class="card">
+        <div class="h-title" id="lbCtrlT"></div>
+        <div class="ctr" id="lbCtrls"></div>
+        <div class="fi" id="lbFi" style="margin-top:14px"></div>
+        <div class="h-title" style="margin-top:16px" id="lbPreT"></div>
+        <div class="presets" id="lbPresets"></div>
+        <button class="btn btn-p" id="lbReport"></button>
+      </div>
+    </div>
+    <div class="grid ro-grid" id="lbRos"></div>
+    <div class="chart-grid">
+      <div class="card"><div class="h-title" id="chNyT"></div><canvas id="cvNyq" class="chart"></canvas></div>
+      <div class="card"><div class="h-title" id="chBoT"></div><canvas id="cvBode" class="chart"></canvas></div>
+      <div class="card">
+        <div class="h-title" id="chCellT"></div>
+        <svg viewBox="0 0 260 120" style="width:100%;background:#0a1220;border:1px solid var(--line);border-radius:12px">
+          <circle cx="130" cy="60" r="38" fill="rgba(45,212,191,.06)" stroke="#2dd4bf" stroke-width="3"/>
+          <circle cx="130" cy="60" r="33" fill="none" stroke="#2dd4bf" stroke-width="1" opacity=".5"/>
+          <circle cx="130" cy="60" r="10" fill="#132038" stroke="#38bdf8"/>
+          <path id="cellAround" d="M15,60 Q130,-25 245,60" fill="none" stroke="#e879f9" stroke-width="3" stroke-dasharray="6 6"/>
+          <path id="cellThrough" d="M15,60 L245,60" fill="none" stroke="#a3e635" stroke-width="3" stroke-dasharray="6 6"/>
+          <text id="cellLbl" x="130" y="112" text-anchor="middle" fill="#8aa2c9" font-size="11"></text>
+        </svg>
+        <canvas id="cvGauge" class="chart" style="height:70px;margin-top:8px"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="h-title" id="lbMiT"></div>
+      <ul class="mi" id="lbMis"></ul>
+    </div>
+  </section>
+
+  <!-- VITAIS -->
+  <section id="scr-vitals" class="screen">
+    <div class="case-head"><h1 class="title" id="vtT" style="font-size:24px"></h1><button class="btn btn-g" id="vtBack"></button></div>
+    <p class="sub" id="vtSub"></p>
+    <div class="vgrid">
+      <div class="card">
+        <div class="h-title" id="vtMonT"></div>
+        <div class="monwrap">
+          <canvas id="cvGrid"></canvas>
+          <canvas id="cvTrace"></canvas>
+          <div class="monlabel ecglbl" id="lblEcg">ECG · II</div>
+          <div class="monlabel plbl" id="lblPleth">PLETH</div>
+        </div>
+        <div class="bigs">
+          <div class="bigval"><span id="vHR">--</span><small id="lHR"></small></div>
+          <div class="bigval"><span id="vSpo">--</span><small id="lSpo"></small></div>
+          <div class="bigval"><span id="vPi">--</span><small id="lPi"></small></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="h-title" id="vtCtrlT"></div>
+        <div class="ctr" id="vtCtrls"></div>
+        <div class="h-title" style="margin-top:16px" id="vtPreT"></div>
+        <div class="presets" id="vtPresets"></div>
+      </div>
+    </div>
+    <div class="chart-grid">
+      <div class="card"><div class="h-title" id="vtHbT"></div><canvas id="cvHb" class="chart"></canvas><p class="fi" id="vtHbNote"></p></div>
+      <div class="card"><div class="h-title" id="vtDiagT"></div><div class="note" id="vtRef"></div><ul class="mi" id="vtDiag"></ul></div>
+      <div class="card">
+        <div class="h-title" id="vtMiT"></div>
+        <ul class="mi" id="vtMis"></ul>
+        <div id="vtQuizBox" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASOS -->
+  <section id="scr-cases" class="screen">
+    <div class="case-head"><h1 class="title" id="csT" style="font-size:24px"></h1><button class="btn btn-g" id="csBack"></button></div>
+    <div class="card" id="csBox"></div>
+  </section>
+
+  <!-- BOSS -->
+  <section id="scr-boss" class="screen">
+    <div class="case-head"><h1 class="title" id="bsT" style="font-size:24px"></h1><button class="btn btn-g" id="bsBack"></button></div>
+    <p class="sub" id="bsSub"></p>
+    <div class="card" id="bsBox"></div>
+  </section>
+
+  <!-- RANKING -->
+  <section id="scr-rank" class="screen">
+    <div class="case-head"><h1 class="title" id="rkT" style="font-size:24px"></h1><button class="btn btn-g" id="rkBack"></button></div>
+    <p class="sub" id="rkSub"></p>
+    <div class="card">
+      <table class="rk-table">
+        <thead><tr id="rkHead"></tr></thead>
+        <tbody id="rkBody"></tbody>
+      </table>
+      <div class="btnrow">
+        <button class="btn btn-p" id="rkReg"></button>
+        <button class="btn btn-g" id="rkExp"></button>
+        <button class="btn btn-g" id="rkImp"></button>
+        <button class="btn btn-g" id="rkClr"></button>
+        <input type="file" id="rkFile" accept=".json" hidden>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section id="scr-final" class="screen">
+    <div class="final-box">
+      <div style="font-size:54px">🏅</div>
+      <h2 id="fnT" style="font-size:24px;margin:8px 0"></h2>
+      <div id="fnRank" style="font-size:clamp(22px,4vw,34px);font-weight:900;color:var(--gold);margin:6px 0"></div>
+      <div id="fnXp" style="color:var(--cyan);font-weight:800"></div>
+      <div class="badge-row" id="fnBdgs"></div>
+      <p id="fnMsg" style="color:var(--mut);max-width:520px;margin:0 auto 22px;line-height:1.5"></p>
+      <div class="btnrow" style="justify-content:center">
+        <!-- NOVO: exportação de PDF ao final -->
+        <button class="btn btn-gold" id="fnPdf"></button>
+        <button class="btn btn-p" id="fnAgain"></button>
+        <button class="btn btn-g" id="fnReg"></button>
+        <button class="btn btn-g" id="fnMap"></button>
+      </div>
+    </div>
+  </section>
+  <p class="disc" id="disc"></p>
+</main>
+
+<div id="repOverlay"><div id="repDoc"></div></div>
+<div id="toast"></div>
+<div id="confetti"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtF=f=>f>=1e6?(f/1e6).toFixed(2)+' MHz':(f/1e3).toFixed(1)+' kHz';
+const LS='bsq21',RKL='bsq21rk';
+
+/* ================= ESTADO ================= */
+let st;
+try{st=JSON.parse(localStorage.getItem(LS));}catch(e){st=null;}
+if(!st)st={lang:'pt',name:'',xp:0,bdg:{},done:{},
+ anam:{nome:'',idade:'',sexo:'F',h:170,w:70,act:2,meds:'',qx:'',cb:{}},
+ lab:{hyd:.5,mus:50,fat:20,edm:.1,temp:36.5,fv:57,cur:300,h:170,w:70},
+ vt:{hr:78,spo:97,perf:2.5,rhy:'sin',stv:0,nz:0},
+ pre:{},cases:{}};
+function save(){localStorage.setItem(LS,JSON.stringify(st));}
+const T=()=>I18N[st.lang];
+
+/* ================= TRADUÇÕES ================= */
+const I18N={
+/* ---------------- PT ---------------- */
+pt:{
+ ui:{start:'▶ Entrar no laboratório',namePh:'Seu nome ou equipe',title:'BioSensor Quest',
+ tagline:'Simulador gamificado de sensores biomédicos, bioimpedância e sinais vitais. Preencha a anamnese, posicione os eletrodos, domine o modelo Cole-Cole, monitore ECG e SpO₂ e gere o relatório em PDF!',
+ langT:'Escolha o idioma',howT:'Como jogar',
+ how:['Explore os 5 módulos do laboratório clínico.','Ganhe XP com quizzes, missões dos simuladores e diagnósticos.','Os simuladores são AO VIVO: mexa nos controles e veja a física reagir.','Preencha a ANAMNESE no módulo BIA e exporte o relatório em PDF no final.','Seu progresso fica salvo neste navegador.'],
+ rankBtn:'🏆 Placar da turma',
+ nav:{hub:'Mapa',acad:'Academia',lab:'Simulador BIA',vitals:'Sinais Vitais',cases:'Casos Clínicos',boss:'Desafio Final'},
+ hubT:'🗺️ Laboratório Clínico Inovare',hubSub:'Complete os módulos, colete as 11 insígnias e torne-se Mestre da Bioimpedância.',
+ mods:[{k:'acad',ic:'🔬',xp:'+10 XP',d:'Sensores, cadeia de medição, eletrodos e os principais sinais do corpo humano — com valores definidos.'},
+ {k:'lab',ic:'⚡',xp:'+20 XP',d:'Simulador AO VIVO de bioimpedância: anamnese, eletrodos tetrapolares, frequência e relatório PDF.'},
+ {k:'vitals',ic:'💓',xp:'+26 XP',d:'Monitor AO VIVO: ECG com arritmias, SpO₂, ruído e curva Hb·O₂ com valores de referência.'},
+ {k:'cases',ic:'🩺',xp:'+30 XP',d:'Leia os valores de bioimpedância (definidos em cada prontuário) e identifique a condição.'},
+ {k:'boss',ic:'👑',xp:'+14 XP',d:'Desafio final: prove que virou mestre em bioinstrumentação biomédica.'}],
+ play:'▶ Jogar',review:'🔁 Revisar',done:'✅ Concluído',back:'⬅ Mapa',
+ correct:'✅ Correto!',wrong:'❌ Incorreto. ',next:'Próxima ▶',finish:'Ver resultado 🏁',
+ startQuiz:'Fazer o quiz (+10 XP)',redo:'🔁 Refazer o quiz (sem XP extra)',vqStart:'Fazer o quiz do monitor (+6 XP)',vqRedo:'🔁 Refazer o quiz do monitor',
+ badges:{acad:'🔬 Veterano da Academia',m1:'⚡ Domador de Correntes',m2:'📚 Explorador de Presets',m3:'💧 Detetive de Fluidos',m4:'🧲 Precisão Tetrapolar',
+  v1:'💓 Caçador de Taquicardia',v2:'🫁 Guardião da Oxigenação',v3:'🌀 Detetive de Arritmias',v4:'🔊 Dominador de Ruído',
+  cases:'🩺 Diagnóstico Impecável',boss:'👑 Mestre do Laboratório'},
+ ranks:['🎓 Trainee','🧰 Técnico(a) em Bioinstrumentação','🧪 Analista Biomédico','🏅 Mestre da Bioimpedância'],
+ finT:'Missão cumprida!',finPdf:'📄 Exportar relatório final (PDF)',finAgain:'Reiniciar progresso',finMap:'Voltar ao mapa',
+ finMsg:['Revise a Academia e os simuladores e volte mais forte!','Bom começo! Tente os Casos Clínicos para subir de cargo.','Excelente! Falta pouco para o mestrado.','Incrível! Você domina sensores biomédicos, bioimpedância e sinais vitais. O laboratório está em boas mãos.'],
+ disc:'Simulação educacional (modelo de Cole-Cole + ECG sintético) — não é um dispositivo médico.',reset:'Progresso zerado!'},
+ acad:{t:'🔬 Academia dos Sensores',sub:'Toque nas cartas para virar e aprender os fundamentos — agora com faixas de valores definidas.',
+ cards:[
+ {ic:'📡',t:'O que é um sensor?',b:'Converte uma grandeza física ou química (pressão, luz, temperatura, íons) em sinal elétrico mensurável. É o “sentido” dos equipamentos médicos.'},
+ {ic:'🔗',t:'Cadeia de medição',b:'Sensor → Condicionamento (amplificar/filtrar) → Conversão A/D → Processamento → Exibição. Cada etapa pode adicionar ruído.'},
+ {ic:'🫀',t:'Sinais e faixas (definidas)',b:'ECG: 0,5–4 mV · EEG: 10–100 μV · EMG superficial: 0,05–5 mV · SpO₂: luz 660 nm (vermelha) + 940 nm (IV) · Temperatura: termistor NTC (36–38 °C) · Glicose: reação enzimática eletroquímica.'},
+ {ic:'⚡',t:'Bioimpedância (BIA)',b:'Injeta microcorrente alternada SEGURA de 50–800 μA (tipicamente em 50 kHz) por 2 eletrodos de CORRENTE (I) e mede a tensão em 2 eletrodos de TENSÃO (V): Z = V/I (Ω). R reflete água e eletrólitos; Xc vem da capacitância das membranas celulares.'},
+ {ic:'🌊',t:'Faixas de frequência',b:'Em baixas frequências, a contribuição extracelular predomina. 50 kHz é uma frequência amplamente usada em BIA de frequência única. Em frequências mais altas aumenta a contribuição dos compartimentos intra e extracelular; MF-BIA/BIS usa múltiplas frequências.'},
+ {ic:'🔌',t:'O que é um eletrodo?',b:'Interface condutora pele–equipamento (Ag/AgCl + gel). Na BIA tetrapolar são 4: dois de corrente (mão e pé) e dois de tensão (punho e tornozelo) — assim a impedância da pele NÃO entra no resultado. No ECG, captam potenciais cardíacos de ~1 mV e exigem bom contato para evitar ruído.'}],
+ quiz:[
+ {q:'Um transdutor biomédico converte…',ops:['Grandeza biológica (pressão, luz, íons) em sinal elétrico','Sangue em oxigênio','Corrente em alimento','Som em luz'],a:0},
+ {q:'Qual sinal tem a MENOR amplitude (valores definidos)?',ops:['ECG: 0,5–4 mV','EMG superficial: 0,05–5 mV','EEG: 10–100 μV','Temperatura: 36–38 °C'],a:2},
+ {q:'Na BIA, a membrana celular comporta-se como…',ops:['Resistor puro','Capacitor (gera a reatância Xc)','Bateria','Fusível'],a:1},
+ {q:'Por que a BIA usa corrente ALTERNADA de kHz (e não contínua)?',ops:['Para dar choque no paciente','Para não estimular nervos/músculos e evitar polarização dos eletrodos','Para gastar mais bateria','Porque corrente contínua não existe'],a:1},
+ {q:'Na BIA, a resistência R depende principalmente de…',ops:['Água corporal total e eletrólitos','Da cor do cabelo','Da marca do aparelho','Da hora do dia'],a:0},
+ {q:'Na configuração TETRAPOLAR, os eletrodos de TENSÃO (V) servem para…',ops:['Injetar a corrente no paciente','Captar a queda de tensão longe dos eletrodos de corrente — a impedância da pele fica fora da medição','Medir a temperatura','Substituir o gel condutor'],a:1}]},
+ lab:{t:'⚡ Laboratório de Bioimpedância',sub:'Paciente virtual AO VIVO (modelo Cole-Cole: Z = R + jXc). Preencha a anamnese, posicione os 4 eletrodos e observe Z = V/I.',
+ bodyT:'🧍 Paciente virtual — arraste os 4 eletrodos até os alvos',ctrlT:'🎛️ Controles',preT:'🩺 Condições clínicas (presets)',
+ bodyHint:'I1/I2 = CORRENTE (mão/pé) · V1/V2 = TENSÃO (punho/tornozelo), no mesmo trajeto corporal',
+ anaT:'📋 Anamnese do paciente',
+ ana:{nome:'Nome completo',idade:'Idade (anos)',sexo:'Sexo',sex:['Masculino','Feminino','Outro'],h:'Altura (cm)',w:'Peso (kg)',
+ act:'Nível de atividade física',acts:['Sedentário','Leve','Moderado','Intenso'],cb:'Comorbidades',
+ cbOps:['Hipertensão','Diabetes','Insuficiência renal','Cardiopatia','Tabagismo'],meds:'Medicamentos em uso',qx:'Queixa principal / histórico atual',
+ imcCls:['Abaixo do peso (< 18,5)','Normal (18,5–24,9)','Sobrepeso (25–29,9)','Obesidade (≥ 30)']},
+ lb:{hyd:'Hidratação',mus:'Massa muscular (0–100)',fat:'Gordura corporal (%)',edm:'Edema (líquido extracelular)',temp:'Temperatura (°C)',frq:'Frequência da corrente',cur:'Corrente injetada (μA)'},
+ ros:[['R — Resistência','Ω'],['Xc — Reatância','Ω'],['|Z| — Impedância','Ω'],['φ — Ângulo de fase','°'],['Água total (est.)','L'],['Massa magra','kg'],['Gordura','%'],['Água extracel./total',''],['Tensão V = Z·I','mV']],
+ chNy:'📉 Cole-Cole (Nyquist): Xc × R',chBo:'📈 Varredura: |Z| × frequência',chCell:'🔎 Visão da célula',
+ fi:['<b>Baixas frequências:</b> predomina a contribuição do compartimento extracelular; o modelo é uma aproximação educacional.','<b>Frequências intermediárias:</b> 50 kHz é amplamente utilizada em BIA de frequência única, mas não é um padrão universal para todos os equipamentos.','<b>Frequências mais altas:</b> aumenta a contribuição intracelular; MF-BIA/BIS estima compartimentos usando múltiplas frequências e modelos.','<b>Corrente do simulador:</b> 50–800 μA. Valores reais dependem do equipamento, frequência, circuito aplicado e requisitos de segurança do dispositivo médico.'],
+ cell:['Só líquido extracelular','Misto (transição)','Água corporal total'],
+ presets:['Adulto padrão','Atleta hidratado','Desidratado','Edematoso','Obesidade','Idoso sarcopênico'],
+ miT:'🎯 Missões do laboratório (+5 XP cada)',
+ mis:['Varredura completa — leve a frequência de 1 kHz até 1 MHz.','Explorador — teste 3 condições clínicas (presets).','Detetive de fluidos — simule edema grave (ECW/água ≥ 0,45).','Mãos de precisão — encaixe os 4 eletrodos nos alvos (tetrapolar).'],
+ sq:['🟢 Perfeito! Tetrapolar correta — ','🟡 Eletrodos desalinhados — encaixe cada um no alvo pontilhado.','🔴 Sem corrente: posicione I1 e I2 primeiro!'],
+ sqV:'🟡 Corrente OK (I1→I2). Faltam os eletrodos de TENSÃO: V1 no punho e V2 no tornozelo do mesmo lado dos eletrodos de corrente.',
+ tetra:'<b>Como funciona:</b> I1/I2 injetam a microcorrente segura; V1/V2 captam a tensão gerada, longe dos eletrodos de corrente — reduzindo fortemente a influência da impedância de contato dos eletrodos de corrente sobre a medida de tensão. O sistema calcula <b>Z = V/I</b> e deriva R, Xc, φ e a composição corporal.',
+ axR0:'R₀ = só LIE',axRinf:'R∞ = água total',report:'📄 Gerar relatório do paciente (PDF)'},
+ vit:{t:'💓 Monitor de Sinais Vitais',sub:'ECG e pletismografia AO VIVO. Referências definidas: FC 60–100 bpm · SpO₂ 95–100% · IP > 1,6 · P50 = 26,6 mmHg.',
+ monT:'🖥️ Monitor (varredura contínua)',ctrlT:'🎛️ Parâmetros',preT:'🫀 Ritmos e condições',
+ hHR:'Frequência cardíaca (bpm)',hSpo:'SpO₂ (%)',hPerf:'Perfusão (índice de pulso)',rhy:'Ritmo cardíaco',
+ rhySin:'Sinusal',rhyAfib:'Fibrilação atrial',stT:'Supra de ST (0–1)',nz:'Ruído no sinal (0–1)',
+ presets:['Normal','Taquicardia','Bradicardia','Fibrilação atrial','IAM (supra ST)','Hipoxemia'],
+ big:{hr:'FC (bpm)',spo:'SpO₂ (%)',pi:'IP (perfusão)'},
+ hbT:'Curva de dissociação Hb·O₂',hbNote:'Saturação da Hb em função da pO₂ (P50 = 26,6 mmHg: pO₂ em que a Hb está 50% saturada). Abaixo do P50, pequenas quedas de pO₂ derrubam a SpO₂ rapidamente. O ponto dourado é o paciente atual.',ref:'Referências: FC 60–100 bpm · SpO₂ 95–100% · IP > 1,6',
+ diagT:'🧠 Interpretação automática',
+ diag:{tach:'⚠️ Taquicardia (FC ≥ 100 bpm)',brad:'⚠️ Bradicardia (FC ≤ 50 bpm)',
+ h1:'🟠 Hipoxemia leve (SpO₂ 90–93%)',h2:'🔴 Hipoxemia moderada (85–89%) — requer avaliação',h3:'🚨 Hipoxemia grave (< 85%) — emergência!',
+ afib:'🌀 RR irregular sem onda P — compatível com fibrilação atrial',stemi:'⚠️ Elevação simulada do ST — requer ECG de 12 derivações e correlação clínica; não confirma IAM isoladamente',lopi:'🔵 Baixa perfusão (IP < 1,6) — pulso fraco',ok:'✅ Parâmetros dentro da faixa normal'},
+ miT:'🎯 Missões do monitor (+5 XP cada)',
+ mis:['Induzir taquicardia (FC ≥ 120 bpm).','Provocar hipoxemia (SpO₂ ≤ 88%).','Reproduzir fibrilação atrial (preset ou seletor).','Ligar o ruído (≥ 0,5) e observar o traçado.'],
+ quiz:[
+ {q:'A onda P do ECG representa…',ops:['Despolarização dos átrios','Repolarização dos ventrículos','Contração das pernas','Ruído do cabo'],a:0},
+ {q:'Uma SpO₂ de 87% (normal: 95–100%) indica…',ops:['Oxigenação normal','Hipoxemia moderada que exige avaliação','Erro certo do sensor','Saturação alta'],a:1},
+ {q:'Na fibrilação atrial, o traçado mostra…',ops:['Ondas P regulares','RR irregular e ausência de onda P','QRS gigantes','Linha reta'],a:1}]},
+ cases:{t:'🩺 Casos Clínicos',sub:'Leia o prontuário e a bioimpedância (50 kHz). Os valores são didáticos e devem ser interpretados no contexto; ângulo de fase e razões hídricas dependem de população, protocolo e equipamento.',intro:'Caso {n} de 6',
+ data:[
+ {t:'O maratonista',v:'Homem, 28 anos, 170 cm, 62 kg. Terminou uma maratona com sede intensa e tontura.',note:'R50 = 720 Ω · Xc = 38 Ω · φ = 3,0° · Água ext./total = 0,41 · Água total ↓',ops:['Desidratação (pouca água corporal)','Edema por excesso de líquido','Obesidade','Tudo normal'],a:0,exp:'Com menos água corporal, R sobe muito e φ cai abaixo de 4°: desidratação.'},
+ {t:'A paciente renal',v:'Mulher, 65 anos, insuficiência renal. Pernas inchadas e ganho de peso em 3 dias.',note:'R50 = 380 Ω · φ = 2,2° · Água ext./total = 0,52 (↑ do limite 0,45)',ops:['Desidratação','Sarcopenia','Edema / excesso de líquido extracelular','Hipertrofia muscular'],a:2,exp:'No edema, o líquido retido derruba R e ECW/água passa de 0,45.'},
+ {t:'O halterofilista',v:'Homem, 30 anos, 178 cm, 88 kg, treino diário de força.',note:'R50 = 390 Ω · Xc = 62 Ω · φ = 9,0° (acima da faixa 4–8°) · Gordura = 9%',ops:['Obesidade','Alta massa muscular (muita água e membranas)','Desidratação','Edema'],a:1,exp:'Músculo é rico em água e membranas: R baixa, Xc alta e φ ≥ 7°.'},
+ {t:'O sedentário',v:'Homem, 45 anos, 105 kg, 1,74 m, sedentário.',note:'R50 = 640 Ω · Água total = 32 L · Gordura = 38%',ops:['Sarcopenia','Hiperidratação','Obesidade — muita gordura, pouca água relativa','Atleta'],a:2,exp:'Gordura tem pouca água: R alta + %G elevado = adiposidade.'},
+ {t:'A idosa frágil',v:'Mulher, 82 anos, 48 kg, perda de força e apetite.',note:'R50 = 580 Ω · φ = 3,4° (abaixo de 4°) · Massa muscular ↓',ops:['Hipertrofia','Sarcopenia (perda muscular e φ baixo)','Edema','Desidratação grave'],a:1,exp:'φ baixo junto de baixa massa muscular pode ser compatível com pior estado celular/nutricional e levantar hipótese de sarcopenia, mas não estabelece o diagnóstico isoladamente.'},
+ {t:'O paciente febril',v:'Homem, 40 anos, febre de 39,8 °C. Medição comparada à de ontem, mesmo peso.',note:'R diminuiu em relação à medição anterior · φ levemente alterado',ops:['Só um erro de medição','Efeito da temperatura: calor aumenta a condutividade dos fluidos','Ganhou 10 kg de músculo em 1 dia','O aparelho quebrou'],a:1,exp:'A temperatura pode alterar a condutividade e a impedância; comparações exigem condições de medição padronizadas.'}]},
+ boss:{t:'👑 Desafio Final',sub:'6 perguntas de alto nível (até +14 XP).',
+ quiz:[
+ {q:'Por que 50 kHz é frequentemente utilizada na BIA de frequência única?',ops:['Porque é a frequência da rede elétrica','Porque é uma frequência historicamente muito utilizada para medidas padronizadas de BIA de frequência única','Porque nenhum aparelho gera outras frequências','Porque a FDA obriga esse valor exato'],a:1},
+ {q:'A configuração tetrapolar (4 eletrodos) serve para…',ops:['Medir 4 pacientes ao mesmo tempo','Excluir a impedância da pele/eletrodos da medição (V fica longe de I)','Duplicar a corrente','Deixar o exame mais bonito'],a:1},
+ {q:'Em alta frequência (≥ 200 kHz), a corrente consegue…',ops:['Atravessar a membrana e medir a água corporal total','Parar no líquido extracelular','Aquecer os tecidos','Sair do corpo'],a:0},
+ {q:'Em uma interpretação educacional, um ângulo de fase relativamente elevado pode estar associado a…',ops:['Integridade celular e boa massa celular','Desidratação grave','Obesidade','Erro de medição'],a:0},
+ {q:'A reatância Xc reflete principalmente…',ops:['A quantidade de sal no corpo','A capacitância das membranas celulares','A temperatura da sala','O batimento cardíaco'],a:1},
+ {q:'Supra de ST no ECG + SpO₂ caindo sugere…',ops:['Achado potencialmente preocupante — requer avaliação clínica urgente e ECG diagnóstico','Apenas ansiedade','Bateria fraca do monitor','Excesso de água'],a:0}]},
+ rank:{t:'🏆 Placar da Turma',sub:'Registre seu resultado, exporte o JSON e o professor consolida o ranking.',
+ reg:'➕ Registrar meu resultado',exp:'⬇ Exportar JSON',imp:'⬆ Importar JSON',clr:'🗑️ Limpar placar',
+ th:['#','Nome','XP','Cargo','Data'],empty:'Ninguém registrado ainda. Seja o primeiro!',
+ regOk:'✅ Resultado registrado no placar!',impOk:'✅ Ranking importado ({n} linhas)',clrOk:'Placar limpo.',
+ clrC:'Apagar todo o placar da turma?',fileErr:'⚠️ Arquivo inválido.'},
+ rep:{t:'📄 Relatório de Avaliação — Bioimpedância',eval:'Avaliador',date:'Data',pat:'Paciente',anam:'Anamnese',params:'Parâmetros medidos (simulação)',
+ graphs:'Gráficos',interp:'Interpretação automática',vitSec:'Sinais vitais (simulados)',perf:'Desempenho',
+ disc:'Documento gerado pelo simulador educacional BioSensor Quest. Não substitui avaliação médica.',
+ pn:['R (Ω)','Xc (Ω)','|Z| (Ω)','φ (°)','Água total (L)','Massa magra (kg)','Gordura (%)','Água ext./total','Frequência','Corrente (μA)','Temperatura (°C)','Altura (cm)','Peso (kg)'],
+ rules:[
+ [v=>v.phi<4,'⚠️ Ângulo de fase baixo para a população/protocolo de referência pode estar associado a menor integridade/massa celular; não é diagnóstico isolado.'],
+ [v=>v.ecw>0.45,'⚠️ Razão de água extracelular/total elevada no modelo pode sugerir expansão extracelular; interpretar conforme equipamento e contexto clínico.'],
+ [v=>v.ecw<0.36,'⚠️ Água extracelular/total < 0,36: possível desidratação relativa.'],
+ [v=>v.fat>32,'⚠️ Percentual de gordura estimado elevado (> 32%).'],
+ [v=>v.tbw/v.p.w<0.45,'⚠️ Água corporal total proporcionalmente baixa para o peso.'],
+ [v=>v.p.temp>37.5,'ℹ️ Temperatura elevada pode influenciar a impedância; compare medições apenas sob condições padronizadas.']],
+ okMsg:'✅ Sem alterações significativas nos parâmetros simulados.',
+ print:'🖨️ Imprimir / Salvar PDF',close:'✕ Fechar',xpL:'XP',bdgL:'Insígnias',imc:'IMC'}},
+/* ---------------- EN ---------------- */
+en:{
+ ui:{start:'▶ Enter the lab',namePh:'Your name or team',title:'BioSensor Quest',
+ tagline:'A gamified simulator of biomedical sensors, bioimpedance and vital signs. Fill the anamnesis, place the electrodes, master Cole-Cole, monitor ECG & SpO₂ and export a PDF report!',
+ langT:'Choose a language',howT:'How to play',
+ how:['Explore the 5 modules of the clinical lab.','Earn XP with quizzes, missions and diagnoses.','Both simulators are LIVE: move the controls and watch the physics react.','Fill the ANAMNESIS in the BIA module and export the PDF report at the end.','Progress is saved in this browser.'],
+ rankBtn:'🏆 Class scoreboard',
+ nav:{hub:'Map',acad:'Academy',lab:'BIA Simulator',vitals:'Vital Signs',cases:'Clinical Cases',boss:'Final Challenge'},
+ hubT:'🗺️ Inovare Clinical Lab',hubSub:'Complete the modules, collect all 11 badges and become the Bioimpedance Master.',
+ mods:[{k:'acad',ic:'🔬',xp:'+10 XP',d:'Sensors, measurement chain, electrodes and the body’s main signals — with well-defined values.'},
+ {k:'lab',ic:'⚡',xp:'+20 XP',d:'LIVE bioimpedance simulator: anamnesis, tetrapolar electrodes, frequency and PDF report.'},
+ {k:'vitals',ic:'💓',xp:'+26 XP',d:'LIVE monitor: ECG with arrhythmias, SpO₂, noise and Hb·O₂ curve with reference ranges.'},
+ {k:'cases',ic:'🩺',xp:'+30 XP',d:'Read the bioimpedance values (defined in each chart) and identify the condition.'},
+ {k:'boss',ic:'👑',xp:'+14 XP',d:'Final challenge: prove you’ve mastered biomedical instrumentation.'}],
+ play:'▶ Play',review:'🔁 Review',done:'✅ Completed',back:'⬅ Map',
+ correct:'✅ Correct!',wrong:'❌ Incorrect. ',next:'Next ▶',finish:'See result 🏁',
+ startQuiz:'Take the quiz (+10 XP)',redo:'🔁 Redo the quiz (no extra XP)',vqStart:'Take the monitor quiz (+6 XP)',vqRedo:'🔁 Redo the monitor quiz',
+ badges:{acad:'🔬 Academy Veteran',m1:'⚡ Current Tamer',m2:'📚 Preset Explorer',m3:'💧 Fluid Detective',m4:'🧲 Tetrapolar Precision',
+  v1:'💓 Tachycardia Hunter',v2:'🫁 Oxygenation Guardian',v3:'🌀 Arrhythmia Detective',v4:'🔊 Noise Wrangler',
+  cases:'🩺 Flawless Diagnosis',boss:'👑 Lab Master'},
+ ranks:['🎓 Trainee','🧰 Bioinstrumentation Tech','🧪 Biomedical Analyst','🏅 Bioimpedance Master'],
+ finT:'Mission complete!',finPdf:'📄 Export final report (PDF)',finAgain:'Restart progress',finMap:'Back to map',
+ finMsg:['Review the Academy and the simulators and come back stronger!','Good start! Try the Clinical Cases to level up.','Excellent! You’re close to mastery.','Amazing! You master biomedical sensors, bioimpedance and vital signs.'],
+ disc:'Educational simulation (Cole-Cole model + synthetic ECG) — not a medical device.',reset:'Progress reset!'},
+ acad:{t:'🔬 Sensor Academy',sub:'Tap the cards to flip them — now with well-defined value ranges.',
+ cards:[
+ {ic:'📡',t:'What is a sensor?',b:'Converts a physical/chemical quantity (pressure, light, temperature, ions) into a measurable electrical signal — the “sense” of medical equipment.'},
+ {ic:'🔗',t:'Measurement chain',b:'Sensor → Conditioning (amplify/filter) → A/D → Processing → Display. Each stage can add noise.'},
+ {ic:'🫀',t:'Signals & ranges (defined)',b:'ECG: 0.5–4 mV · EEG: 10–100 μV · Surface EMG: 0.05–5 mV · SpO₂: 660 nm red + 940 nm IR light · Temperature: NTC thermistor (36–38 °C) · Glucose: enzymatic electrochemical reaction.'},
+ {ic:'⚡',t:'Bioimpedance (BIA)',b:'A safe AC micro-current of 50–800 μA (typically 50 kHz) is injected through 2 CURRENT electrodes (I) and the voltage is sensed at 2 VOLTAGE electrodes (V): Z = V/I (Ω). R reflects water/electrolytes; Xc comes from membrane capacitance.'},
+ {ic:'🌊',t:'Frequency ranges',b:'1–5 kHz: extracellular fluid (ECW) only. 50 kHz: clinical single-frequency standard. 200–500 kHz: crosses the membrane → total body water (BIS).'},
+ {ic:'🔌',t:'What is an electrode?',b:'Conductive skin–device interface (Ag/AgCl + gel). Tetrapolar BIA uses 4: 2 current (hand/foot) and 2 voltage (wrist/ankle) — so skin impedance is excluded. In ECG they pick up ~1 mV cardiac potentials and need good contact.'}],
+ quiz:[
+ {q:'A biomedical transducer converts…',ops:['A biological quantity (pressure, light, ions) into an electrical signal','Blood into oxygen','Current into food','Sound into light'],a:0},
+ {q:'Which signal has the SMALLEST amplitude (defined values)?',ops:['ECG: 0.5–4 mV','Surface EMG: 0.05–5 mV','EEG: 10–100 μV','Temperature: 36–38 °C'],a:2},
+ {q:'In BIA, the cell membrane behaves like a…',ops:['Pure resistor','Capacitor (creates reactance Xc)','Battery','Fuse'],a:1},
+ {q:'Why does BIA use AC at kHz (not DC)?',ops:['To shock the patient','To avoid stimulating nerves/muscles and electrode polarization','To drain the battery','Because DC doesn’t exist'],a:1},
+ {q:'In BIA, resistance R mainly depends on…',ops:['Total body water and electrolytes','Hair color','Device brand','Time of day'],a:0},
+ {q:'In the TETRAPOLAR setup, the VOLTAGE (V) electrodes…',ops:['Inject current into the patient','Sense the voltage drop far from the current electrodes — skin impedance is excluded','Measure temperature','Replace the gel'],a:1}]},
+ lab:{t:'⚡ Bioimpedance Lab',sub:'LIVE virtual patient (Cole-Cole: Z = R + jXc). Fill the anamnesis, place the 4 electrodes and watch Z = V/I.',
+ bodyT:'🧍 Virtual patient — drag the 4 electrodes onto the targets',ctrlT:'🎛️ Controls',preT:'🩺 Clinical conditions (presets)',
+ bodyHint:'I1/I2 = CURRENT (hand/foot) · V1/V2 = VOLTAGE (wrist/ankle) along the same body path',
+ anaT:'📋 Patient anamnesis',
+ ana:{nome:'Full name',idade:'Age (years)',sexo:'Sex',sex:['Male','Female','Other'],h:'Height (cm)',w:'Weight (kg)',
+ act:'Physical activity level',acts:['Sedentary','Light','Moderate','Intense'],cb:'Comorbidities',
+ cbOps:['Hypertension','Diabetes','Kidney failure','Heart disease','Smoking'],meds:'Medications',qx:'Chief complaint / history',
+ imcCls:['Underweight (< 18.5)','Normal (18.5–24.9)','Overweight (25–29.9)','Obesity (≥ 30)']},
+ lb:{hyd:'Hydration',mus:'Muscle mass (0–100)',fat:'Body fat (%)',edm:'Edema (extracellular fluid)',temp:'Temperature (°C)',frq:'Current frequency',cur:'Injected current (μA)'},
+ ros:[['R — Resistance','Ω'],['Xc — Reactance','Ω'],['|Z| — Impedance','Ω'],['φ — Phase angle','°'],['Total water (est.)','L'],['Fat-free mass','kg'],['Fat','%'],['ECW/total water',''],['Voltage V = Z·I','mV']],
+ chNy:'📉 Cole-Cole (Nyquist): Xc × R',chBo:'📈 Sweep: |Z| × frequency',chCell:'🔎 Cell view',
+ fi:['<b>1–5 kHz:</b> the membrane blocks the current → extracellular fluid (ECW) only.','<b>20–100 kHz:</b> transition; 50 kHz is the clinical standard.','<b>≥ 200 kHz:</b> crosses the membrane → total body water (BIS).','<b>Safe current:</b> 50–800 μA (commercial standard; patient limit ≤ 1 mA rms — IEC 60601).'],
+ cell:['Extracellular fluid only','Mixed (transition)','Total body water'],
+ presets:['Standard adult','Hydrated athlete','Dehydrated','Edematous','Obesity','Sarcopenic elderly'],
+ miT:'🎯 Lab missions (+5 XP each)',
+ mis:['Full sweep — take the frequency from 1 kHz to 1 MHz.','Explorer — try 3 clinical presets.','Fluid detective — simulate severe edema (ECW/water ≥ 0.45).','Steady hands — snap all 4 electrodes onto the targets.'],
+ sq:['🟢 Perfect! Correct tetrapolar setup — ','🟡 Electrodes misaligned — snap each one to its dashed target.','🔴 No current: place I1 and I2 first!'],
+ sqV:'🟡 Current OK (I1→I2). VOLTAGE electrodes missing: V1 on the wrist and V2 on the ankle on the same side as the current electrodes.',
+ tetra:'<b>How it works:</b> I1/I2 inject the safe micro-current; V1/V2 sense the resulting voltage far from the current electrodes — greatly reducing the influence of current-electrode contact impedance on voltage sensing. The system computes <b>Z = V/I</b> and derives R, Xc, φ and body composition.',
+ axR0:'R₀ = ECW only',axRinf:'R∞ = total water',report:'📄 Generate patient report (PDF)'},
+ vit:{t:'💓 Vital Signs Monitor',sub:'LIVE ECG and plethysmography. Defined references: HR 60–100 bpm · SpO₂ 95–100% · PI > 1.6 · P50 = 26.6 mmHg.',
+ monT:'🖥️ Monitor (sweeping trace)',ctrlT:'🎛️ Parameters',preT:'🫀 Rhythms & conditions',
+ hHR:'Heart rate (bpm)',hSpo:'SpO₂ (%)',hPerf:'Perfusion (pulse index)',rhy:'Cardiac rhythm',
+ rhySin:'Sinus',rhyAfib:'Atrial fibrillation',stT:'ST elevation (0–1)',nz:'Signal noise (0–1)',
+ presets:['Normal','Tachycardia','Bradycardia','Atrial fibrillation','MI (ST elevation)','Hypoxemia'],
+ big:{hr:'HR (bpm)',spo:'SpO₂ (%)',pi:'PI (perfusion)'},
+ hbT:'Hb·O₂ dissociation curve',hbNote:'Hb saturation vs pO₂ (P50 = 26.6 mmHg: pO₂ at which Hb is 50% saturated). Below P50, small pO₂ drops crash SpO₂ fast. The gold dot is the current patient.',ref:'References: HR 60–100 bpm · SpO₂ 95–100% · PI > 1.6',
+ diagT:'🧠 Automatic interpretation',
+ diag:{tach:'⚠️ Tachycardia (HR ≥ 100 bpm)',brad:'⚠️ Bradycardia (HR ≤ 50 bpm)',
+ h1:'🟠 Mild hypoxemia (SpO₂ 90–93%)',h2:'🔴 Moderate hypoxemia (85–89%) — needs evaluation',h3:'🚨 Severe hypoxemia (< 85%) — emergency!',
+ afib:'🌀 Irregular RR without P waves — consistent with atrial fibrillation',stemi:'⚠️ ST elevation — suspected myocardial infarction',lopi:'🔵 Low perfusion (PI < 1.6) — weak pulse',ok:'✅ Parameters within normal range'},
+ miT:'🎯 Monitor missions (+5 XP each)',
+ mis:['Induce tachycardia (HR ≥ 120 bpm).','Cause hypoxemia (SpO₂ ≤ 88%).','Reproduce atrial fibrillation (preset or selector).','Turn noise on (≥ 0.5) and watch the trace.'],
+ quiz:[
+ {q:'The ECG P wave represents…',ops:['Atrial depolarization','Ventricular repolarization','Leg contraction','Cable noise'],a:0},
+ {q:'A SpO₂ of 87% (normal: 95–100%) means…',ops:['Normal oxygenation','Moderate hypoxemia requiring evaluation','A certain sensor error','High saturation'],a:1},
+ {q:'In atrial fibrillation the trace shows…',ops:['Regular P waves','Irregular RR and absent P waves','Giant QRS','A flat line'],a:1}]},
+ cases:{t:'🩺 Clinical Cases',sub:'Read the chart and the BIA values (50 kHz). Defined references: healthy φ 4–8° · ECW/water 0.36–0.45.',intro:'Case {n} of 6',
+ data:[
+ {t:'The marathoner',v:'Male, 28, 170 cm, 62 kg. Finished a marathon with intense thirst and dizziness.',note:'R50 = 720 Ω · Xc = 38 Ω · φ = 3.0° · ECW/water = 0.41 · Total water ↓',ops:['Dehydration (low body water)','Fluid-overload edema','Obesity','All normal'],a:0,exp:'Less body water: R rises sharply and φ falls below 4° — dehydration.'},
+ {t:'The renal patient',v:'Female, 65, kidney failure. Swollen legs and 3-day weight gain.',note:'R50 = 380 Ω · φ = 2.2° · ECW/water = 0.52 (↑ above the 0.45 limit)',ops:['Dehydration','Sarcopenia','Edema / extracellular fluid excess','Muscle hypertrophy'],a:2,exp:'In edema, retained fluid drops R and ECW/water exceeds 0.45.'},
+ {t:'The weightlifter',v:'Male, 30, 178 cm, 88 kg, daily strength training.',note:'R50 = 390 Ω · Xc = 62 Ω · φ = 9.0° (above the 4–8° range) · Fat = 9%',ops:['Obesity','High muscle mass (plenty of water and membranes)','Dehydration','Edema'],a:1,exp:'Muscle is rich in water and membranes: low R, high Xc, φ ≥ 7°.'},
+ {t:'The sedentary man',v:'Male, 45, 105 kg, 1.74 m, sedentary.',note:'R50 = 640 Ω · Total water = 32 L · Fat = 38%',ops:['Sarcopenia','Overhydration','Obesity — lots of fat, little relative water','Athlete'],a:2,exp:'Fat holds little water: high R + high fat % = excess adiposity.'},
+ {t:'The frail elderly',v:'Female, 82, 48 kg, losing strength and appetite.',note:'R50 = 580 Ω · φ = 3.4° (below 4°) · Muscle mass ↓',ops:['Hypertrophy','Sarcopenia (muscle loss, low φ)','Edema','Severe dehydration'],a:1,exp:'φ ≤ 4° with low muscle mass: sarcopenia marker.'},
+ {t:'The febrile patient',v:'Male, 40, fever of 39.8 °C. Compared to yesterday, same weight.',note:'R fell ~5% (≈ 2% per °C above 36 °C) · φ slightly changed',ops:['Just a measurement error','Temperature effect: heat increases fluid conductivity','Gained 10 kg of muscle in 1 day','The device is broken'],a:1,exp:'Impedance drops ~1.5–2% per °C: ions move more easily when hot.'}]},
+ boss:{t:'👑 Final Challenge',sub:'6 high-level questions (up to +14 XP).',
+ quiz:[
+ {q:'Why is 50 kHz the clinical BIA standard?',ops:['It matches the power grid','It balances intra/extra-cellular penetration with safety','No device can generate other frequencies','The FDA mandates that exact value'],a:1},
+ {q:'The tetrapolar (4-electrode) setup is used to…',ops:['Measure 4 patients at once','Exclude skin/electrode impedance (V is placed away from I)','Double the current','Make the exam prettier'],a:1},
+ {q:'At high frequency (≥ 200 kHz) the current can…',ops:['Cross the membrane and measure total body water','Stop in the extracellular fluid','Heat the tissues','Leave the body'],a:0},
+ {q:'A high phase angle (e.g., 9°; healthy 4–8°) indicates…',ops:['Cell integrity and good cellular mass','Severe dehydration','Obesity','A measurement error'],a:0},
+ {q:'Reactance Xc mainly reflects…',ops:['Body salt content','Cell membrane capacitance','Room temperature','The heartbeat'],a:1},
+ {q:'ST elevation on ECG + falling SpO₂ suggests…',ops:['Acute coronary event — call the emergency team','Just anxiety','Low monitor battery','Too much water'],a:0}]},
+ rank:{t:'🏆 Class Scoreboard',sub:'Register your result, export the JSON and the teacher consolidates the ranking.',
+ reg:'➕ Register my result',exp:'⬇ Export JSON',imp:'⬆ Import JSON',clr:'🗑️ Clear scoreboard',
+ th:['#','Name','XP','Rank','Date'],empty:'Nobody registered yet. Be the first!',
+ regOk:'✅ Result registered!',impOk:'✅ Ranking imported ({n} rows)',clrOk:'Scoreboard cleared.',
+ clrC:'Erase the whole class scoreboard?',fileErr:'⚠️ Invalid file.'},
+ rep:{t:'📄 Assessment Report — Bioimpedance',eval:'Evaluator',date:'Date',pat:'Patient',anam:'Anamnesis',params:'Measured parameters (simulation)',
+ graphs:'Graphs',interp:'Automatic interpretation',vitSec:'Vital signs (simulated)',perf:'Performance',
+ disc:'Generated by the BioSensor Quest educational simulator. It does not replace medical evaluation.',
+ pn:['R (Ω)','Xc (Ω)','|Z| (Ω)','φ (°)','Total water (L)','Fat-free mass (kg)','Fat (%)','ECW/total','Frequency','Current (μA)','Temperature (°C)','Height (cm)','Weight (kg)'],
+ rules:[
+ [v=>v.phi<4,'⚠️ Phase angle < 4° (healthy 4–8°): nutritional risk and reduced cellular mass.'],
+ [v=>v.ecw>0.45,'⚠️ ECW/total water > 0.45: consistent with edema / overhydration.'],
+ [v=>v.ecw<0.36,'⚠️ ECW/total water < 0.36: possible relative dehydration.'],
+ [v=>v.fat>32,'⚠️ Estimated body fat percentage is high (> 32%).'],
+ [v=>v.tbw/v.p.w<0.45,'⚠️ Total body water proportionally low for the weight.'],
+ [v=>v.p.temp>37.5,'ℹ️ Temperature > 37.5 °C: impedance falls ~2% per °C.']],
+ okMsg:'✅ No significant changes in the simulated parameters.',
+ print:'🖨️ Print / Save as PDF',close:'✕ Close',xpL:'XP',bdgL:'Badges',imc:'BMI'}},
+/* ---------------- ES ---------------- */
+es:{
+ ui:{start:'▶ Entrar al laboratorio',namePh:'Tu nombre o equipo',title:'BioSensor Quest',
+ tagline:'Simulador gamificado de sensores biomédicos, bioimpedancia y signos vitales. ¡Rellena la anamnesis, coloca los electrodos, domina Cole-Cole, monitorea ECG y SpO₂ y exporta el informe PDF!',
+ langT:'Elige el idioma',howT:'Cómo jugar',
+ how:['Explora los 5 módulos del laboratorio clínico.','Gana XP con quizzes, misiones y diagnósticos.','Los simuladores están EN VIVO: mueve los controles y mira la física.','Rellena la ANAMNESIS en el módulo BIA y exporta el informe PDF al final.','Tu progreso queda guardado en este navegador.'],
+ rankBtn:'🏆 Marcador de la clase',
+ nav:{hub:'Mapa',acad:'Academia',lab:'Simulador BIA',vitals:'Signos Vitales',cases:'Casos Clínicos',boss:'Desafío Final'},
+ hubT:'🗺️ Laboratorio Clínico Inovare',hubSub:'Completa los módulos, consigue las 11 insignias y sé Maestro de la Bioimpedancia.',
+ mods:[{k:'acad',ic:'🔬',xp:'+10 XP',d:'Sensores, cadena de medición, electrodos y señales del cuerpo — con valores definidos.'},
+ {k:'lab',ic:'⚡',xp:'+20 XP',d:'Simulador EN VIVO de bioimpedancia: anamnesis, electrodos tetrapolares, frecuencia e informe PDF.'},
+ {k:'vitals',ic:'💓',xp:'+26 XP',d:'Monitor EN VIVO: ECG con arritmias, SpO₂, ruido y curva Hb·O₂ con rangos de referencia.'},
+ {k:'cases',ic:'🩺',xp:'+30 XP',d:'Lee los valores de bioimpedancia (definidos en cada historia) e identifica la condición.'},
+ {k:'boss',ic:'👑',xp:'+14 XP',d:'Desafío final: demuestra que dominas la bioinstrumentación.'}],
+ play:'▶ Jugar',review:'🔁 Repasar',done:'✅ Completado',back:'⬅ Mapa',
+ correct:'✅ ¡Correcto!',wrong:'❌ Incorrecto. ',next:'Siguiente ▶',finish:'Ver resultado 🏁',
+ startQuiz:'Hacer el quiz (+10 XP)',redo:'🔁 Repetir el quiz (sin XP extra)',vqStart:'Hacer el quiz del monitor (+6 XP)',vqRedo:'🔁 Repetir el quiz del monitor',
+ badges:{acad:'🔬 Veterano de la Academia',m1:'⚡ Domador de Corrientes',m2:'📚 Explorador de Presets',m3:'💧 Detective de Fluidos',m4:'🧲 Precisión Tetrapolar',
+  v1:'💓 Cazador de Taquicardia',v2:'🫁 Guardián de la Oxigenación',v3:'🌀 Detective de Arritmias',v4:'🔊 Domador de Ruido',
+  cases:'🩺 Diagnóstico Impecable',boss:'👑 Maestro del Laboratorio'},
+ ranks:['🎓 Aprendiz','🧰 Técnico en Bioinstrumentación','🧪 Analista Biomédico','🏅 Maestro de la Bioimpedancia'],
+ finT:'¡Misión cumplida!',finPdf:'📄 Exportar informe final (PDF)',finAgain:'Reiniciar progreso',finMap:'Volver al mapa',
+ finMsg:['Repasa la Academia y los simuladores y vuelve más fuerte.','¡Buen inicio! Prueba los Casos Clínicos para subir de cargo.','¡Excelente! Te falta poco para el máster.','¡Increíble! Dominas sensores biomédicos, bioimpedancia y signos vitales.'],
+ disc:'Simulación educativa (Cole-Cole + ECG sintético) — no es un dispositivo médico.',reset:'¡Progreso reiniciado!'},
+ acad:{t:'🔬 Academia de los Sensores',sub:'Toca las cartas para girarlas — ahora con rangos de valores definidos.',
+ cards:[
+ {ic:'📡',t:'¿Qué es un sensor?',b:'Convierte una magnitud física/química (presión, luz, temperatura, iones) en señal eléctrica medible: el “sentido” de los equipos médicos.'},
+ {ic:'🔗',t:'Cadena de medición',b:'Sensor → Acondicionamiento (amplificar/filtrar) → A/D → Procesamiento → Pantalla. Cada etapa puede añadir ruido.'},
+ {ic:'🫀',t:'Señales y rangos (definidos)',b:'ECG: 0,5–4 mV · EEG: 10–100 μV · EMG superficial: 0,05–5 mV · SpO₂: luz 660 nm + 940 nm · Temperatura: termistor NTC (36–38 °C) · Glucosa: reacción enzimática.'},
+ {ic:'⚡',t:'Bioimpedancia (BIA)',b:'Inyecta microcorrente alterna SEGURA de 50–800 μA (típicamente 50 kHz) por 2 electrodos de CORRIENTE (I) y mide la tensión en 2 de TENSIÓN (V): Z = V/I (Ω). R refleja agua y electrolitos; Xc viene de la capacitancia de las membranas.'},
+ {ic:'🌊',t:'Rangos de frecuencia',b:'1–5 kHz: solo líquido extracelular (LIE). 50 kHz: estándar clínico. 200–500 kHz: atraviesa la membrana → AGUA CORPORAL TOTAL (BIS).'},
+ {ic:'🔌',t:'¿Qué es un electrodo?',b:'Interfaz conductora piel–equipo (Ag/AgCl + gel). La BIA tetrapolar usa 4: 2 de corriente (mano/pie) y 2 de tensión (muñeca/tobillo) — la impedancia de la piel NO entra en el resultado. En ECG captan potenciales de ~1 mV.'}],
+ quiz:[
+ {q:'Un transductor biomédico convierte…',ops:['Magnitud biológica (presión, luz, iones) en señal eléctrica','Sangre en oxígeno','Corriente en alimento','Sonido en luz'],a:0},
+ {q:'¿Qué señal tiene la MENOR amplitud (valores definidos)?',ops:['ECG: 0,5–4 mV','EMG superficial: 0,05–5 mV','EEG: 10–100 μV','Temperatura: 36–38 °C'],a:2},
+ {q:'En la BIA, la membrana celular se comporta como…',ops:['Resistencia pura','Condensador (genera la reactancia Xc)','Batería','Fusible'],a:1},
+ {q:'¿Por qué la BIA usa corriente ALTERNA de kHz (no continua)?',ops:['Para dar descargas','Para no estimular nervios/músculos y evitar polarización de electrodos','Para gastar más batería','Porque la continua no existe'],a:1},
+ {q:'En la BIA, la resistencia R depende sobre todo de…',ops:['Agua corporal total y electrolitos','El color del pelo','La marca del aparato','La hora del día'],a:0},
+ {q:'En la configuración TETRAPOLAR, los electrodos de TENSIÓN (V)…',ops:['Inyectan la corriente','Captan la caída de tensión lejos de los de corriente — la impedancia de la piel queda fuera','Miden la temperatura','Sustituyen el gel'],a:1}]},
+ lab:{t:'⚡ Laboratorio de Bioimpedancia',sub:'Paciente virtual EN VIVO (Cole-Cole: Z = R + jXc). Rellena la anamnesis, coloca los 4 electrodos y observa Z = V/I.',
+ bodyT:'🧍 Paciente virtual — arrastra los 4 electrodos a los objetivos',ctrlT:'🎛️ Controles',preT:'🩺 Condiciones clínicas (presets)',
+ bodyHint:'I1/I2 = CORRIENTE (mano/pie) · V1/V2 = TENSIÓN (muñeca/tobillo) en el mismo trayecto corporal',
+ anaT:'📋 Anamnesis del paciente',
+ ana:{nome:'Nombre completo',idade:'Edad (años)',sexo:'Sexo',sex:['Masculino','Femenino','Otro'],h:'Altura (cm)',w:'Peso (kg)',
+ act:'Nivel de actividad física',acts:['Sedentario','Ligero','Moderado','Intenso'],cb:'Comorbilidades',
+ cbOps:['Hipertensión','Diabetes','Insuficiencia renal','Cardiopatía','Tabaquismo'],meds:'Medicación',qx:'Motivo de consulta / historia',
+ imcCls:['Bajo peso (< 18,5)','Normal (18,5–24,9)','Sobrepeso (25–29,9)','Obesidad (≥ 30)']},
+ lb:{hyd:'Hidratación',mus:'Masa muscular (0–100)',fat:'Grasa corporal (%)',edm:'Edema (líquido extracelular)',temp:'Temperatura (°C)',frq:'Frecuencia de la corriente',cur:'Corriente inyectada (μA)'},
+ ros:[['R — Resistencia','Ω'],['Xc — Reactancia','Ω'],['|Z| — Impedancia','Ω'],['φ — Ángulo de fase','°'],['Agua total (est.)','L'],['Masa magra','kg'],['Grasa','%'],['Agua extracel./total',''],['Tensión V = Z·I','mV']],
+ chNy:'📉 Cole-Cole (Nyquist): Xc × R',chBo:'📈 Barrido: |Z| × frecuencia',chCell:'🔎 Vista de la célula',
+ fi:['<b>1–5 kHz:</b> la membrana bloquea la corriente → solo líquido EXTRACELULAR.','<b>20–100 kHz:</b> transición; 50 kHz es el estándar clínico.','<b>≥ 200 kHz:</b> atraviesa la membrana → AGUA CORPORAL TOTAL (BIS).','<b>Corriente segura:</b> 50–800 μA (límite de paciente ≤ 1 mA rms — IEC 60601).'],
+ cell:['Solo líquido extracelular','Mixto (transición)','Agua corporal total'],
+ presets:['Adulto estándar','Atleta hidratado','Deshidratado','Edematoso','Obesidad','Anciano sarcopénico'],
+ miT:'🎯 Misiones del laboratorio (+5 XP cada)',
+ mis:['Barrido completo — lleva la frecuencia de 1 kHz a 1 MHz.','Explorador — prueba 3 presets clínicos.','Detective de fluidos — simula edema grave (ECW/agua ≥ 0,45).','Manos de precisión — coloca los 4 electrodos en los objetivos.'],
+ sq:['🟢 ¡Perfecto! Tetrapolar correcta — ','🟡 Electrodos desalineados — coloca cada uno en su objetivo.','🔴 Sin corriente: ¡coloca I1 e I2 primero!'],
+ sqV:'🟡 Corriente OK (I1→I2). Faltan los electrodos de TENSIÓN: V1 en la muñeca y V2 en el tobillo del mismo lado que los electrodos de corriente.',
+ tetra:'<b>Cómo funciona:</b> I1/I2 inyectan la microcorriente segura; V1/V2 captan la tensión lejos de los de corriente — se reduce fuertemente la influencia de la impedancia de contacto de los electrodos de corriente en la medición de tensión. El sistema calcula <b>Z = V/I</b> y deriva R, Xc, φ y la composición corporal.',
+ axR0:'R₀ = solo LIE',axRinf:'R∞ = agua total',report:'📄 Generar informe del paciente (PDF)'},
+ vit:{t:'💓 Monitor de Signos Vitales',sub:'ECG y pletismografía EN VIVO. Referencias definidas: FC 60–100 lpm · SpO₂ 95–100% · IP > 1,6 · P50 = 26,6 mmHg.',
+ monT:'🖥️ Monitor (barrido continuo)',ctrlT:'🎛️ Parámetros',preT:'🫀 Ritmos y condiciones',
+ hHR:'Frecuencia cardíaca (lpm)',hSpo:'SpO₂ (%)',hPerf:'Perfusión (índice de pulso)',rhy:'Ritmo cardíaco',
+ rhySin:'Sinusal',rhyAfib:'Fibrilación auricular',stT:'Supra de ST (0–1)',nz:'Ruido (0–1)',
+ presets:['Normal','Taquicardia','Bradicardia','Fibrilación auricular','IAM (supra ST)','Hipoxemia'],
+ big:{hr:'FC (lpm)',spo:'SpO₂ (%)',pi:'IP (perfusión)'},
+ hbT:'Curva de disociación Hb·O₂',hbNote:'Saturación de Hb frente a pO₂ (P50 = 26,6 mmHg: pO₂ con Hb al 50%). Bajo el P50, pequeñas caídas de pO₂ hunden la SpO₂. El punto dorado es el paciente actual.',ref:'Referencias: FC 60–100 lpm · SpO₂ 95–100% · IP > 1,6',
+ diagT:'🧠 Interpretación automática',
+ diag:{tach:'⚠️ Taquicardia (FC ≥ 100 lpm)',brad:'⚠️ Bradicardia (FC ≤ 50 lpm)',
+ h1:'🟠 Hipoxemia leve (SpO₂ 90–93%)',h2:'🔴 Hipoxemia moderada (85–89%) — requiere evaluación',h3:'🚨 Hipoxemia grave (< 85%) — ¡emergencia!',
+ afib:'🌀 RR irregular sin onda P — compatible con fibrilación auricular',stemi:'⚠️ Supra de ST — sospecha de infarto',lopi:'🔵 Baja perfusión (IP < 1,6) — pulso débil',ok:'✅ Parámetros dentro del rango normal'},
+ miT:'🎯 Misiones del monitor (+5 XP cada)',
+ mis:['Inducir taquicardia (FC ≥ 120 lpm).','Provocar hipoxemia (SpO₂ ≤ 88%).','Reproducir fibrilación auricular (preset o selector).','Activar el ruido (≥ 0,5) y observar el trazado.'],
+ quiz:[
+ {q:'La onda P del ECG representa…',ops:['Despolarización auricular','Repolarización ventricular','Contracción de las piernas','Ruido del cable'],a:0},
+ {q:'Una SpO₂ de 87% (normal: 95–100%) indica…',ops:['Oxigenación normal','Hipoxemia moderada que requiere evaluación','Error seguro del sensor','Saturación alta'],a:1},
+ {q:'En la fibrilación auricular el trazado muestra…',ops:['Ondas P regulares','RR irregular y ausencia de onda P','QRS gigantes','Línea recta'],a:1}]},
+ cases:{t:'🩺 Casos Clínicos',sub:'Lee la historia y la bioimpedancia (50 kHz). Referencias: φ sano 4–8° · ECW/agua total 0,36–0,45.',intro:'Caso {n} de 6',
+ data:[
+ {t:'El maratonista',v:'Hombre, 28 años, 170 cm, 62 kg. Terminó un maratón con sed intensa y mareo.',note:'R50 = 720 Ω · Xc = 38 Ω · φ = 3,0° · Agua ext./total = 0,41 · Agua total ↓',ops:['Deshidratación (poca agua corporal)','Edema por exceso de líquido','Obesidad','Todo normal'],a:0,exp:'Con menos agua, R sube mucho y φ cae por debajo de 4°: deshidratación.'},
+ {t:'La paciente renal',v:'Mujer, 65 años, insuficiencia renal. Piernas hinchadas y aumento de peso en 3 días.',note:'R50 = 380 Ω · φ = 2,2° · Agua ext./total = 0,52 (↑ del límite 0,45)',ops:['Deshidratación','Sarcopenia','Edema / exceso de líquido extracelular','Hipertrofia muscular'],a:2,exp:'En el edema, el líquido retenido baja R y ECW/agua supera 0,45.'},
+ {t:'El halterófilo',v:'Hombre, 30 años, 178 cm, 88 kg, entrena fuerza a diario.',note:'R50 = 390 Ω · Xc = 62 Ω · φ = 9,0° (sobre el rango 4–8°) · Grasa = 9%',ops:['Obesidad','Alta masa muscular (mucha agua y membranas)','Deshidratación','Edema'],a:1,exp:'El músculo es rico en agua y membranas: R baja, Xc alta, φ ≥ 7°.'},
+ {t:'El sedentario',v:'Hombre, 45 años, 105 kg, 1,74 m, sedentario.',note:'R50 = 640 Ω · Agua total = 32 L · Grasa = 38%',ops:['Sarcopenia','Hiperhidratación','Obesidad — mucha grasa, poca agua relativa','Atleta'],a:2,exp:'La grasa tiene poca agua: R alta + %G alto = adiposidad.'},
+ {t:'La anciana frágil',v:'Mujer, 82 años, 48 kg, pérdida de fuerza y apetito.',note:'R50 = 580 Ω · φ = 3,4° (bajo 4°) · Masa muscular ↓',ops:['Hipertrofia','Sarcopenia (pérdida muscular y φ bajo)','Edema','Deshidratación grave'],a:1,exp:'φ ≤ 4° con baja masa muscular: marcador de sarcopenia.'},
+ {t:'El paciente febril',v:'Hombre, 40 años, fiebre de 39,8 °C. Comparado con ayer, mismo peso.',note:'R cayó ~5% (≈ 2% por °C sobre 36 °C) · φ levemente alterado',ops:['Solo un error de medición','Efecto de la temperatura: el calor aumenta la conductividad','Ganó 10 kg de músculo en 1 día','El aparato se rompió'],a:1,exp:'La impedancia cae ~1,5–2% por °C: los iones se mueven mejor con calor.'}]},
+ boss:{t:'👑 Desafío Final',sub:'6 preguntas de alto nivel (hasta +14 XP).',
+ quiz:[
+ {q:'¿Por qué 50 kHz es el estándar clínico de la BIA?',ops:['Es la frecuencia de la red eléctrica','Equilibra penetración intra/extracelular con seguridad','Ningún aparato genera otras frecuencias','La FDA obliga a ese valor exacto'],a:1},
+ {q:'La configuración tetrapolar (4 electrodos) sirve para…',ops:['Medir 4 pacientes a la vez','Excluir la impedancia de la piel/electrodos (V lejos de I)','Duplicar la corriente','Que el examen quede bonito'],a:1},
+ {q:'En alta frecuencia (≥ 200 kHz) la corriente puede…',ops:['Atravesar la membrana y medir el agua corporal total','Parar en el líquido extracelular','Calentar los tejidos','Salir del cuerpo'],a:0},
+ {q:'Un ángulo de fase alto (p. ej., 9°; sano 4–8°) indica…',ops:['Integridad celular y buena masa celular','Deshidratación grave','Obesidad','Error de medición'],a:0},
+ {q:'La reactancia Xc refleja principalmente…',ops:['La sal del cuerpo','La capacitancia de las membranas celulares','La temperatura de la sala','El latido cardíaco'],a:1},
+ {q:'Supra de ST en el ECG + SpO₂ cayendo sugiere…',ops:['Evento coronario agudo — llamar a emergencias','Solo ansiedad','Batería baja del monitor','Exceso de agua'],a:0}]},
+ rank:{t:'🏆 Marcador de la Clase',sub:'Registra tu resultado, exporta el JSON y el profesor consolida el ranking.',
+ reg:'➕ Registrar mi resultado',exp:'⬇ Exportar JSON',imp:'⬆ Importar JSON',clr:'🗑️ Limpiar marcador',
+ th:['#','Nombre','XP','Cargo','Fecha'],empty:'Nadie registrado todavía. ¡Sé el primero!',
+ regOk:'✅ ¡Resultado registrado!',impOk:'✅ Ranking importado ({n} filas)',clrOk:'Marcador limpio.',
+ clrC:'¿Borrar todo el marcador de la clase?',fileErr:'⚠️ Archivo inválido.'},
+ rep:{t:'📄 Informe de Evaluación — Bioimpedancia',eval:'Evaluador',date:'Fecha',pat:'Paciente',anam:'Anamnesis',params:'Parámetros medidos (simulación)',
+ graphs:'Gráficos',interp:'Interpretación automática',vitSec:'Signos vitales (simulados)',perf:'Desempeño',
+ disc:'Documento generado por el simulador educativo BioSensor Quest. No sustituye la evaluación médica.',
+ pn:['R (Ω)','Xc (Ω)','|Z| (Ω)','φ (°)','Agua total (L)','Masa magra (kg)','Grasa (%)','Agua ext./total','Frecuencia','Corriente (μA)','Temperatura (°C)','Altura (cm)','Peso (kg)'],
+ rules:[
+ [v=>v.phi<4,'⚠️ Ángulo de fase < 4° (sano 4–8°): riesgo nutricional y menor masa celular.'],
+ [v=>v.ecw>0.45,'⚠️ Agua extracelular/total > 0,45: compatible con edema / hiperhidratación.'],
+ [v=>v.ecw<0.36,'⚠️ Agua extracelular/total < 0,36: posible deshidratación relativa.'],
+ [v=>v.fat>32,'⚠️ Porcentaje de grasa estimado elevado (> 32%).'],
+ [v=>v.tbw/v.p.w<0.45,'⚠️ Agua corporal total proporcionalmente baja para el peso.'],
+ [v=>v.p.temp>37.5,'ℹ️ Temperatura > 37,5 °C: la impedancia cae ~2% por °C.']],
+ okMsg:'✅ Sin alteraciones significativas en los parámetros simulados.',
+ print:'🖨️ Imprimir / Guardar PDF',close:'✕ Cerrar',xpL:'XP',bdgL:'Insignias',imc:'IMC'}}
+};
+
+/* ================= FÍSICA (Cole-Cole) ================= */
+function biaAt(f){
+ const L=st.lab,h=L.h/100,w=L.w;
+ const tbw=clamp(w*0.73*(1-L.fat/100)*(0.85+0.30*L.hyd)+w*0.02*(L.mus/100),4,70);
+ const ecwF=clamp(0.36+0.26*L.edm,0.30,0.66),ecw=tbw*ecwF;
+ const R0=3600*h*h/ecw,Ri=5800*h*h/tbw,A=R0-Ri;
+ const al=.65,c=Math.cos(al*Math.PI/2),s=Math.sin(al*Math.PI/2),y=Math.pow(f/50000,al);
+ const D=1+2*y*c+y*y;
+ let R=Ri+A*(1+y*c)/D,X=A*y*s/D;
+ const k=1-0.02*(L.temp-36);R*=k;X*=k;
+ return{R,X,Z:Math.hypot(R,X),phi:Math.atan2(X,R)*180/Math.PI,tbw,ecw,ecwF};
+}
+let B=biaAt(1e3*Math.pow(10,st.lab.fv*.03));
+const curF=()=>1000*Math.pow(10,st.lab.fv*.03);
+
+/* ================= XP / BADGES ================= */
+function addXP(n){st.xp=clamp(st.xp+n,0,100);save();hud();}
+const tier=()=>st.xp>=75?3:st.xp>=50?2:st.xp>=25?1:0;
+function aw(k){if(st.bdg[k])return;st.bdg[k]=1;save();hud();toast('🏅 '+T().ui.badges[k]);}
+function mission(mk,bk){if(st.done[mk])return false;st.done[mk]=1;addXP(5);aw(bk);return true;}
+function hud(){
+ $('#hName').textContent=st.name||'—';
+ $('#hXp').textContent=st.xp+'/100';
+ $('#hRank').textContent=T().ui.ranks[tier()];
+ $('#hBdg').textContent=Object.keys(st.bdg).length;
+ $('#hubBar')&&($('#hubBar').style.width=st.xp+'%');
+}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('on'),2600);}
+function confetti(){const c=$('#confetti');c.innerHTML='';const cs=['#2dd4bf','#38bdf8','#e879f9','#a3e635','#fbbf24'];
+ for(let i=0;i<60;i++){const s=document.createElement('span');const z=6+Math.random()*8;
+  s.style.cssText=`left:${Math.random()*100}%;width:${z}px;height:${z}px;background:${cs[i%5]};animation-delay:${Math.random()*.8}s`;
+  c.appendChild(s);}setTimeout(()=>c.innerHTML='',3600);}
+
+/* ================= NAVEGAÇÃO ================= */
+function show(id){
+ $$('.screen').forEach(s=>s.classList.remove('active'));
+ const target=$('#'+id);
+ if(!target){console.error('Tela inexistente:',id);return;}
+ target.classList.add('active');window.scrollTo(0,0);
+ // Cada módulo é construído ao ser aberto. A versão anterior tentava chamar
+ // labRedraw(), função inexistente, e nunca executava buildLab().
+ if(id==='scr-hub')buildHub();
+ if(id==='scr-acad')buildAcad();
+ if(id==='scr-lab'){
+   vitStop();
+   buildLab();
+   requestAnimationFrame(()=>{labUpdate();chipUpd();});
+ }
+ if(id==='scr-vitals'){
+   buildVit();
+   requestAnimationFrame(vitStart);
+ }else if(id!=='scr-lab'){
+   vitStop();
+ }
+ if(id==='scr-cases')caseShow();
+ if(id==='scr-boss')buildBoss();
+ if(id==='scr-rank')rkRender();
+ if(id==='scr-final')showFinal();
+}
+
+/* ================= QUIZ GENÉRICO ================= */
+function renderQuiz(box,qs,onDone){
+ let i=0,score=0;
+ function step(){
+  box.innerHTML='';
+  if(i>=qs.length){onDone(score);return;}
+  const q=qs[i];
+  const num=el('div','qnum');num.textContent=(i+1)+' / '+qs.length;box.appendChild(num);
+  const tt=el('div','qtext');tt.textContent=q.q;box.appendChild(tt);
+  const ops=el('div','ops');
+  q.ops.forEach((o,k)=>{const b=el('button','opt');b.innerHTML=o;
+   b.onclick=()=>{[...ops.children].forEach(c=>c.disabled=true);
+    const good=k===q.a;
+    if(good){b.classList.add('ok');score++;}else{b.classList.add('bad');ops.children[q.a].classList.add('ok');}
+    const fb=el('div','fb '+(good?'ok':'bad'));fb.textContent=good?T().ui.correct:T().ui.wrong+(q.e||'');
+    box.appendChild(fb);
+    const nx=el('button','btn btn-p nx');nx.textContent=i===qs.length-1?T().ui.finish:T().ui.next;
+    nx.onclick=()=>{i++;step();};box.appendChild(nx);};
+   ops.appendChild(b);});
+  box.appendChild(ops);
+ }
+ step();
+}
+
+/* ================= INTRO ================= */
+function buildIntro(){
+ const u=T().ui;
+ document.documentElement.lang=st.lang;
+ $('#iTitle').textContent=u.title;
+ $('#iTag').textContent=u.tagline;
+ $('#iLangT').textContent=u.langT;
+ $('#iHowT').textContent=u.howT;
+ $('#iHow').innerHTML=u.how.map(h=>`<li>${h}</li>`).join('');
+ $('#iName').placeholder=u.namePh;
+ $('#iName').value=st.name;
+ $('#disc').textContent=u.disc;
+ $$('.langs button, .flag').forEach(b=>b.classList.toggle('on',b.dataset.l===st.lang));
+}
+
+/* ================= HUB ================= */
+function buildHub(){
+ const u=T().ui;
+ $('#hubT').textContent=u.hubT;$('#hubSub').textContent=u.hubSub;
+ $('#hubBar').style.width=st.xp+'%';
+ const c=$('#hubCards');c.innerHTML='';
+ u.mods.forEach(m=>{
+  const d=el('div','mod');
+  d.innerHTML=`<div class="ic">${m.ic}</div><div class="nm">${u.nav[m.k]}</div><div class="d">${m.d}</div><div class="xp">${m.xp}</div>`;
+  const b=el('button','btn '+(st.done[m.k]?'btn-g':'btn-p'));
+  b.textContent=st.done[m.k]?u.done:u.play;
+  b.onclick=()=>show('scr-'+m.k);
+  d.appendChild(b);c.appendChild(d);});
+}
+
+/* ================= ACADEMIA ================= */
+function buildAcad(){
+ const a=T().acad,u=T().ui;
+ $('#acT').textContent=a.t;$('#acSub').textContent=a.sub;$('#acBack').textContent=u.back;
+ const g=$('#acCards');g.innerHTML='';
+ a.cards.forEach(cd=>{
+  const f=el('div','flip');
+  f.innerHTML=`<div class="inner"><div class="face"><div class="ic">${cd.ic}</div><div class="t">${cd.t}</div><div style="font-size:12px;color:var(--mut)">👆</div></div><div class="face back">${cd.b}</div></div>`;
+  f.onclick=()=>f.classList.toggle('on');
+  g.appendChild(f);});
+ const box=$('#acQuizBox');box.innerHTML='';
+ const b=el('button','btn '+(st.done.acad?'btn-g':'btn-p'));
+ b.textContent=st.done.acad?u.redo:u.startQuiz;
+ b.onclick=()=>renderQuiz(box,a.quiz,s=>{
+  if(!st.done.acad){st.done.acad=1;addXP(10);aw('acad');}
+  buildAcad();});
+ box.appendChild(b);
+}
+
+/* ================= LAB: ANAMNESE ================= */
+function imcUpd(){
+ const A=st.anam,imc=A.w/((A.h/100)**2);
+ const cls=imc<18.5?0:imc<25?1:imc<30?2:3;
+ $('#imcV').innerHTML=`IMC: <b>${imc.toFixed(1)} kg/m²</b> — ${T().lab.ana.imcCls[cls]}`;
+}
+function buildAnam(){
+ const A=T().lab.ana,F=$('#anamForm');
+ $('#anamT').textContent=T().lab.anaT;
+ F.innerHTML=`<div class="ctr">
+  <div class="fw"><label>${A.nome}</label><input type="text" id="aNome" value="${esc(st.anam.nome)}"></div>
+  <div><label>${A.idade}</label><input type="number" id="aIdade" min="1" max="120" value="${esc(st.anam.idade)}"></div>
+  <div><label>${A.sexo}</label><select id="aSexo">${A.sex.map((s,i)=>`<option value="${i}" ${st.anam.sexo==i?'selected':''}>${s}</option>`).join('')}</select></div>
+  <div><label>${A.h}</label><input type="number" id="aH" min="100" max="230" value="${st.anam.h}"></div>
+  <div><label>${A.w}</label><input type="number" id="aW" min="25" max="250" value="${st.anam.w}"></div>
+  <div><label>${A.act}</label><select id="aAct">${A.acts.map((s,i)=>`<option value="${i}" ${st.anam.act==i?'selected':''}>${s}</option>`).join('')}</select></div>
+  <div><label>${A.meds}</label><input type="text" id="aMeds" value="${esc(st.anam.meds)}"></div>
+  <div class="fw"><label>${A.cb}</label><div style="display:flex;gap:10px;flex-wrap:wrap">${A.cbOps.map((c,i)=>`<label style="display:flex;gap:5px;align-items:center;font-size:12.5px;color:var(--txt)"><input type="checkbox" class="aCb" data-i="${i}" ${st.anam.cb[i]?'checked':''} style="width:auto">${c}</label>`).join('')}</div></div>
+  <div class="fw"><label>${A.qx}</label><textarea id="aQx">${esc(st.anam.qx)}</textarea></div>
+ </div>`;
+ ['aNome','aIdade','aSexo','aH','aW','aAct','aMeds','aQx'].forEach(id=>$('#'+id).addEventListener('input',saveAnam));
+ $$('.aCb').forEach(c=>c.addEventListener('change',saveAnam));
+ imcUpd();
+}
+function saveAnam(){
+ const A=st.anam,v=id=>$(id)?$(id).value:'';
+ A.nome=v('#aNome');A.idade=v('#aIdade');A.sexo=+v('#aSexo');
+ A.h=clamp(+v('#aH')||170,100,230);A.w=clamp(+v('#aW')||70,25,250);
+ A.act=+v('#aAct');A.meds=v('#aMeds');A.qx=v('#aQx');
+ A.cb={};$$('.aCb').forEach(c=>{if(c.checked)A.cb[c.dataset.i]=1;});
+ st.lab.h=A.h;st.lab.w=A.w;
+ imcUpd();save();labUpdate();
+}
+
+/* ================= LAB: SVG + ELETRODOS (correção Áudio 1) ================= */
+const KEYS=['I1','I2','V1','V2'];
+const TGT={I1:[238,272],V1:[222,235],V2:[180,415],I2:[188,452]};
+// Eletrodos começam fora do paciente, na bandeja lateral, para o aluno identificar e posicionar.
+const START={I1:[272,120],V1:[272,170],V2:[272,340],I2:[272,390]};
+const ECOL={I1:'#e879f9',I2:'#e879f9',V1:'#38bdf8',V2:'#38bdf8'};
+let snap={},B0;
+function buildBody(){
+ const svg=$('#bodySvg');
+ // CORREÇÃO ÁUDIO 1: membros grossos (braços 24px, pernas 30px) para comportar eletrodos pequenos (r=7)
+ svg.innerHTML=`
+  <polyline id="pI" points="238,272 222,235 190,330 188,452" fill="none" stroke="#e879f9" stroke-width="3" stroke-dasharray="8 6" opacity=".9" style="display:none"/>
+  <polyline id="pV" points="222,235 205,270 188,350 180,415" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="8 6" opacity=".9" style="display:none"/>
+  <g stroke="#2dd4bf" stroke-width="2.5" fill="#101c30" stroke-linejoin="round">
+   <circle cx="150" cy="48" r="26"/>
+   <rect x="138" y="70" width="24" height="18" rx="6"/>
+   <rect x="104" y="86" width="92" height="152" rx="26"/>
+   <polyline points="106,106 78,190 64,262" fill="none" stroke-width="24" stroke-linecap="round"/>
+   <polyline points="194,106 222,190 236,262" fill="none" stroke-width="24" stroke-linecap="round"/>
+   <circle cx="62" cy="272" r="13"/><circle cx="238" cy="272" r="13"/>
+   <rect x="110" y="228" width="80" height="42" rx="16"/>
+   <polyline points="128,266 121,380 118,440" fill="none" stroke-width="30" stroke-linecap="round"/>
+   <polyline points="172,266 179,380 182,440" fill="none" stroke-width="30" stroke-linecap="round"/>
+   <ellipse cx="112" cy="452" rx="17" ry="9"/><ellipse cx="188" cy="452" rx="17" ry="9"/>
+  </g>
+  <rect x="250" y="88" width="45" height="335" rx="12" fill="rgba(19,32,56,.72)" stroke="#22345c" stroke-width="1.5"/>
+  <text x="272" y="105" text-anchor="middle" fill="#8aa2c9" font-size="9" font-weight="700">ELETRODOS</text>
+  <g id="tgts"></g><g id="elecs"></g>`;
+ const tg=$('#tgts');
+ KEYS.forEach(k=>{const[t]=[TGT[k]];
+  const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('cx',t[0]);c.setAttribute('cy',t[1]);c.setAttribute('r','12');
+  c.setAttribute('fill','none');c.setAttribute('stroke','#5b7396');c.setAttribute('stroke-dasharray','4 4');
+  tg.appendChild(c);
+  // O alvo fica sem identificação: o aluno precisa descobrir qual eletrodo pertence a cada posição.
+ });
+ const ec=$('#elecs');
+ KEYS.forEach(k=>{
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class','elec');g.dataset.k=k;
+  g.setAttribute('transform',`translate(${START[k][0]},${START[k][1]})`);
+  const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('r','7');c.setAttribute('fill',ECOL[k]);c.setAttribute('stroke','#0a1220');c.setAttribute('stroke-width','2');
+  g.appendChild(c);
+  const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
+  tx.setAttribute('x','12');tx.setAttribute('y','4');tx.setAttribute('fill',ECOL[k]);
+  tx.setAttribute('font-size','11');tx.setAttribute('font-weight','800');tx.textContent=k;
+  g.appendChild(tx);ec.appendChild(g);});
+ snap={};
+ let drag=null;
+ const svgPt=e=>{const r=svg.getBoundingClientRect();return{x:(e.clientX-r.left)*300/r.width,y:(e.clientY-r.top)*520/r.height};};
+ svg.addEventListener('pointerdown',e=>{const g=e.target.closest('.elec');if(!g)return;drag=g;svg.setPointerCapture(e.pointerId);e.preventDefault();});
+ svg.addEventListener('pointermove',e=>{if(!drag)return;const p=svgPt(e);drag.setAttribute('transform',`translate(${p.x},${p.y})`);});
+ svg.addEventListener('pointerup',e=>{
+  if(!drag)return;const k=drag.dataset.k,p=svgPt(e),t=TGT[k];
+  if(Math.hypot(p.x-t[0],p.y-t[1])<=28){snap[k]=1;drag.setAttribute('transform',`translate(${t[0]},${t[1]})`);}
+  else snap[k]=0;
+  drag=null;chipUpd();});
+}
+function chipUpd(){
+ const all=KEYS.every(k=>snap[k]),is=snap.I1&&snap.I2,vs=snap.V1&&snap.V2;
+ const c=$('#sqChip'),L=T().lab;
+ $('#pI').style.display=is?'':'none';
+ $('#pV').style.display=vs?'':'none';
+ if(all){
+  c.className='sq good';
+  c.innerHTML=L.sq[0]+`<b>Z = V/I = ${B.Z.toFixed(0)} Ω</b><br><span style="font-weight:400;color:#c9d8f2">${L.tetra}</span>`;
+  $('#tetraNote').style.display='none';
+  if(mission('m4','m4'))renderLabMis();
+ }else{
+  $('#tetraNote').style.display='block';$('#tetraNote').innerHTML=L.tetra;
+  if(is&&!vs){c.className='sq mid';c.innerHTML=L.sqV;}
+  else if(is||vs){c.className='sq mid';c.innerHTML=L.sq[1];}
+  else{c.className='sq bad';c.innerHTML=L.sq[2];}
+ }
+}
+
+/* ================= LAB: CONTROLES / GRÁFICOS ================= */
+const LPRE=[[170,70,.5,50,20,.1,36.5],[172,72,.8,85,10,.05,36.5],[170,70,.1,50,22,.02,36.5],[170,78,.75,50,25,.95,36.5],[172,108,.55,45,42,.2,36.5],[168,58,.45,25,30,.25,36]];
+function buildLab(){
+ const L=T().lab,u=T().ui;
+ $('#lbT').textContent=L.t;$('#lbSub').textContent=L.sub;
+ $('#lbBack').textContent=u.back;$('#lbBodyT').textContent=L.bodyT;
+ $('#lbCtrlT').textContent=L.ctrlT;$('#lbPreT').textContent=L.preT;
+ $('#lbReport').textContent=L.report;$('#lbFi').innerHTML=L.fi.map(f=>`<div>• ${f}</div>`).join('');
+ buildAnam();buildBody();
+ const ctr=$('#lbCtrls'),lb=L.lb;
+ ctr.innerHTML=`
+  <div><label>${lb.hyd} <b id="vHyd">${(st.lab.hyd*100).toFixed(0)}%</b></label><input type="range" id="sHyd" min="0" max="1" step="0.01" value="${st.lab.hyd}"></div>
+  <div><label>${lb.mus} <b id="vMus">${st.lab.mus}</b></label><input type="range" id="sMus" min="0" max="100" step="1" value="${st.lab.mus}"></div>
+  <div><label>${lb.fat} <b id="vFat">${st.lab.fat}%</b></label><input type="range" id="sFat" min="5" max="60" step="1" value="${st.lab.fat}"></div>
+  <div><label>${lb.edm} <b id="vEdm">${(st.lab.edm*100).toFixed(0)}%</b></label><input type="range" id="sEdm" min="0" max="1" step="0.01" value="${st.lab.edm}"></div>
+  <div><label>${lb.temp} <b id="vTemp">${st.lab.temp}°C</b></label><input type="range" id="sTemp" min="34" max="41" step="0.1" value="${st.lab.temp}"></div>
+  <div><label>${lb.frq} <b id="vF">${fmtF(curF())}</b></label><input type="range" id="sF" min="0" max="100" step="1" value="${st.lab.fv}"></div>
+  <div class="fw"><label>${lb.cur} <b id="vCur">${st.lab.cur} μA</b></label><input type="range" id="sCur" min="50" max="800" step="10" value="${st.lab.cur}"></div>`;
+ const bind=(id,fn)=>$('#'+id).addEventListener('input',e=>{fn(+e.target.value);labUpdate();});
+ bind('sHyd',v=>{st.lab.hyd=v;$('#vHyd').textContent=(v*100).toFixed(0)+'%';});
+ bind('sMus',v=>{st.lab.mus=v;$('#vMus').textContent=v;});
+ bind('sFat',v=>{st.lab.fat=v;$('#vFat').textContent=v+'%';});
+ bind('sEdm',v=>{st.lab.edm=v;$('#vEdm').textContent=(v*100).toFixed(0)+'%';});
+ bind('sTemp',v=>{st.lab.temp=v;$('#vTemp').textContent=v+'°C';});
+ bind('sF',v=>{st.lab.fv=v;$('#vF').textContent=fmtF(curF());
+  if(!st.mn||curF()<st.mn)st.mn=curF();if(!st.mx||curF()>st.mx)st.mx=curF();
+  if(st.mn<=1000&&st.mx>=1e6&&mission('m1','m1'))renderLabMis();});
+ bind('sCur',v=>{st.lab.cur=v;$('#vCur').textContent=v+' μA';});
+ const pr=$('#lbPresets');pr.innerHTML='';
+ L.presets.forEach((p,i)=>{const b=el('button','pre');b.textContent=p;
+  b.onclick=()=>{const q=LPRE[i];
+   st.anam.h=q[0];st.anam.w=q[1];st.lab.h=q[0];st.lab.w=q[1];
+   st.lab.hyd=q[2];st.lab.mus=q[3];st.lab.fat=q[4];st.lab.edm=q[5];st.lab.temp=q[6];
+   $('#aH').value=q[0];$('#aW').value=q[1];imcUpd();
+   st.pre[i]=1;if(Object.keys(st.pre).length>=3&&mission('m2','m2'))renderLabMis();
+   buildLab();labUpdate();};
+  pr.appendChild(b);});
+ const ros=$('#lbRos');ros.innerHTML='';
+ T().lab.ros.forEach((r,i)=>{const d=el('div','ro');
+  d.innerHTML=`<div class="l">${r[0]}</div><div class="v" id="ro${i}">--<small> ${r[1]}</small></div>`;
+  ros.appendChild(d);});
+ renderLabMis();labUpdate();chipUpd();
+}
+function renderLabMis(){
+ const L=T().lab;
+ $('#lbMiT').textContent=L.miT;
+ $('#lbMis').innerHTML=L.mis.map((m,i)=>`<li class="${st.done['m'+(i+1)]?'done':''}">${m}</li>`).join('');
+}
+function labUpdate(){
+ B=biaAt(curF());
+ const vals=[B.R,B.X,B.Z,B.phi,B.tbw,st.lab.w*(1-st.lab.fat/100),st.lab.fat,B.ecwF,B.Z*st.lab.cur/1000];
+ vals.forEach((v,i)=>{const e=$('#ro'+i);if(e)e.innerHTML=(i===3||i===7?v.toFixed(i===7?2:1):v.toFixed(i===0?0:1))+'<small> '+T().lab.ros[i][1]+'</small>';});
+ if(B.ecwF>=.45&&mission('m3','m3'))renderLabMis();
+ drawNy();drawBo();drawGauge();drawCell();
+ if(KEYS.every(k=>snap[k]))chipUpd();
+}
+function drawCell(){
+ const f=curF();
+ $('#cellLbl').textContent=T().lab.cell[f<20000?0:f<=200000?1:2];
+ $('#cellAround').style.opacity=f<200000?1:.2;
+ $('#cellThrough').style.opacity=f>20000?1:.2;
+}
+const fit=(cv,fw=640,fh=200)=>{const w=cv.offsetWidth||fw,h=cv.offsetHeight||fh;if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}};
+function biaPts(n=80){const p=[];for(let i=0;i<=n;i++){const f=1000*Math.pow(1000,i/n);p.push([f,biaAt(f)]);}return p;}
+function drawNy(){
+ const cv=$('#cvNyq');fit(cv);const x=cv.getContext('2d'),W=cv.width,H=cv.height;
+ x.clearRect(0,0,W,H);
+ const pts=biaPts();let mX=0;pts.forEach(p=>mX=Math.max(mX,p[1].X));
+ const r0=pts[0][1].R,ri=pts[pts.length-1][1].R;
+ const X=v=>38+ (v-ri*0.9)/((r0*1.04)-ri*0.9)*(W-52);
+ const Y=v=>H-26-(v/(mX*1.18))*(H-44);
+ x.strokeStyle='#22345c';x.lineWidth=1;x.strokeRect(38,14,W-52,H-44);
+ x.strokeStyle='#e879f9';x.lineWidth=2.5;x.beginPath();
+ pts.forEach((p,i)=>{const px=X(p[1].R),py=Y(p[1].X);i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();
+ const cf=curF(),cb=biaAt(cf);
+ x.fillStyle='#a3e635';x.beginPath();x.arc(X(cb.R),Y(cb.X),5,0,7);x.fill();
+ x.fillStyle='#8aa2c9';x.font='11px sans-serif';
+ x.fillText(T().lab.axR0,42,H-8);x.fillText(T().lab.axRinf,W-110,26);
+ x.fillText(fmtF(cf),X(cb.R)+8,Y(cb.X)-8);
+}
+function drawBo(){
+ const cv=$('#cvBode');fit(cv);const x=cv.getContext('2d'),W=cv.width,H=cv.height;
+ x.clearRect(0,0,W,H);
+ const pts=biaPts();let mn=1e9,mx=0;pts.forEach(p=>{const z=p[1].Z;mn=Math.min(mn,z);mx=Math.max(mx,z);});
+ const X=f=>38+Math.log10(f/1000)/3*(W-52);
+ const Y=z=>H-26-((z-mn*0.92)/((mx*1.06)-mn*0.92))*(H-44);
+ x.strokeStyle='#22345c';x.lineWidth=1;x.strokeRect(38,14,W-52,H-44);
+ x.strokeStyle='#38bdf8';x.lineWidth=2.5;x.beginPath();
+ pts.forEach((p,i)=>{const px=X(p[0]),py=Y(p[1].Z);i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();
+ const cf=curF();
+ x.strokeStyle='#5b7396';x.setLineDash([4,4]);x.beginPath();x.moveTo(X(cf),14);x.lineTo(X(cf),H-26);x.stroke();x.setLineDash([]);
+ x.fillStyle='#a3e635';x.beginPath();x.arc(X(cf),Y(biaAt(cf).Z),5,0,7);x.fill();
+ x.fillStyle='#8aa2c9';x.font='11px sans-serif';x.fillText(fmtF(cf),X(cf)-24,H-8);
+ x.fillText('1 kHz',42,H-8);x.fillText('1 MHz',W-58,H-8);
+}
+function drawGauge(){
+ const cv=$('#cvGauge');fit(cv,640,70);const x=cv.getContext('2d'),W=cv.width,H=cv.height;
+ x.clearRect(0,0,W,H);
+ const cx=W/2,cy=H+8,r=Math.min(H*0.95,W*0.22);
+ const a=v=>Math.PI+ (clamp(v,0,12)/12)*Math.PI;
+ const zones=[[0,4,'#f87171'],[4,7,'#a3e635'],[7,12,'#38bdf8']];
+ zones.forEach(z=>{x.strokeStyle=z[2];x.lineWidth=8;x.beginPath();x.arc(cx,cy,r,a(z[0]),a(z[1]));x.stroke();});
+ x.strokeStyle='#fff';x.lineWidth=3;x.beginPath();x.moveTo(cx,cy);
+ x.lineTo(cx+Math.cos(a(B.phi))*r*0.9,cy+Math.sin(a(B.phi))*r*0.9);x.stroke();
+ x.fillStyle='#e9f1ff';x.font='bold 13px sans-serif';x.textAlign='center';
+ x.fillText('φ = '+B.phi.toFixed(1)+'°',cx,16);x.textAlign='left';
+}
+
+/* ================= LAB: RELATÓRIO PDF ================= */
+function chartImg(cv,fn){const hid=!cv.offsetWidth;if(hid){cv.width=640;cv.height=200;}fn();const d=cv.toDataURL('image/png');return d;}
+function snapEcg(){
+ if($('#cvTrace').offsetWidth)return $('#cvTrace').toDataURL('image/png');
+ const c=document.createElement('canvas');c.width=640;c.height=160;
+ const x=c.getContext('2d');x.fillStyle='#050b10';x.fillRect(0,0,640,160);
+ x.strokeStyle='#a3e635';x.lineWidth=2;x.beginPath();
+ for(let px=0;px<=640;px+=2){const p=(px%128)/128;const v=ecgBase(p);const y=48-v*40;px?x.lineTo(px,y):x.moveTo(px,y);}
+ x.stroke();return c.toDataURL('image/png');
+}
+function openReport(){
+ const R=T().rep,A=st.anam,u=T().ui;
+ B=biaAt(curF());
+ const imc=A.w/((A.h/100)**2),cls=imc<18.5?0:imc<25?1:imc<30?2:3;
+ const v={phi:B.phi,ecw:B.ecwF,fat:st.lab.fat,tbw:B.tbw,p:{w:A.w,temp:st.lab.temp}};
+ const msgs=R.rules.filter(r=>r[0](v)).map(r=>`<li>${r[1]}</li>`).join('')||`<li>${R.okMsg}</li>`;
+ const sexN=T().lab.ana.sex[A.sexo]||'—';
+ const cbs=T().lab.ana.cbOps.filter((c,i)=>A.cb[i]).join(', ')||'—';
+ const imN=T().lab.ana.acts[A.act]||'—';
+ const bdg=Object.keys(st.bdg).map(k=>u.badges[k]).join(' · ')||'—';
+ const imNy=chartImg($('#cvNyq'),drawNy),imBo=chartImg($('#cvBode'),drawBo);
+ $('#repDoc').innerHTML=`
+ <h1>${R.t}</h1>
+ <div class="rmeta">${R.eval}: <b>${esc(st.name)||'—'}</b> · ${R.pat}: <b>${esc(A.nome)||esc(st.name)||'—'}</b> · ${R.date}: ${new Date().toLocaleString()}</div>
+ <h3>${R.anam}</h3>
+ <table><tr><th>${T().lab.ana.nome}</th><td>${esc(A.nome)||'—'}</td><th>${T().lab.ana.idade}</th><td>${esc(A.idade)||'—'}</td></tr>
+ <tr><th>${T().lab.ana.sexo}</th><td>${sexN}</td><th>${R.imc}</th><td>${imc.toFixed(1)} kg/m² — ${T().lab.ana.imcCls[cls]}</td></tr>
+ <tr><th>${T().lab.ana.h}</th><td>${A.h} cm</td><th>${T().lab.ana.w}</th><td>${A.w} kg</td></tr>
+ <tr><th>${T().lab.ana.act}</th><td>${imN}</td><th>${T().lab.ana.cb}</th><td>${cbs}</td></tr>
+ <tr><th>${T().lab.ana.meds}</th><td>${esc(A.meds)||'—'}</td><th>${T().lab.ana.qx}</th><td>${esc(A.qx)||'—'}</td></tr></table>
+ <h3>${R.params}</h3>
+ <table><tr>${R.pn.slice(0,5).map(p=>`<th>${p}</th>`).join('')}</tr>
+ <tr><td>${B.R.toFixed(0)}</td><td>${B.X.toFixed(1)}</td><td>${B.Z.toFixed(0)}</td><td>${B.phi.toFixed(1)}</td><td>${B.tbw.toFixed(1)}</td></tr>
+ <tr>${R.pn.slice(5,9).map(p=>`<th>${p}</th>`).join('')}</tr>
+ <tr><td>${(A.w*(1-st.lab.fat/100)).toFixed(1)}</td><td>${st.lab.fat}</td><td>${B.ecwF.toFixed(2)}</td><td>${fmtF(curF())}</td><td>${st.lab.cur}</td></tr></table>
+ <h3>${R.graphs}</h3>
+ <img src="${imNy}"><img src="${imBo}">
+ <h3>${R.interp}</h3><ul>${msgs}</ul>
+ <h3>${R.vitSec}</h3>
+ <table><tr><th>${T().vit.big.hr}</th><td>${st.vt.hr} bpm</td><th>${T().vit.big.spo}</th><td>${st.vt.spo}%</td></tr>
+ <tr><th>${T().vit.big.pi}</th><td>${st.vt.perf.toFixed(1)}</td><th>${T().vit.rhy}</th><td>${st.vt.rhy==='afib'?T().vit.rhyAfib:T().vit.rhySin}</td></tr></table>
+ <img src="${snapEcg()}">
+ <h3>${R.perf}</h3>
+ <table><tr><th>${R.xpL}</th><td>${st.xp}/100 — ${u.ranks[tier()]}</td><th>${R.bdgL}</th><td>${bdg}</td></tr></table>
+ <p style="margin-top:14px;color:#64748b;font-size:11px">${R.disc}</p>
+ <div class="noprint btnrow" style="margin-top:16px">
+  <button class="btn btn-p" onclick="window.print()">${R.print}</button>
+  <button class="btn btn-g" id="repClose" style="color:#334">${R.close}</button>
+ </div>`;
+ $('#repOverlay').style.display='block';
+ $('#repClose').onclick=()=>$('#repOverlay').style.display='none';
+}
+
+/* ================= VITAIS ================= */
+const VPRE=[[78,97,2.5,'sin',0,0],[135,97,2.6,'sin',0,0],[45,98,2.2,'sin',0,0],[105,95,1.9,'afib',0,0],[102,93,1.7,'sin',.8,0],[115,86,1.1,'sin',0,0]];
+let beats=[],nextT=0,raf=null;
+const bump=(x,w,a)=>{const d=x/w;return(d<-1||d>1)?0:a*Math.pow(Math.cos(d*Math.PI/2),2);};
+function ecgBase(p){return bump(p-.16,.05,.12)+bump(p-.30,.02,-.16)+bump(p-.325,.022,1)+bump(p-.355,.025,-.24)+bump(p-.52,.10,.30);}
+function ecgAt(p,t){
+ const vt=st.vt;let v;
+ if(vt.rhy==='afib'){v=bump(p-.30,.03,1)+bump(p-.34,.05,-.3)+bump(p-.55,.12,.25)+.06*Math.sin(t*2*Math.PI*7)+.04*Math.sin(t*2*Math.PI*11);}
+ else v=ecgBase(p);
+ if(vt.stv>0&&p>.38&&p<.75)v+=vt.stv*.6;
+ return v;
+}
+function ensureBeats(now){
+ const vt=st.vt;
+ while(nextT<now+1){
+  const dur=vt.rhy==='afib'?(0.5+Math.random()*0.9)*(60/vt.hr):60/vt.hr;
+  beats.push({t:nextT,d:dur});nextT+=dur;}
+ beats=beats.filter(b=>b.t>now-15);
+}
+function phaseAt(t){for(let i=beats.length-1;i>=0;i--){const b=beats[i];if(t>=b.t)return {p:(t-b.t)/b.d};}return null;}
+function vitStart(){
+ const now=performance.now()/1000;
+ if(!nextT)nextT=now;
+ ['cvGrid','cvTrace'].forEach(id=>{const cv=$('#'+id);cv.width=cv.offsetWidth||600;cv.height=cv.offsetHeight||250;});
+ const g=$('#cvGrid').getContext('2d'),W=$('#cvGrid').width,H=$('#cvGrid').height;
+ g.fillStyle='#050b10';g.fillRect(0,0,W,H);
+ g.strokeStyle='#12233d';g.lineWidth=1;g.beginPath();
+ for(let i=0;i<W;i+=24){g.moveTo(i,0);g.lineTo(i,H);}
+ for(let j=0;j<H;j+=24){g.moveTo(0,j);g.lineTo(W,j);}
+ g.stroke();
+ if(!raf)raf=requestAnimationFrame(vitLoop);
+}
+function vitStop(){if(raf){cancelAnimationFrame(raf);raf=null;}}
+function vitLoop(){
+ if(!$('#scr-vitals').classList.contains('active')){vitStop();return;}
+ const now=performance.now()/1000,vt=st.vt;
+ ensureBeats(now);
+ const cv=$('#cvTrace'),x=cv.getContext('2d'),W=cv.width,H=cv.height;
+ x.clearRect(0,0,W,H);
+ const win=6,pps=W/win;
+ x.lineWidth=2;x.strokeStyle='#a3e635';x.beginPath();
+ let first=true;
+ for(let px=0;px<=W;px+=2){
+  const t=now-(W-px)/pps,ph=phaseAt(t);
+  let v=ph?ecgAt(ph.p,t):0;
+  v+=vt.nz*0.09*Math.sin(t*83)*Math.sin(t*47);
+  const y=H*0.27-v*H*0.15;
+  first?x.moveTo(px,y):x.lineTo(px,y);first=false;}
+ x.stroke();
+ x.strokeStyle='#38bdf8';x.beginPath();first=true;
+ for(let px=0;px<=W;px+=2){
+  const t=now-(W-px)/pps,ph=phaseAt(t);
+  let v=ph?bump(ph.p-.4,.3,1)+.3*bump(ph.p-.65,.22,.7):0;
+  v*=clamp(vt.perf/2.5,0.15,1.6);v+=vt.nz*0.05*Math.sin(t*67);
+  const y=H*0.80-v*H*0.22;
+  first?x.moveTo(px,y):x.lineTo(px,y);first=false;}
+ x.stroke();
+ raf=requestAnimationFrame(vitLoop);
+}
+function vtDiag(){
+ const vt=st.vt,D=T().vit.diag,d=[];
+ if(vt.hr>=100)d.push(D.tach);if(vt.hr<=50)d.push(D.brad);
+ if(vt.spo<85)d.push(D.h3);else if(vt.spo<90)d.push(D.h2);else if(vt.spo<94)d.push(D.h1);
+ if(vt.rhy==='afib')d.push(D.afib);
+ if(vt.stv>0.3)d.push(D.stemi);
+ if(vt.perf<1.6)d.push(D.lopi);
+ if(!d.length)d.push(D.ok);
+ $('#vtDiag').innerHTML=d.map(x=>`<li>${x}</li>`).join('');
+ $('#vHR').textContent=vt.hr;$('#vSpo').textContent=vt.spo;$('#vPi').textContent=vt.perf.toFixed(1);
+ if(vt.hr>=120&&mission('v1','v1'))renderVitMis();
+ if(vt.spo<=88&&mission('v2','v2'))renderVitMis();
+ if(vt.rhy==='afib'&&mission('v3','v3'))renderVitMis();
+ if(vt.nz>=.5&&mission('v4','v4'))renderVitMis();
+}
+function drawHb(){
+ const cv=$('#cvHb');fit(cv);const x=cv.getContext('2d'),W=cv.width,H=cv.height;
+ x.clearRect(0,0,W,H);
+ x.strokeStyle='#22345c';x.lineWidth=1;x.strokeRect(34,12,W-48,H-38);
+ const X=p=>34+(p/100)*(W-48),Y=s=>H-24-(s/100)*(H-40);
+ x.strokeStyle='#38bdf8';x.lineWidth=2.5;x.beginPath();
+ for(let p=0;p<=100;p+=2){const s=100*Math.pow(p,2.7)/(Math.pow(26.6,2.7)+Math.pow(p,2.7));
+  p?x.lineTo(X(p),Y(s)):x.moveTo(X(p),Y(s));}
+ x.stroke();
+ x.strokeStyle='#fbbf24';x.setLineDash([4,4]);x.beginPath();x.moveTo(X(26.6),12);x.lineTo(X(26.6),H-24);x.stroke();x.setLineDash([]);
+ const s=clamp(st.vt.spo/100,.02,.995),po2=26.6*Math.pow(s/(1-s),1/2.7);
+ x.fillStyle='#fbbf24';x.beginPath();x.arc(X(clamp(po2,0,100)),Y(st.vt.spo),6,0,7);x.fill();
+ x.fillStyle='#8aa2c9';x.font='11px sans-serif';
+ x.fillText('P50 = 26,6 mmHg',X(26.6)+6,26);x.fillText('pO₂ (mmHg)',W-90,H-8);x.fillText('SpO₂ %',40,24);
+}
+function buildVit(){
+ const v=T().vit,u=T().ui,vt=st.vt;
+ $('#vtT').textContent=v.t;$('#vtSub').textContent=v.sub;$('#vtBack').textContent=u.back;
+ $('#vtMonT').textContent=v.monT;$('#vtCtrlT').textContent=v.ctrlT;$('#vtPreT').textContent=v.preT;
+ $('#vtRef').textContent=v.ref;$('#vtHbT').textContent=v.hbT;$('#vtHbNote').textContent=v.hbNote;
+ $('#lHR').textContent=v.big.hr;$('#lSpo').textContent=v.big.spo;$('#lPi').textContent=v.big.pi;
+ const c=$('#vtCtrls');
+ c.innerHTML=`
+  <div><label>${v.hHR} <b id="vHRs">${vt.hr}</b></label><input type="range" id="vHr" min="30" max="200" step="1" value="${vt.hr}"></div>
+  <div><label>${v.hSpo} <b id="vSps">${vt.spo}%</b></label><input type="range" id="vSp" min="70" max="100" step="1" value="${vt.spo}"></div>
+  <div><label>${v.hPerf} <b id="vPfs">${vt.perf.toFixed(1)}</b></label><input type="range" id="vPf" min="0.2" max="10" step="0.1" value="${vt.perf}"></div>
+  <div><label>${v.rhy}</label><select id="vRh"><option value="sin" ${vt.rhy==='sin'?'selected':''}>${v.rhySin}</option><option value="afib" ${vt.rhy==='afib'?'selected':''}>${v.rhyAfib}</option></select></div>
+  <div><label>${v.stT} <b id="vSts">${vt.stv}</b></label><input type="range" id="vSt" min="0" max="1" step="0.05" value="${vt.stv}"></div>
+  <div><label>${v.nz} <b id="vNzs">${vt.nz}</b></label><input type="range" id="vNz" min="0" max="1" step="0.05" value="${vt.nz}"></div>`;
+ const bind=(id,fn)=>$('#'+id).addEventListener('input',e=>{fn(+e.target.value);save();vtDiag();drawHb();});
+ bind('vHr',x=>{vt.hr=x;$('#vHRs').textContent=x;});
+ bind('vSp',x=>{vt.spo=x;$('#vSps').textContent=x+'%';});
+ bind('vPf',x=>{vt.perf=x;$('#vPfs').textContent=x.toFixed(1);});
+ bind('vSt',x=>{vt.stv=x;$('#vSts').textContent=x;});
+ bind('vNz',x=>{vt.nz=x;$('#vNzs').textContent=x;});
+ $('#vRh').addEventListener('change',e=>{vt.rhy=e.target.value;save();vtDiag();});
+ const pr=$('#vtPresets');pr.innerHTML='';
+ v.presets.forEach((p,i)=>{const b=el('button','pre');b.textContent=p;
+  b.onclick=()=>{const q=VPRE[i];
+   Object.assign(vt,{hr:q[0],spo:q[1],perf:q[2],rhy:q[3],stv:q[4],nz:q[5]});
+   buildVit();save();vtDiag();drawHb();};
+  pr.appendChild(b);});
+ renderVitMis();vtDiag();drawHb();
+ const qb=$('#vtQuizBox');qb.innerHTML='';
+ const b=el('button','btn '+(st.done.vq?'btn-g':'btn-p'));
+ b.textContent=st.done.vq?u.vqRedo:u.vqStart;
+ b.onclick=()=>renderQuiz(qb,v.quiz,()=>{if(!st.done.vq){st.done.vq=1;addXP(6);}buildVit();});
+ qb.appendChild(b);
+}
+function renderVitMis(){
+ const v=T().vit;
+ $('#vtMiT').textContent=v.miT;
+ $('#vtMis').innerHTML=v.mis.map((m,i)=>`<li class="${st.done['v'+(i+1)]?'done':''}">${m}</li>`).join('');
+}
+
+/* ================= CASOS ================= */
+let ci=0;
+function caseShow(){
+ const C=T().cases,u=T().ui,d=C.data[ci],box=$('#csBox');
+ $('#csT').textContent=C.t;$('#csBack').textContent=u.back;
+ box.innerHTML=`<div class="qnum">${C.intro.replace('{n}',ci+1)}</div>
+ <div class="qtext">🩺 ${d.t}</div>
+ <p class="fi">${d.v}</p>
+ <div class="note">${d.note}</div>
+ <div class="ops" id="csOps"></div><div id="csFb"></div>`;
+ const ops=$('#csOps');
+ d.ops.forEach((o,k)=>{const b=el('button','opt');b.innerHTML=o;
+  b.onclick=()=>{[...ops.children].forEach(c=>c.disabled=true);
+   const good=k===d.a;
+   if(good){b.classList.add('ok');if(!st.done['c'+ci]){st.done['c'+ci]=1;addXP(5);}}
+   else{b.classList.add('bad');ops.children[d.a].classList.add('ok');}
+   if(KEYS.every((_,i)=>st.done['c'+i]))aw('cases');
+   $('#csFb').innerHTML=`<div class="fb ${good?'ok':'bad'}">${good?u.correct:u.wrong}${d.exp}</div>`;
+   const nx=el('button','btn btn-p nx');
+   nx.textContent=ci===5?u.finish:u.next;
+   nx.onclick=()=>{if(ci<5){ci++;caseShow();}else show('scr-hub');};
+   $('#csFb').appendChild(nx);save();};
+  ops.appendChild(b);});
+}
+
+/* ================= BOSS ================= */
+function buildBoss(){
+ const b=T().boss,u=T().ui;
+ $('#bsT').textContent=b.t; const bsSub=$('#bsSub'); if(bsSub) bsSub.textContent=b.sub; $('#bsBack').textContent=u.back;
+ renderQuiz($('#bsBox'),b.quiz,s=>{
+  if(!st.done.boss){st.done.boss=1;addXP(s*2+(s===6?2:0));aw('boss');}
+  const box=$('#bsBox');box.innerHTML=`<div class="qtext">🏁 ${s} / 6 — ${st.xp}/100 XP</div>`;
+  const bt=el('button','btn btn-p');bt.textContent=u.finish;bt.onclick=showFinal;box.appendChild(bt);});
+}
+
+/* ================= RANKING ================= */
+let rk=[];try{rk=JSON.parse(localStorage.getItem(RKL))||[];}catch(e){rk=[];}
+function rkSave(){localStorage.setItem(RKL,JSON.stringify(rk));}
+function rkRender(){
+ const R=T().rank;
+ $('#rkT').textContent=R.t;$('#rkSub').textContent=R.sub;$('#rkBack').textContent=T().ui.back;
+ $('#rkHead').innerHTML=R.th.map(t=>`<th>${t}</th>`).join('');
+ $('#rkBody').innerHTML=rk.length?rk.map((r,i)=>`<tr class="${r.n===st.name?'me':''}"><td>${i+1}</td><td>${esc(r.n)}</td><td>${r.xp}</td><td>${r.r}</td><td>${r.d}</td></tr>`).join('')
+  :`<tr><td colspan="5" style="color:var(--mut)">${R.empty}</td></tr>`;
+ $('#rkReg').textContent=R.reg;$('#rkExp').textContent=R.exp;$('#rkImp').textContent=R.imp;$('#rkClr').textContent=R.clr;
+}
+ $('#rkReg')&&0;
+function rkInit(){
+ $('#rkReg').onclick=()=>{
+  rk.push({n:st.name||'—',xp:st.xp,r:T().ui.ranks[tier()],d:new Date().toLocaleDateString()});
+  rk.sort((a,b)=>b.xp-a.xp);rk=rk.slice(0,50);rkSave();rkRender();toast(T().rank.regOk);};
+ $('#rkExp').onclick=()=>{
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(rk,null,1)],{type:'application/json'}));
+  a.download='ranking_biosensor.json';a.click();};
+ $('#rkImp').onclick=()=>$('#rkFile').click();
+ $('#rkFile').onchange=e=>{const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);
+   if(!Array.isArray(j))throw 0;rk=j.slice(0,50);rkSave();rkRender();toast(T().rank.impOk.replace('{n}',rk.length));}
+   catch(err){toast(T().rank.fileErr);}};r.readAsText(f);};
+ $('#rkClr').onclick=()=>{if(confirm(T().rank.clrC)){rk=[];rkSave();rkRender();toast(T().rank.clrOk);}};
+}
+
+/* ================= FINAL ================= */
+function showFinal(){
+ show('scr-final');
+ const u=T().ui,t=tier();
+ $('#fnT').textContent=u.finT;
+ $('#fnRank').textContent=u.ranks[t];
+ $('#fnXp').textContent=st.xp+' / 100 XP';
+ $('#fnMsg').textContent=u.finMsg[t];
+ $('#fnPdf').textContent=u.finPdf;
+ $('#fnAgain').textContent=u.finAgain;
+ $('#fnMap').textContent=u.finMap;
+ $('#fnReg').textContent=u.rankBtn.replace('🏆','➕');
+ $('#fnBdgs').innerHTML=Object.keys(u.badges).map(k=>`<span class="bdg ${st.bdg[k]?'':'off'}">${u.badges[k]}</span>`).join('');
+ confetti();
+}
+
+/* ================= INIT ================= */
+function buildAll(){buildIntro();hud();}
+ $$('.langs button, .flag').forEach(b=>b.addEventListener('click',()=>{st.lang=b.dataset.l;save();buildAll();
+ if($('#scr-hub').classList.contains('active'))buildHub();
+ if($('#scr-lab').classList.contains('active'))buildLab();
+ if($('#scr-vitals').classList.contains('active'))buildVit();
+ if($('#scr-rank').classList.contains('active'))rkRender();
+ if($('#scr-final').classList.contains('active'))showFinal();}));
+ $('#iStart').onclick=()=>{
+ const n=$('#iName').value.trim();
+ if(!n){toast(st.lang==='pt'?'Digite seu nome!':st.lang==='es'?'¡Escribe tu nombre!':'Enter your name!');return;}
+ st.name=n;
+ if(!st.anam.nome)st.anam.nome=n;
+ save();buildAll();show('scr-hub');};
+ $('#bMap').onclick=()=>show('scr-hub');
+ $('#bRank').onclick=()=>show('scr-rank');
+ $('#bReset').onclick=()=>{if(confirm('🔄')){localStorage.removeItem(LS);localStorage.removeItem(RKL);location.reload();}};
+ $('#acBack').onclick=$('#lbBack').onclick=$('#vtBack').onclick=$('#csBack').onclick=$('#bsBack').onclick=$('#rkBack').onclick=()=>show('scr-hub');
+ $('#lbReport').onclick=openReport;
+ $('#fnPdf').onclick=openReport;
+ $('#fnAgain').onclick=()=>{if(confirm('🔄')){localStorage.removeItem(LS);location.reload();}};
+ $('#fnMap').onclick=()=>show('scr-hub');
+ $('#fnReg').onclick=()=>{rk.push({n:st.name||'—',xp:st.xp,r:T().ui.ranks[tier()],d:new Date().toLocaleDateString()});
+ rk.sort((a,b)=>b.xp-a.xp);rk=rk.slice(0,50);rkSave();show('scr-rank');toast(T().rank.regOk);};
+rkInit();
+buildAll();
+</script>
+</body>
+</html>
