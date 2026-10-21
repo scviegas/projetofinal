@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projeto em Ação — A Jornada do Pesquisador</title>
+<style>
+:root {
+  --bg-deep: #0f172a;
+  --bg-card: #1e293b;
+  --bg-soft: #f8fafc;
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #818cf8;
+  --accent: #f59e0b;
+  --accent-dark: #d97706;
+  --success: #10b981;
+  --success-light: #34d399;
+  --danger: #ef4444;
+  --warning: #fbbf24;
+  --text-dark: #0f172a;
+  --text-light: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --shadow-lg: 0 20px 50px -10px rgba(0,0,0,0.5);
+  --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+  min-height: 100vh;
+  color: var(--text-light);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Decorative animated background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(245, 158, 11, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: bgFloat 20s ease-in-out infinite;
+}
+
+@keyframes bgFloat {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-30px, 20px); }
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.logo-text h1 {
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-light), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-text p {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.hud {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.hud-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hud-icon { font-size: 16px; }
+
+.score-val { color: var(--accent); }
+.stars-val { color: var(--warning); }
+.phase-val { color: var(--primary-light); }
+
+/* Progress bar */
+.progress-bar {
+  height: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
+  background-size: 200% 100%;
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* Main card */
+.card {
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 24px;
+  padding: 36px;
+  box-shadow: var(--shadow-lg);
+  min-height: 500px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
+}
+
+/* Welcome screen */
+.welcome {
+  text-align: center;
+  padding: 20px;
+}
+
+.welcome-emoji {
+  font-size: 80px;
+  margin-bottom: 20px;
+  display: inline-block;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.welcome h2 {
+  font-size: 36px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--primary-light), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+}
+
+.welcome p {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  line-height: 1.7;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.story-box {
+  background: rgba(15, 23, 42, 0.5);
+  border-left: 4px solid var(--accent);
+  padding: 20px 24px;
+  border-radius: 12px;
+  margin: 24px auto;
+  max-width: 700px;
+  text-align: left;
+  font-style: italic;
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+
+.chapter-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.chapter-card {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+  transition: all 0.3s;
+}
+
+.chapter-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.chapter-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.chapter-card h4 {
+  font-size: 14px;
+  margin: 6px 0 4px 0;
+  color: var(--text-light);
+}
+
+.chapter-card p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.55);
+}
+
+.btn-secondary {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary-light);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.btn-secondary:hover {
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: white;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+.btn-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.55);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--success), #059669);
+  color: white;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-success:hover {
+  transform: translateY(-2px);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Chapter header */
+.chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.chapter-badge {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+.chapter-info h3 {
+  font-size: 22px;
+  margin-bottom: 4px;
+  color: var(--text-light);
+}
+
+.chapter-info .subtitle {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Story narration */
+.narration {
+  background: rgba(15, 23, 42, 0.5);
+  border-left: 4px solid var(--primary);
+  padding: 20px 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  line-height: 1.8;
+  color: #e2e8f0;
+  font-size: 15px;
+}
+
+.narration .speaker {
+  font-weight: 700;
+  color: var(--primary-light);
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Question */
+.question-box {
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.question-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+
+.question-text {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+
+.question-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Options */
+.options {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.option {
+  background: rgba(15, 23, 42, 0.6);
+  border: 2px solid rgba(99, 102, 241, 0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 15px;
+  color: var(--text-light);
+  text-align: left;
+  font-family: inherit;
+}
+
+.option:hover:not(.disabled) {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+  transform: translateX(4px);
+}
+
+.option-letter {
+  width: 32px;
+  height: 32px;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--primary-light);
+  flex-shrink: 0;
+}
+
+.option.correct {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--success);
+}
+
+.option.correct .option-letter {
+  background: var(--success);
+  color: white;
+}
+
+.option.incorrect {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--danger);
+}
+
+.option.incorrect .option-letter {
+  background: var(--danger);
+  color: white;
+}
+
+.option.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Feedback */
+.feedback {
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin-top: 20px;
+  display: none;
+  border-left: 4px solid;
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.feedback.show { display: block; }
+
+.feedback.correct {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success);
+}
+
+.feedback.incorrect {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger);
+}
+
+.feedback-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.feedback.correct .feedback-title { color: var(--success-light); }
+.feedback.incorrect .feedback-title { color: #fca5a5; }
+
+.feedback-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #cbd5e1;
+}
+
+/* Action bar */
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  gap: 12px;
+}
+
+/* Drag and drop */
+.drag-zone {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.drag-item {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(245, 158, 11, 0.1));
+  border: 2px solid rgba(99, 102, 241, 0.4);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: grab;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.drag-item:hover {
+  transform: scale(1.05);
+  border-color: var(--accent);
+}
+
+.drag-item:active { cursor: grabbing; }
+
+.drag-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.drop-zones {
+  display: grid;
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.drop-zone {
+  background: rgba(15, 23, 42, 0.5);
+  border: 2px dashed rgba(99, 102, 241, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 80px;
+  transition: all 0.2s;
+}
+
+.drop-zone.over {
+  border-color: var(--accent);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.drop-zone-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drop-zone-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.dropped-item {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.dropped-item .remove-x {
+  opacity: 0.7;
+  font-size: 14px;
+}
+
+.dropped-item .remove-x:hover { opacity: 1; }
+
+/* Matching game */
+.match-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.match-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.match-item {
+  background: rgba(15, 23, 42, 0.6);
+  border: 2px solid rgba(99, 102, 241, 0.25);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 14px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.match-item:hover {
+  border-color: var(--primary);
+}
+
+.match-item.selected {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+.match-item.matched {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--success);
+  color: var(--success-light);
+  cursor: default;
+}
+
+.match-item.wrong {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--danger);
+  animation: shake 0.4s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* True/False */
+.tf-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.tf-btn {
+  padding: 24px;
+  border-radius: 14px;
+  border: 2px solid;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.tf-btn.true {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success);
+  color: var(--success-light);
+}
+
+.tf-btn.false {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger);
+  color: #fca5a5;
+}
+
+.tf-btn:hover:not(.disabled) {
+  transform: translateY(-3px);
+}
+
+.tf-btn.selected {
+  transform: scale(1.02);
+}
+
+/* Fill in the blank */
+.fill-blank {
+  font-size: 18px;
+  line-height: 1.8;
+  margin: 16px 0;
+  color: var(--text-light);
+}
+
+.fill-input {
+  display: inline-block;
+  width: 200px;
+  padding: 6px 12px;
+  margin: 0 4px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 2px solid rgba(99, 102, 241, 0.4);
+  border-radius: 8px;
+  color: var(--text-light);
+  font-size: 15px;
+  font-family: inherit;
+  text-align: center;
+}
+
+.fill-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Chapter complete */
+.complete-screen {
+  text-align: center;
+  padding: 20px;
+}
+
+.complete-icon {
+  font-size: 70px;
+  margin-bottom: 16px;
+  display: inline-block;
+  animation: pop 0.6s ease;
+}
+
+@keyframes pop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.complete-screen h2 {
+  font-size: 28px;
+  margin-bottom: 12px;
+  color: var(--success-light);
+}
+
+.complete-screen p {
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  line-height: 1.7;
+}
+
+.stars-display {
+  font-size: 36px;
+  margin: 20px 0;
+  letter-spacing: 8px;
+}
+
+.star { color: rgba(148, 163, 184, 0.3); }
+.star.earned { color: var(--warning); animation: starPop 0.5s ease; }
+
+@keyframes starPop {
+  0% { transform: scale(0) rotate(-180deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.summary-list {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 600px;
+  text-align: left;
+}
+
+.summary-list h4 {
+  color: var(--accent);
+  margin-bottom: 12px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.summary-list ul {
+  list-style: none;
+}
+
+.summary-list li {
+  padding: 8px 0;
+  padding-left: 24px;
+  position: relative;
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.summary-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* Certificate */
+.certificate {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #78350f;
+  padding: 40px;
+  border-radius: 20px;
+  border: 8px double #92400e;
+  margin: 20px 0;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.certificate::before, .certificate::after {
+  content: '🎓';
+  position: absolute;
+  font-size: 40px;
+  top: 10px;
+}
+
+.certificate::before { left: 20px; }
+.certificate::after { right: 20px; }
+
+.cert-title {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #78350f;
+}
+
+.cert-subtitle {
+  font-size: 14px;
+  color: #92400e;
+  margin-bottom: 24px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.cert-body {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #78350f;
+  margin: 20px 0;
+}
+
+.cert-name {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 16px 0;
+  border-bottom: 2px solid #92400e;
+  display: inline-block;
+  padding: 0 20px 4px;
+}
+
+.cert-score {
+  font-size: 18px;
+  margin: 16px 0;
+}
+
+.cert-footer {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 30px;
+  font-size: 12px;
+  color: #92400e;
+}
+
+.cert-sig {
+  border-top: 1px solid #92400e;
+  padding-top: 6px;
+  margin-top: 30px;
+}
+
+.name-input {
+  padding: 10px 16px;
+  border: 2px solid #92400e;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  background: rgba(255,255,255,0.5);
+  color: #78350f;
+  text-align: center;
+  margin: 10px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 1000;
+  transform: translateX(400px);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 350px;
+}
+
+.toast.show { transform: translateX(0); }
+.toast.success { border-color: var(--success); }
+.toast.error { border-color: var(--danger); }
+.toast.info { border-color: var(--primary); }
+
+/* Map / Chapter selection */
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.map-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 2px solid rgba(99, 102, 241, 0.25);
+  border-radius: 16px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.map-card:hover:not(.locked) {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.2);
+}
+
+.map-card.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.map-card.completed {
+  border-color: var(--success);
+}
+
+.map-card-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.map-card h4 {
+  font-size: 16px;
+  margin-bottom: 6px;
+  color: var(--text-light);
+}
+
+.map-card p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.map-card-status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 18px;
+}
+
+.map-card-stars {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--warning);
+  letter-spacing: 2px;
+}
+
+/* Final results */
+.final-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.stat-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary-light), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app { padding: 12px; }
+  .card { padding: 20px; }
+  .header { flex-direction: column; gap: 12px; }
+  .welcome h2 { font-size: 26px; }
+  .chapter-overview { grid-template-columns: 1fr; }
+  .match-grid { grid-template-columns: 1fr; }
+  .tf-buttons { grid-template-columns: 1fr; }
+  .question-text { font-size: 16px; }
+  .cert-title { font-size: 22px; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🎓</div>
+      <div class="logo-text">
+        <h1>Projeto em Ação</h1>
+        <p>A Jornada do Pesquisador</p>
+      </div>
+    </div>
+    <div class="hud">
+      <div class="hud-item">
+        <span class="hud-icon">⭐</span>
+        <span>Pontos: <span class="score-val" id="scoreVal">0</span></span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-icon">🏆</span>
+        <span>Estrelas: <span class="stars-val" id="starsVal">0</span>/15</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-icon">📍</span>
+        <span>Fase: <span class="phase-val" id="phaseVal">0</span>/5</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Progress -->
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+  </div>
+
+  <!-- Main Card -->
+  <main class="card" id="mainCard">
+    <!-- Content injected by JS -->
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== GAME STATE =====================
+const state = {
+  screen: 'welcome',
+  score: 0,
+  stars: 0,
+  currentChapter: 0,
+  currentStep: 0,
+  chapterStars: [0, 0, 0, 0, 0],
+  chapterCompleted: [false, false, false, false, false],
+  studentName: ''
+};
+
+// ===================== CHAPTERS DEFINITION =====================
+const chapters = [
+  {
+    id: 1,
+    title: 'A Busca pelo Conhecimento',
+    subtitle: 'Semanas 7-8 · Pesquisa Bibliográfica',
+    icon: '🔍',
+    description: 'Aprenda a localizar, selecionar e avaliar fontes científicas para o seu projeto.',
+    steps: [
+      // Step 1: narration
+      {
+        type: 'narration',
+        speaker: 'Professora Orientadora',
+        text: 'Você decidiu construir um sistema de reconhecimento facial para controle de acesso ao laboratório. Mas antes de programar, precisamos entender o que já existe sobre o tema. Vamos aprender a pesquisar como um verdadeiro cientista!',
+        cta: 'Iniciar desafio →'
+      },
+      // Step 2: keyword question
+      {
+        type: 'quiz',
+        question: 'Ao pesquisar sobre "inteligência artificial aplicada à detecção de ataques em redes", qual combinação de palavras-chave é a mais adequada para iniciar sua busca em bases internacionais?',
+        hint: 'Lembre-se: use termos em português E inglês.',
+        options: [
+          { text: 'Apenas "redes" e "segurança"', correct: false, feedback: 'Termos muito amplos retornarão milhares de resultados pouco relevantes. Precisamos ser específicos.' },
+          { text: 'Network Security, Intrusion Detection, Machine Learning, Anomaly Detection', correct: true, feedback: 'Perfeito! Combinar termos em inglês relevantes aumenta a precisão da busca em bases internacionais como IEEE Xplore e ACM.' },
+          { text: 'Apenas "inteligência artificial"', correct: false, feedback: 'Termo isolado é genérico demais. A busca retornará tudo sobre IA, sem foco em segurança.' },
+          { text: 'Google, Facebook, Twitter', correct: false, feedback: 'Esses não são termos científicos. Use palavras-chave acadêmicas relacionadas ao problema.' }
+        ]
+      },
+      // Step 3: search expression
+      {
+        type: 'quiz',
+        question: 'Qual expressão de busca utiliza corretamente os operadores booleanos para combinar conceitos?',
+        hint: 'Operadores AND, OR e NOT ajudam a refinar resultados.',
+        options: [
+          { text: 'machine learning intrusion detection', correct: false, feedback: 'Sem operadores, a busca pode retornar resultados que contenham qualquer uma das palavras, sem relação entre elas.' },
+          { text: '("machine learning" OR "artificial intelligence") AND "intrusion detection"', correct: true, feedback: 'Excelente! O OR expande sinônimos dentro do parênteses, e o AND exige a presença do tema principal. Expressão bem construída!' },
+          { text: 'machine learning NOT artificial intelligence NOT intrusion', correct: false, feedback: 'Excesso de NOT pode excluir resultados relevantes. Use NOT com cautela, apenas para eliminar ruídos.' },
+          { text: 'todos os artigos sobre IA', correct: false, feedback: 'Não é uma expressão de busca válida. Use operadores booleanos em bases acadêmicas.' }
+        ]
+      },
+      // Step 4: database matching
+      {
+        type: 'match',
+        title: 'Conecte cada base científica à sua principal utilidade:',
+        hint: 'Clique em um item da coluna esquerda e depois em seu par na coluna direita.',
+        pairs: [
+          { left: 'Google Acadêmico', right: 'Busca ampla de artigos, teses e livros' },
+          { left: 'IEEE Xplore', right: 'Computação, engenharia e redes' },
+          { left: 'ACM Digital Library', right: 'Ciência da Computação e software' },
+          { left: 'SciELO', right: 'Periódicos científicos em acesso aberto' },
+          { left: 'Portal CAPES', right: 'Acesso a diversas bases via instituição' }
+        ]
+      },
+      // Step 5: source evaluation
+      {
+        type: 'quiz',
+        question: 'Ao avaliar uma publicação encontrada, quais critérios você deve observar para decidir se vale a pena ler integralmente?',
+        hint: 'Não leia tudo de imediato. Faça uma triagem inteligente.',
+        options: [
+          { text: 'Apenas o ano de publicação', correct: false, feedback: 'A data é importante, mas não é o único critério. Avalie também relevância e método.' },
+          { text: 'Título, resumo, método, resultados, data e aderência ao problema', correct: true, feedback: 'Correto! Essa triagem evita perda de tempo com fontes irrelevantes. Reserve a leitura integral para as mais relevantes.' },
+          { text: 'Apenas o número de páginas', correct: false, feedback: 'Tamanho não indica qualidade. Um artigo curto pode ser mais impactante que um longo.' },
+          { text: 'Se o artigo é gratuito', correct: false, feedback: 'Acesso aberto é conveniente, mas não deve ser o critério principal de qualidade científica.' }
+        ]
+      }
+    ],
+    summary: [
+      'Use palavras-chave em português e inglês para ampliar a busca',
+      'Combine termos com operadores AND, OR e NOT',
+      'Conheça as bases: Google Acadêmico, IEEE, ACM, SciELO e CAPES',
+      'Avalie título, resumo, método, resultados e aderência antes de ler'
+    ]
+  },
+  {
+    id: 2,
+    title: 'Construindo o Referencial Teórico',
+    subtitle: 'Organização dos Conceitos',
+    icon: '📚',
+    description: 'Estruture o referencial teórico organizando conceitos em seções lógicas.',
+    steps: [
+      {
+        type: 'narration',
+        speaker: 'Professora Orientadora',
+        text: 'Agora que você já reuniu as fontes, é hora de organizar o conhecimento. O referencial teórico não é um amontoado de resumos — é uma estrutura que sustenta sua pesquisa. Vamos aprender a montá-lo!',
+        cta: 'Organizar o referencial →'
+      },
+      {
+        type: 'quiz',
+        question: 'Qual é a finalidade principal do referencial teórico em um projeto de pesquisa?',
+        hint: 'Pense no que ele "sustenta".',
+        options: [
+          { text: 'Preencher páginas obrigatórias do trabalho', correct: false, feedback: 'Não! O referencial não é enchimento. Ele tem função científica essencial.' },
+          { text: 'Demonstrar o que já se sabe e como esse conhecimento sustenta a investigação', correct: true, feedback: 'Exato! O referencial apresenta conceitos, teorias e estudos que fundamentam sua pesquisa e justificam suas escolhas.' },
+          { text: 'Listar todos os sites visitados durante a pesquisa', correct: false, feedback: 'Isso seria uma lista de referências, não o referencial teórico. São coisas diferentes.' },
+          { text: 'Apresentar apenas a opinião pessoal do autor', correct: false, feedback: 'O referencial é fundamentado em fontes científicas, não em opinião pessoal sem base.' }
+        ]
+      },
+      {
+        type: 'sort',
+        title: 'Organize as seções do referencial teórico na ordem correta (das mais gerais para as mais específicas):',
+        hint: 'Comece pelos fundamentos e termine com a comparação de soluções.',
+        items: [
+          { id: 'redes', text: '2.1 Redes de Computadores: protocolos, endereçamento e comunicação', order: 1 },
+          { id: 'seguranca', text: '2.2 Segurança da Informação: ameaças, vulnerabilidades e proteção', order: 2 },
+          { id: 'monitoramento', text: '2.3 Monitoramento de Redes: disponibilidade, latência e análise de tráfego', order: 3 },
+          { id: 'ia', text: '2.4 Inteligência Artificial: aprendizado de máquina e detecção de anomalias', order: 4 },
+          { id: 'relacionados', text: '2.5 Trabalhos Relacionados: comparação de soluções e lacunas', order: 5 }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Em um projeto sobre "IA aplicada à detecção de ataques em redes", qual fluxo de trabalho correto para a pesquisa bibliográfica?',
+        hint: 'Pense na ordem lógica das etapas.',
+        options: [
+          { text: 'Redigir o referencial → pesquisar publicações → definir tema → selecionar fontes', correct: false, feedback: 'Não dá para redigir antes de pesquisar! A ordem está invertida.' },
+          { text: 'Definir tema e questão → pesquisar publicações → selecionar fontes → analisar e comparar → organizar conceitos e lacunas → redigir o referencial', correct: true, feedback: 'Perfeito! Esse é o fluxo correto: parte do tema, passa pela busca e análise, e só então redige.' },
+          { text: 'Selecionar fontes → redigir → pesquisar → definir tema', correct: false, feedback: 'Você não pode selecionar fontes antes de definir o tema. A ordem está errada.' },
+          { text: 'Organizar conceitos → redigir → pesquisar → comparar', correct: false, feedback: 'Não se organiza conceitos sem antes pesquisar e analisar as fontes.' }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Qual NÃO é um benefício da revisão bibliográfica bem feita?',
+        hint: 'Analise cada alternativa cuidadosamente.',
+        options: [
+          { text: 'Conhecer o estado atual do conhecimento e as principais abordagens', correct: false, feedback: 'Esse é um benefício real — entender o estado da arte é essencial.' },
+          { text: 'Identificar tecnologias, métodos e resultados já publicados', correct: false, feedback: 'Esse é um benefício real — mapear o que já existe evita reinventar a roda.' },
+          { text: 'Reconhecer limitações, divergências e lacunas de pesquisa', correct: false, feedback: 'Esse é um benefício real — identificar lacunas justifica a contribuição do seu projeto.' },
+          { text: 'Copiar integralmente os artigos encontrados para preencher o referencial', correct: true, feedback: 'Isso é PLAGIO! A revisão serve para sintetizar e comparar com suas palavras, nunca copiar.' }
+        ]
+      }
+    ],
+    summary: [
+      'O referencial teórico fundamenta cientificamente a pesquisa',
+      'Estruture em seções que vão do geral para o específico',
+      'Siga o fluxo: tema → busca → seleção → análise → redação',
+      'Identifique lacunas que justifiquem sua contribuição'
+    ]
+  },
+  {
+    id: 3,
+    title: 'Trabalhos Relacionados',
+    subtitle: 'Comparando Soluções Existentes',
+    icon: '⚖️',
+    description: 'Aprenda a comparar pesquisas anteriores e identificar a contribuição do seu projeto.',
+    steps: [
+      {
+        type: 'narration',
+        speaker: 'Professora Orientadora',
+        text: 'Você já tem o referencial estruturado. Agora precisa comparar seu projeto com o que já existe. Não basta listar resumos — é preciso analisar o que cada estudo fez, o que alcançou e o que deixou de resolver. Vamos lá!',
+        cta: 'Comparar trabalhos →'
+      },
+      {
+        type: 'quiz',
+        question: 'Qual é a diferença entre o referencial teórico e os trabalhos relacionados?',
+        hint: 'Pense no foco de cada um.',
+        options: [
+          { text: 'São a mesma coisa com nomes diferentes', correct: false, feedback: 'São seções distintas. Embora complementares, têm focos diferentes.' },
+          { text: 'O referencial explica fundamentos; os trabalhos relacionados comparam soluções, metodologias, resultados e limitações', correct: true, feedback: 'Exato! O referencial constrói a base teórica; os trabalhos relacionados posicionam seu projeto frente às soluções existentes.' },
+          { text: 'O referencial vem depois dos trabalhos relacionados', correct: false, feedback: 'A ordem estrutural pode variar, mas essa não é a diferença conceitual entre eles.' },
+          { text: 'Trabalhos relacionados são apenas artigos em inglês', correct: false, feedback: 'O idioma não define o que é um trabalho relacionado. Pode estar em qualquer idioma.' }
+        ]
+      },
+      {
+        type: 'match',
+        title: 'Analise os estudos ilustrativos e conecte cada abordagem à sua limitação:',
+        hint: 'Clique em um item de cada lado para formar os pares.',
+        pairs: [
+          { left: 'Estudo A · Monitoramento ICMP', right: 'Não classifica ataques' },
+          { left: 'Estudo B · Aprendizado de máquina', right: 'Depende de dados de treinamento' },
+          { left: 'Estudo C · Inspeção de pacotes', right: 'Maior custo computacional' },
+          { left: 'Projeto proposto · Detecção de anomalias', right: 'Contribuição a validar' }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Em uma tabela comparativa de trabalhos relacionados, quais colunas são essenciais?',
+        hint: 'Pense no que precisa ser comparado.',
+        options: [
+          { text: 'Apenas o nome dos autores e o ano', correct: false, feedback: 'Faltam informações cruciais para uma comparação útil. Não é suficiente.' },
+          { text: 'Estudo, abordagem, resultados, limitações e a contribuição do projeto proposto', correct: true, feedback: 'Perfeito! Essas colunas permitem ao leitor entender o cenário e posicionar seu projeto frente ao estado da arte.' },
+          { text: 'Apenas o link DOI de cada artigo', correct: false, feedback: 'O DOI é importante para referência, mas não substitui a análise comparativa.' },
+          { text: 'Apenas o número de citações de cada trabalho', correct: false, feedback: 'Número de citações indica impacto, mas não substitui análise de abordagem e limitações.' }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Por que é importante identificar as LACUNAS deixadas pelos trabalhos relacionados?',
+        hint: 'Pense na justificativa do seu projeto.',
+        options: [
+          { text: 'Para criticar os outros autores publicamente', correct: false, feedback: 'Não é sobre criticar por criticar. É uma análise técnica, não ataque pessoal.' },
+          { text: 'Para justificar a contribuição e a originalidade do projeto proposto', correct: true, feedback: 'Isso! Identificar lacunas mostra onde seu projeto agrega valor e justifica por que ele é necessário.' },
+          { text: 'Para aumentar a contagem de páginas do trabalho', correct: false, feedback: 'Análise de lacunas não é enchimento. Tem função argumentativa clara.' },
+          { text: 'Para provar que os outros autores estão errados', correct: false, feedback: 'Não se trata de certo/errado, mas de identificar o que ainda não foi resolvido.' }
+        ]
+      }
+    ],
+    summary: [
+      'Trabalhos relacionados comparam soluções, metodologias e resultados',
+      'Monte tabelas comparativas com abordagem, resultados e limitações',
+      'Identifique lacunas para justificar a contribuição do seu projeto',
+      'Analise criticamente — não apenas resuma!'
+    ]
+  },
+  {
+    id: 4,
+    title: 'Ética e Integridade Científica',
+    subtitle: 'Semanas 9-10 · Plágio, IA e Dados',
+    icon: '🛡️',
+    description: 'Compreenda o plágio, o uso ético da IA e a proteção de dados pessoais.',
+    steps: [
+      {
+        type: 'narration',
+        speaker: 'Professora Orientadora',
+        text: 'Sua pesquisa está tomando forma. Mas um bom projeto não é apenas bem-feito — precisa ser ÉTICO. Vamos falar sobre plágio, uso responsável da inteligência artificial e proteção de dados pessoais. Esses temas podem definir o sucesso ou o fracasso do seu trabalho!',
+        cta: 'Aprender ética →'
+      },
+      {
+        type: 'match',
+        title: 'Conecte cada prática antiética à sua descrição:',
+        hint: 'Identifique o tipo correreto de cada prática.',
+        pairs: [
+          { left: 'Plágio direto', right: 'Copiar texto sem atribuir autoria' },
+          { left: 'Paráfrase inadequada', right: 'Apropriar-se da ideia sem citar a fonte' },
+          { left: 'Plágio de tradução', right: 'Traduzir texto alheio como se fosse original' },
+          { left: 'Autoplágio', right: 'Reutilizar produção própria sem transparência' },
+          { left: 'Fabricação de dados', right: 'Inventar observações ou resultados' },
+          { left: 'Falsificação de dados', right: 'Manipular dados ou resultados indevidamente' }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Um colega trocou algumas palavras de um parágrafo de um artigo por sinônimos e não citou a fonte. Isso é aceitável?',
+        hint: 'Lembre-se: a ideia continua sendo do autor original.',
+        options: [
+          { text: 'Sim, porque ele reescreveu com palavras diferentes', correct: false, feedback: 'ERRADO! Trocar palavras por sinônimos não transforma a ideia em autoria própria. Isso é paráfrase inadequada — um tipo de plágio.' },
+          { text: 'Não. A ideia original exige citação da fonte, mesmo com palavras próprias', correct: true, feedback: 'Perfeito! A paráfrase exige citação. O correto é compreender o conteúdo, escrever com suas palavras e citar a fonte.' },
+          { text: 'Sim, se o texto tiver menos de 3 linhas', correct: false, feedback: 'O tamanho do texto não isenta da citação. Toda paráfrase precisa de atribuição.' },
+          { text: 'Depende do idioma original do artigo', correct: false, feedback: 'O idioma não altera a regra. Atribuição da fonte é sempre obrigatória.' }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Sobre o uso responsável da Inteligência Artificial na pesquisa, qual afirmação está CORRETA?',
+        hint: 'A IA é ferramenta — não substitui o pesquisador.',
+        options: [
+          { text: 'A IA pode ser usada para fabricar resultados que confirmem sua hipótese', correct: false, feedback: 'Absolutamente não! Fabricar resultados é falsificação, antiético independentemente de usar IA.' },
+          { text: 'A IA pode apoiar buscas exploratórias, organização de ideias e revisão linguística, sempre com verificação', correct: true, feedback: 'Correto! A IA é uma ferramenta de apoio. Toda informação e referência sugerida por IA precisa ser verificada.' },
+          { text: 'Referências geradas por IA podem ser usadas diretamente sem conferir', correct: false, feedback: 'Perigoso! A IA pode inventar referências (alucinação). Sempre verifique se a publicação existe.' },
+          { text: 'A IA pode ocultar a autoria indevidamente para evitar penalidades', correct: false, feedback: 'Ocultar autoria é antiético. A transparência sobre o uso de IA é fundamental.' }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Em um projeto com reconhecimento facial, os dados biométricos são coletados. Qual cuidado ético é indispensável?',
+        hint: 'Pense na LGPD e dados sensíveis.',
+        options: [
+          { text: 'Nenhum, dados biométricos são como qualquer outro dado', correct: false, feedback: 'Errado! Dados biométricos são dados pessoais SENSÍVEIS pela LGPD e exigem cuidados especiais.' },
+          { text: 'Considerar finalidade, necessidade, transparência, segurança, base legal e eventual avaliação ética específica', correct: true, feedback: 'Exatamente! Dados biométricos vinculados a pessoas são dados pessoais sensíveis. Exigem tratamento cuidadoso conforme a LGPD.' },
+          { text: 'Apenas armazenar em qualquer servidor barato', correct: false, feedback: 'A segurança do armazenamento é crítica. Servidores sem padrão podem comprometer a privacidade.' },
+          { text: 'Coletar sem avisar os usuários para não causar desconforto', correct: false, feedback: 'A transparência é obrigatória! Os titulares devem ser informados sobre a coleta e finalidade.' }
+        ]
+      }
+    ],
+    summary: [
+      'Plágio direto, paráfrase inadequada, tradução, autoplágio: todos são antiéticos',
+      'IA é ferramenta de apoio — toda informação gerada deve ser verificada',
+      'Dados biométricos são dados pessoais sensíveis (LGPD)',
+      'Considere finalidade, necessidade, transparência e base legal'
+    ]
+  },
+  {
+    id: 5,
+    title: 'Normas ABNT',
+    subtitle: 'Semanas 9-10 · Citações e Referências',
+    icon: '📋',
+    description: 'Domine as normas ABNT para citações, referências e formatação acadêmica.',
+    steps: [
+      {
+        type: 'narration',
+        speaker: 'Professora Orientadora',
+        text: 'Última fase! Sua pesquisa está ética e fundamentada. Agora precisamos formatar tudo dentro das normas ABNT. Afinal, um trabalho excelente pode ser rejeitado apenas por erros de formatação. Vamos dominar as regras!',
+        cta: 'Dominar as normas →'
+      },
+      {
+        type: 'quiz',
+        question: 'O que significa a sigla ABNT e qual sua função?',
+        hint: 'Pense em padronização.',
+        options: [
+          { text: 'Associação Brasileira de Normas Técnicas — estabelece normas que padronizam trabalhos acadêmicos', correct: true, feedback: 'Correto! A ABNT padroniza apresentação, citações, referências e outros elementos. Também é preciso seguir o manual da instituição.' },
+          { text: 'Agência Brasileira de Notícias Tecnológicas — divulga pesquisas', correct: false, feedback: 'Não é isso. A ABNT não é uma agência de notícias.' },
+          { text: 'Academia Brasileira de Números e Tabelas — faz cálculos estatísticos', correct: false, feedback: 'Incorreto. A ABNT não faz cálculos estatísticos.' },
+          { text: 'Associação de Bibliotecas Nacionais Técnicas — empresta livros', correct: false, feedback: 'Não. A ABNT não é uma rede de bibliotecas.' }
+        ]
+      },
+      {
+        type: 'match',
+        title: 'Conecte cada norma ABNT ao seu assunto:',
+        hint: 'Identifique a norma correta para cada finalidade.',
+        pairs: [
+          { left: 'ABNT NBR 14724:2024', right: 'Apresentação de trabalhos acadêmicos' },
+          { left: 'ABNT NBR 10520:2023', right: 'Citações em documentos' },
+          { left: 'ABNT NBR 6023:2025', right: 'Referências' },
+          { left: 'ABNT NBR 6024:2012', right: 'Numeração progressiva das seções' },
+          { left: 'ABNT NBR 6028:2021', right: 'Resumo, resenha e recensão' }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Qual é a formatação geral recomendada para trabalhos acadêmicos segundo a ABNT?',
+        hint: 'Lembre-se: confirme sempre no modelo institucional.',
+        options: [
+          { text: 'Papel A4, fonte 12, margens 3cm (sup./esq.) e 2cm (inf./dir.), espaçamento 1,5', correct: true, feedback: 'Perfeito! Essa é a referência geral. Sempre confirme fonte, recuos e detalhes no template da sua instituição.' },
+          { text: 'Paisagem, fonte 14, margens iguais de 1cm, espaçamento simples', correct: false, feedback: 'Não. O padrão é retrato, com margens específicas e espaçamento 1,5 no corpo.' },
+          { text: 'Qualquer formato, desde que seja colorido', correct: false, feedback: 'A ABNT especifica formato, fonte, margens e espaçamento. Não é livre.' },
+          { text: 'Apenas texto justificado em toda a página, sem regras de margem', correct: false, feedback: 'Há regras claras de margem e formatação. Justificação não é a regra principal.' }
+        ]
+      },
+      {
+        type: 'sort',
+        title: 'Organize os elementos de uma referência de artigo científico na ordem ABNT correta:',
+        hint: 'Pense na estrutura: do autor para a fonte de acesso.',
+        items: [
+          { id: 'autor', text: 'SOBRENOME, Prenome. (autor)', order: 1 },
+          { id: 'titulo', text: 'Título do artigo.', order: 2 },
+          { id: 'periodico', text: 'Título do periódico,', order: 3 },
+          { id: 'dados', text: 'volume, número, páginas, ano,', order: 4 },
+          { id: 'doi', text: 'DOI ou endereço eletrônico.', order: 5 }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Qual é a diferença entre citação direta CURTA e citação direta LONGA?',
+        hint: 'O critério é o número de linhas.',
+        options: [
+          { text: 'Curta tem até 3 linhas (entre aspas); longa tem mais de 3 linhas (bloco, sem aspas, recuo, fonte menor, espaçamento simples)', correct: true, feedback: 'Exatamente! A citação direta curta vai entre aspas no texto. A longa é destacada em bloco com formatação específica.' },
+          { text: 'Curta é do livro; longa é da internet', correct: false, feedback: 'A fonte não define se é curta ou longa. O critério é o número de linhas.' },
+          { text: 'Curta não precisa de citação; longa precisa', correct: false, feedback: 'Ambas exigem citação da fonte. O tamanho não isenta da atribuição.' },
+          { text: 'Curta é em português; longa é em outro idioma', correct: false, feedback: 'O idioma não define o tipo de citação direta. O critério é o número de linhas.' }
+        ]
+      },
+      {
+        type: 'quiz',
+        question: 'Você encontra a seguinte afirmação em um artigo: "a segurança da informação exige monitoramento contínuo" (Silva, 2024, p. 15). Que tipo de citação é essa?',
+        hint: 'Repare nas aspas e na indicação da página.',
+        options: [
+          { text: 'Citação indireta', correct: false, feedback: 'Não. Citação indireta é quando reescrevemos a ideia com nossas palavras. Aqui há reprodução literal entre aspas.' },
+          { text: 'Citação direta curta (até 3 linhas, entre aspas, com indicação da fonte e página)', correct: true, feedback: 'Perfeito! É direta (reprodução literal), curta (até 3 linhas), entre aspas, com autor, ano e página.' },
+          { text: 'Citação direta longa', correct: false, feedback: 'Não. Citação direta longa tem mais de 3 linhas e vai em bloco recuado, sem aspas.' },
+          { text: 'Não é uma citação, é uma opinião do autor do projeto', correct: false, feedback: 'É sim uma citação! A presença de (Silva, 2024, p. 15) indica atribuição a outra fonte.' }
+        ]
+      }
+    ],
+    summary: [
+      'ABNT padroniza trabalhos acadêmicos — siga também o template da instituição',
+      'Conheça as principais normas: 14724, 10520, 6023, 6024 e 6028',
+      'Citação direta curta (≤3 linhas, aspas) vs. longa (>3 linhas, bloco)',
+      'Referências: autor → título → periódico → dados → DOI/endereço'
+    ]
+  }
+];
+
+// ===================== UTILITIES =====================
+function $(sel) { return document.querySelector(sel); }
+function el(tag, className, content) {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  if (content !== undefined) e.innerHTML = content;
+  return e;
+}
+
+function showToast(message, type = 'info', duration = 3000) {
+  const toast = $('#toast');
+  toast.className = `toast ${type}`;
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> <span>${message}</span>`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+function updateHUD() {
+  $('#scoreVal').textContent = state.score;
+  $('#starsVal').textContent = state.stars;
+  $('#phaseVal').textContent = state.currentChapter || 0;
+  const totalSteps = chapters.reduce((sum, c) => sum + c.steps.length, 0);
+  const completedSteps = chapters.reduce((sum, c, i) => 
+    sum + (state.chapterCompleted[i] ? c.steps.length : 0), 0);
+  const progress = (completedSteps / totalSteps) * 100;
+  $('#progressFill').style.width = progress + '%';
+}
+
+function render(html) {
+  $('#mainCard').innerHTML = html;
+  $('#mainCard').scrollTop = 0;
+}
+
+// ===================== SCREEN: WELCOME =====================
+function renderWelcome() {
+  const chapterCards = chapters.map((c, i) => `
+    <div class="chapter-card">
+      <div class="chapter-num">Capítulo ${i + 1}</div>
+      <h4>${c.icon} ${c.title}</h4>
+      <p>${c.description}</p>
+    </div>
+  `).join('');
+
+  render(`
+    <div class="welcome">
+      <div class="welcome-emoji">🎓</div>
+      <h2>Projeto em Ação</h2>
+      <p>Bem-vindo(a) à jornada do pesquisador! Este jogo vai te guiar, passo a passo, pela construção do seu projeto tecnológico — do referencial teórico às normas ABNT.</p>
+      
+      <div class="story-box">
+        <strong>🎤 Professora Orientadora:</strong><br><br>
+        "Turma, durante essas quatro semanas, vamos transformar uma ideia em uma proposta sustentada pelo conhecimento científico. Primeiro, aprenderemos a localizar e comparar pesquisas. Depois, vamos aplicar as normas ABNT e discutir a ética acadêmica. Um bom projeto não é aquele que tem mais páginas, mas aquele que apresenta um problema claro, usa fontes confiáveis e justifica sua contribuição."
+      </div>
+
+      <h3 style="margin: 32px 0 16px 0; color: var(--accent); font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">📋 Sua Jornada — 5 Capítulos</h3>
+      <div class="chapter-overview">${chapterCards}</div>
+
+      <div style="margin-top: 32px;">
+        <button class="btn btn-primary" onclick="startGame()">🚀 Começar Aventura</button>
+      </div>
+
+      <p style="margin-top: 24px; font-size: 13px; color: var(--text-muted);">
+        💡 Dica: Cada capítulo avalia seus conhecimentos. Acerte as perguntas para ganhar estrelas ⭐ e desbloquear o próximo capítulo!
+      </p>
+    </div>
+  `);
+}
+
+// ===================== SCREEN: CHAPTER MAP =====================
+function renderMap() {
+  const cards = chapters.map((c, i) => {
+    const isLocked = i > 0 && !state.chapterCompleted[i - 1];
+    const isCompleted = state.chapterCompleted[i];
+    const stars = state.chapterStars[i];
+    const starsStr = '★★★'.split('').map((s, idx) => 
+      `<span class="star ${idx < stars ? 'earned' : ''}">★</span>`).join('');
+    
+    return `
+      <div class="map-card ${isLocked ? 'locked' : ''} ${isCompleted ? 'completed' : ''}" 
+           onclick="${isLocked ? '' : `startChapter(${i})`}">
+        <div class="map-card-status">
+          ${isLocked ? '🔒' : (isCompleted ? '✅' : '▶️')}
+        </div>
+        <div class="map-card-icon">${c.icon}</div>
+        <h4>${c.title}</h4>
+        <p>${c.description}</p>
+        <div class="map-card-stars">${starsStr}</div>
+      </div>
+    `;
+  }).join('');
+
+  const allDone = state.chapterCompleted.every(v => v);
+  
+  render(`
+    <div style="text-align: center; margin-bottom: 24px;">
+      <h2 style="font-size: 28px; margin-bottom: 8px;">🗺️ Mapa da Jornada</h2>
+      <p style="color: var(--text-muted);">Escolha um capítulo para explorar. Complete um para desbloquear o próximo!</p>
+    </div>
+    <div class="map-grid">${cards}</div>
+    ${allDone ? `
+      <div style="text-align: center; margin-top: 32px;">
+        <button class="btn btn-accent" onclick="renderFinal()">🏆 Ver Resultado Final</button>
+      </div>
+    ` : `
+      <div style="text-align: center; margin-top: 24px;">
+        <button class="btn btn-secondary" onclick="renderWelcome()">← Voltar ao Início</button>
+      </div>
+    `}
+  `);
+}
+
+// ===================== START =====================
+function startGame() {
+  state.screen = 'map';
+  state.currentChapter = 0;
+  renderMap();
+}
+
+function startChapter(idx) {
+  state.currentChapter = idx;
+  state.currentStep = 0;
+  state.screen = 'chapter';
+  renderChapterStep();
+}
+
+// ===================== CHAPTER STEP RENDERER =====================
+function renderChapterStep() {
+  const chapter = chapters[state.currentChapter];
+  const step = chapter.steps[state.currentStep];
+  const totalSteps = chapter.steps.length;
+  const progress = ((state.currentStep) / totalSteps) * 100;
+
+  let content = `
+    <div class="chapter-header">
+      <div class="chapter-badge">${chapter.icon}</div>
+      <div class="chapter-info">
+        <div class="subtitle">Capítulo ${chapter.id} · Passo ${state.currentStep + 1} de ${totalSteps}</div>
+        <h3>${chapter.title}</h3>
+      </div>
+    </div>
+    <div class="progress-bar" style="margin-bottom: 20px;">
+      <div class="progress-fill" style="width: ${progress}%;"></div>
+    </div>
+  `;
+
+  if (step.type === 'narration') {
+    content += `
+      <div class="narration">
+        <span class="speaker">${step.speaker}</span>
+        ${step.text}
+      </div>
+      <div class="action-bar">
+        <button class="btn btn-secondary" onclick="renderMap()">← Voltar ao Mapa</button>
+        <button class="btn btn-primary" onclick="nextStep()">${step.cta}</button>
+      </div>
+    `;
+  } else if (step.type === 'quiz') {
+    content += renderQuiz(step);
+  } else if (step.type === 'match') {
+    content += renderMatch(step);
+  } else if (step.type === 'sort') {
+    content += renderSort(step);
+  }
+
+  render(content);
+
+  // Initialize interactive features
+  if (step.type === 'match') initMatch(step);
+  if (step.type === 'sort') initSort(step);
+}
+
+function renderQuiz(step) {
+  const options = step.options.map((opt, i) => `
+    <button class="option" data-idx="${i}" onclick="answerQuiz(${i})">
+      <div class="option-letter">${String.fromCharCode(65 + i)}</div>
+      <div>${opt.text}</div>
+    </button>
+  `).join('');
+
+  return `
+    <div class="question-box">
+      <div class="question-label">📝 Desafio</div>
+      <div class="question-text">${step.question}</div>
+      ${step.hint ? `<div class="question-hint">💡 ${step.hint}</div>` : ''}
+    </div>
+    <div class="options" id="optionsList">${options}</div>
+    <div class="feedback" id="feedback"></div>
+    <div class="action-bar">
+      <button class="btn btn-secondary" onclick="renderMap()">← Voltar ao Mapa</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextStep()" disabled>Próximo →</button>
+    </div>
+  `;
+}
+
+function answerQuiz(idx) {
+  const chapter = chapters[state.currentChapter];
+  const step = chapter.steps[state.currentStep];
+  const opt = step.options[idx];
+  const options = document.querySelectorAll('.option');
+  
+  options.forEach((o, i) => {
+    o.classList.add('disabled');
+    if (i === idx) {
+      o.classList.add(opt.correct ? 'correct' : 'incorrect');
+    }
+    // Show correct one if user got it wrong
+    if (!opt.correct && step.options[i].correct) {
+      o.classList.add('correct');
+    }
+  });
+
+  const fb = $('#feedback');
+  fb.className = `feedback show ${opt.correct ? 'correct' : 'incorrect'}`;
+  fb.innerHTML = `
+    <div class="feedback-title">${opt.correct ? '✅ Muito bem!' : '❌ Quase lá!'}</div>
+    <div class="feedback-text">${opt.feedback}</div>
+  `;
+
+  if (opt.correct) {
+    state.score += 100;
+    showToast('+100 pontos!', 'success');
+  } else {
+    state.score += 30;
+    showToast('+30 pontos pela tentativa', 'info');
+  }
+  updateHUD();
+  $('#nextBtn').disabled = false;
+}
+
+// ===================== MATCH GAME =====================
+let matchState = { selected: null, matched: 0, total: 0 };
+
+function renderMatch(step) {
+  const leftItems = step.pairs.map((p, i) => 
+    `<div class="match-item" data-side="left" data-idx="${i}" onclick="selectMatch('left', ${i})">${p.left}</div>`
+  ).join('');
+  
+  const rightItems = step.pairs.map((p, i) => 
+    `<div class="match-item" data-side="right" data-idx="${i}" onclick="selectMatch('right', ${i})">${p.right}</div>`
+  ).join('');
+
+  // Shuffle right column
+  const shuffled = step.pairs.map((p, i) => i).sort(() => Math.random() - 0.5);
+  const rightShuffled = shuffled.map(i => 
+    `<div class="match-item" data-side="right" data-idx="${i}" onclick="selectMatch('right', ${i})">${step.pairs[i].right}</div>`
+  ).join('');
+
+  return `
+    <div class="question-box">
+      <div class="question-label">🔗 Associação</div>
+      <div class="question-text">${step.title}</div>
+      ${step.hint ? `<div class="question-hint">💡 ${step.hint}</div>` : ''}
+    </div>
+    <div class="match-grid">
+      <div class="match-col" id="leftCol">${leftItems}</div>
+      <div class="match-col" id="rightCol">${rightShuffled}</div>
+    </div>
+    <div class="feedback" id="feedback"></div>
+    <div class="action-bar">
+      <button class="btn btn-secondary" onclick="renderMap()">← Voltar ao Mapa</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextStep()" disabled>Próximo →</button>
+    </div>
+  `;
+}
+
+function initMatch(step) {
+  matchState = { selected: null, matched: 0, total: step.pairs.length };
+}
+
+function selectMatch(side, idx) {
+  const items = document.querySelectorAll('.match-item');
+  items.forEach(i => { if (!i.classList.contains('matched')) i.classList.remove('selected'); });
+  
+  const item = document.querySelector(`.match-item[data-side="${side}"][data-idx="${idx}"]`);
+  if (item.classList.contains('matched')) return;
+  
+  item.classList.add('selected');
+
+  if (!matchState.selected) {
+    matchState.selected = { side, idx };
+  } else {
+    if (matchState.selected.side === side) {
+      // Same side - just change selection
+      matchState.selected = { side, idx };
+      return;
+    }
+    
+    // Different sides - check if match
+    const leftIdx = side === 'left' ? idx : matchState.selected.idx;
+    const rightIdx = side === 'right' ? idx : matchState.selected.idx;
+    
+    const leftItem = document.querySelector(`.match-item[data-side="left"][data-idx="${leftIdx}"]`);
+    const rightItem = document.querySelector(`.match-item[data-side="right"][data-idx="${rightIdx}"]`);
+    
+    if (leftIdx === rightIdx) {
+      // Correct match
+      leftItem.classList.remove('selected');
+      rightItem.classList.remove('selected');
+      leftItem.classList.add('matched');
+      rightItem.classList.add('matched');
+      matchState.matched++;
+      state.score += 50;
+      showToast('Par correto! +50 pontos', 'success');
+      updateHUD();
+      
+      if (matchState.matched === matchState.total) {
+        const fb = $('#feedback');
+        fb.className = 'feedback show correct';
+        fb.innerHTML = `
+          <div class="feedback-title">✅ Todos os pares corretos!</div>
+          <div class="feedback-text">Você conectou todas as informações com sucesso. Avance para o próximo desafio!</div>
+        `;
+        $('#nextBtn').disabled = false;
+      }
+    } else {
+      // Wrong match
+      leftItem.classList.add('wrong');
+      rightItem.classList.add('wrong');
+      setTimeout(() => {
+        leftItem.classList.remove('wrong', 'selected');
+        rightItem.classList.remove('wrong', 'selected');
+      }, 600);
+      showToast('Tente novamente!', 'error', 1500);
+    }
+    matchState.selected = null;
+  }
+}
+
+// ===================== SORT GAME =====================
+let sortState = { items: [], placed: [] };
+
+function renderSort(step) {
+  const shuffled = [...step.items].sort(() => Math.random() - 0.5);
+  sortState = { items: step.items, placed: [], shuffled };
+
+  const items = shuffled.map((item, i) => `
+    <div class="drag-item" draggable="true" data-id="${item.id}" id="drag-${item.id}">
+      ${item.text}
+    </div>
+  `).join('');
+
+  return `
+    <div class="question-box">
+      <div class="question-label">🔄 Ordenação</div>
+      <div class="question-text">${step.title}</div>
+      ${step.hint ? `<div class="question-hint">💡 ${step.hint}</div>` : ''}
+    </div>
+    <h4 style="color: var(--accent); margin: 16px 0 8px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">📋 Itens para ordenar:</h4>
+    <div class="drag-zone" id="dragZone">${items}</div>
+    <h4 style="color: var(--accent); margin: 16px 0 8px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">✅ Ordem correta:</h4>
+    <div class="drop-zones" id="dropZones">
+      ${step.items.map((_, i) => `
+        <div class="drop-zone" data-pos="${i}" ondrop="dropSort(event, ${i})" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)">
+          <div class="drop-zone-title">Posição ${i + 1}</div>
+          <div class="drop-zone-items" id="drop-items-${i}"></div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="feedback" id="feedback"></div>
+    <div class="action-bar">
+      <button class="btn btn-secondary" onclick="renderMap()">← Voltar ao Mapa</button>
+      <button class="btn btn-primary" id="checkBtn" onclick="checkSort()">Verificar Ordem</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextStep()" disabled style="display: none;">Próximo →</button>
+    </div>
+  `;
+}
+
+function initSort(step) {
+  const draggables = document.querySelectorAll('.drag-item');
+  draggables.forEach(d => {
+    d.addEventListener('dragstart', (e) => {
+      d.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', d.dataset.id);
+    });
+    d.addEventListener('dragend', () => d.classList.remove('dragging'));
+  });
+}
+
+function allowDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('over');
+}
+
+function leaveDrop(e) {
+  e.currentTarget.classList.remove('over');
+}
+
+function dropSort(e, pos) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('over');
+  const id = e.dataTransfer.getData('text/plain');
+  const dragged = document.getElementById(`drag-${id}`);
+  if (!dragged) return;
+  
+  // Remove from previous position if any
+  const oldContainer = dragged.parentElement;
+  if (oldContainer.classList.contains('drop-zone-items')) {
+    oldContainer.innerHTML = '';
+  }
+  
+  // Check if position already has an item
+  const target = document.getElementById(`drop-items-${pos}`);
+  if (target.children.length > 0) {
+    // Move existing item back to drag zone
+    const existing = target.children[0];
+    document.getElementById('dragZone').appendChild(existing);
+  }
+  
+  target.appendChild(dragged);
+}
+
+function checkSort() {
+  const chapter = chapters[state.currentChapter];
+  const step = chapter.steps[state.currentStep];
+  let allCorrect = true;
+  let allPlaced = true;
+  
+  step.items.forEach((item, i) => {
+    const dropZone = document.getElementById(`drop-items-${i}`);
+    if (dropZone.children.length === 0) {
+      allPlaced = false;
+      return;
+    }
+    const placed = dropZone.children[0];
+    if (placed.dataset.id !== item.id) {
+      allCorrect = false;
+    }
+  });
+  
+  const fb = $('#feedback');
+  
+  if (!allPlaced) {
+    fb.className = 'feedback show incorrect';
+    fb.innerHTML = `
+      <div class="feedback-title">⚠️ Incompleto</div>
+      <div class="feedback-text">Preencha todas as posições antes de verificar.</div>
+    `;
+    return;
+  }
+  
+  if (allCorrect) {
+    fb.className = 'feedback show correct';
+    fb.innerHTML = `
+      <div class="feedback-title">✅ Ordem correta!</div>
+      <div class="feedback-text">Você organizou os elementos na sequência ideal. Continue assim!</div>
+    `;
+    state.score += 150;
+    showToast('+150 pontos!', 'success');
+    updateHUD();
+    $('#checkBtn').style.display = 'none';
+    $('#nextBtn').style.display = 'inline-flex';
+    $('#nextBtn').disabled = false;
+  } else {
+    fb.className = 'feedback show incorrect';
+    fb.innerHTML = `
+      <div class="feedback-title">❌ Ordem incorreta</div>
+      <div class="feedback-text">Revise a sequência. Tente novamente!</div>
+    `;
+    state.score += 30;
+    updateHUD();
+    showToast('Tente novamente!', 'error');
+  }
+}
+
+// ===================== NEXT STEP / CHAPTER COMPLETE =====================
+function nextStep() {
+  state.currentStep++;
+  const chapter = chapters[state.currentChapter];
+  
+  if (state.currentStep >= chapter.steps.length) {
+    completeChapter();
+  } else {
+    renderChapterStep();
+  }
+}
+
+function completeChapter() {
+  const chapter = chapters[state.currentChapter];
+  state.chapterCompleted[state.currentChapter] = true;
+  
+  // Calculate stars based on chapter performance
+  // Each chapter has between 1-3 stars
+  // For simplicity: 3 stars if completed (we can refine later)
+  const earnedStars = 3;
+  state.chapterStars[state.currentChapter] = earnedStars;
+  state.stars += earnedStars;
+  
+  const summaryItems = chapter.summary.map(s => `<li>${s}</li>`).join('');
+  const allDone = state.chapterCompleted.every(v => v);
+  
+  render(`
+    <div class="complete-screen">
+      <div class="complete-icon">🎉</div>
+      <h2>Capítulo ${chapter.id} Concluído!</h2>
+      <p>${chapter.title}</p>
+      
+      <div class="stars-display">
+        ${[1,2,3].map(i => `<span class="star earned">★</span>`).join('')}
+      </div>
+      
+      <div class="summary-list">
+        <h4>📚 O que você aprendeu:</h4>
+        <ul>${summaryItems}</ul>
+      </div>
+
+      <div class="action-bar" style="justify-content: center; max-width: 600px; margin: 24px auto 0;">
+        <button class="btn btn-secondary" onclick="renderMap()">🗺️ Voltar ao Mapa</button>
+        ${allDone ? 
+          `<button class="btn btn-accent" onclick="renderFinal()">🏆 Ver Resultado Final</button>` : 
+          `<button class="btn btn-primary" onclick="nextChapter()">➡️ Próximo Capítulo</button>`
+        }
+      </div>
+    </div>
+  `);
+  
+  updateHUD();
+  showToast(`Capítulo concluído! +3 estrelas ⭐`, 'success');
+}
+
+function nextChapter() {
+  state.currentChapter++;
+  state.currentStep = 0;
+  renderChapterStep();
+}
+
+// ===================== FINAL SCREEN =====================
+function renderFinal() {
+  const maxScore = 5 * 3 * 100 + 5 * 50 + 2 * 150 + 5 * 30; // approximate
+  const totalStars = state.stars;
+  const maxStars = 15;
+  const percentage = Math.round((state.stars / maxStars) * 100);
+  
+  let medal = '🥉';
+  let title = 'Bronze';
+  let msg = 'Você completou a jornada! Continue praticando para alcançar o nível Ouro.';
+  if (percentage >= 90) { medal = '🥇'; title = 'Ouro'; msg = 'Desempenho excepcional! Você dominou todos os conceitos da construção de um projeto tecnológico.'; }
+  else if (percentage >= 70) { medal = '🥈'; title = 'Prata'; msg = 'Excelente trabalho! Você está pronto para construir um projeto sólido e ético.'; }
+
+  render(`
+    <div class="complete-screen">
+      <div class="complete-icon">${medal}</div>
+      <h2 style="color: var(--accent);">Jornada Completa!</h2>
+      <p>${msg}</p>
+      
+      <div class="final-stats">
+        <div class="stat-box">
+          <div class="stat-value">${state.score}</div>
+          <div class="stat-label">Pontos</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${totalStars}/${maxStars}</div>
+          <div class="stat-label">Estrelas</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">5/5</div>
+          <div class="stat-label">Capítulos</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${percentage}%</div>
+          <div class="stat-label">Aproveitamento</div>
+        </div>
+      </div>
+
+      <h3 style="margin: 32px 0 16px 0; color: var(--accent); font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">🎓 Emitir Certificado</h3>
+      <p style="color: var(--text-muted); margin-bottom: 16px;">Digite seu nome para gerar seu certificado de conclusão:</p>
+      <input type="text" class="name-input" id="studentName" placeholder="Seu nome completo" style="display: block; margin: 0 auto 16px auto; width: 100%; max-width: 400px;">
+      <button class="btn btn-accent" onclick="generateCertificate()">📜 Gerar Certificado</button>
+      
+      <div id="certificateContainer" style="margin-top: 32px;"></div>
+
+      <div style="margin-top: 32px;">
+        <button class="btn btn-secondary" onclick="restartGame()">🔄 Jogar Novamente</button>
+      </div>
+    </div>
+  `);
+}
+
+function generateCertificate() {
+  const name = $('#studentName').value.trim() || 'Pesquisador(a)';
+  state.studentName = name;
+  const date = new Date().toLocaleDateString('pt-BR');
+  
+  $('#certificateContainer').innerHTML = `
+    <div class="certificate">
+      <div class="cert-title">Certificado de Conclusão</div>
+      <div class="cert-subtitle">Projeto em Ação · A Jornada do Pesquisador</div>
+      <div class="cert-body">
+        Certificamos que<br>
+        <span class="cert-name">${name}</span><br>
+        concluiu com êxito a jornada de construção do Projeto Tecnológico,<br>
+        dominando os conceitos de Referencial Teórico, Trabalhos Relacionados,<br>
+        Ética Científica e Normas ABNT.
+      </div>
+      <div class="cert-score">
+        ⭐ ${state.stars}/15 estrelas · 🏆 ${state.score} pontos
+      </div>
+      <div class="cert-footer">
+        <div>
+          <div class="cert-sig">Profª Orientadora</div>
+        </div>
+        <div>
+          <div class="cert-sig">${date}</div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align: center; margin-top: 16px;">
+      <p style="color: var(--text-muted); font-size: 13px;">💡 Dica: Para salvar, use Ctrl+P e escolha "Salvar como PDF"</p>
+    </div>
+  `;
+  
+  showToast('Certificado gerado! 🎉', 'success');
+}
+
+function restartGame() {
+  state.score = 0;
+  state.stars = 0;
+  state.currentChapter = 0;
+  state.currentStep = 0;
+  state.chapterStars = [0, 0, 0, 0, 0];
+  state.chapterCompleted = [false, false, false, false, false];
+  state.studentName = '';
+  updateHUD();
+  renderWelcome();
+}
+
+// ===================== INIT =====================
+renderWelcome();
+updateHUD();
+</script>
+</body>
+</html>
